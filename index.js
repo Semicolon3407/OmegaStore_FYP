@@ -3,8 +3,10 @@ const express = require('express');
 const dbConnect = require('./config/dbconnect');
 const authRouter = require('./routes/authRoutes');
 const { notFound, errorHandler } = require('./middlewares/errorHandler');
+const cookieParser =require ("cookie-parser");
 const app = express();
 const PORT = process.env.PORT || 5001;
+
 
 // Middleware
 app.use(express.json());
@@ -20,9 +22,14 @@ dbConnect().then(() => {
 // Routes
 app.use("/api/user", authRouter);  // This is where auth routes are registered
 
+
+// cookie parser
+app.use(cookieParser());
 // Error Handling Middlewares
 app.use(notFound);  // Not Found Error
 app.use(errorHandler);  // Custom error handler
+
+
 
 // Start Server
 app.listen(PORT, () => {

@@ -2,16 +2,42 @@ const User = require('../models/usermodel');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const asyncHandler = require('express-async-handler');
+const validateMongoDBID = require('../utils/validateMangodbid');
+const cookieParser = require('cookie-parser');
+
+// Generate JWT Access Token
+const generateAccessToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: '1d', // Expiration for access token (1 day)
+  });
+};
+
+// Generate JWT Refresh Token
+const generateRefreshToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, {
+    expiresIn: '3d', // Expiration for refresh token (3 days)
+  });
+};
+
+// Handel Refresh token
+
 
 // Register User
 const registerUser = asyncHandler(async (req, res) => {
-  const { firstname, lastname, email, mobile, password } = req.body;
+  const { firstname, lastname, email, mobile, password, isAdmin } = req.body;
 
-  // Check if user exists
-  const userExists = await User.findOne({ email });
-  if (userExists) {
+  // Check if user already exists with email or mobile
+  const emailExists = await User.findOne({ email });
+  const mobileExists = await User.findOne({ mobile });
+
+  if (emailExists) {
     res.status(400);
-    throw new Error('User already exists');
+    throw new Error('Email already registered');
+  }
+
+  if (mobileExists) {
+    res.status(400);
+    throw new Error('Mobile number already registered');
   }
 
   // Create new user
@@ -21,6 +47,7 @@ const registerUser = asyncHandler(async (req, res) => {
     email,
     mobile,
     password,
+    isAdmin: isAdmin || false
   });
 
   if (user) {
@@ -30,7 +57,7 @@ const registerUser = asyncHandler(async (req, res) => {
       lastname: user.lastname,
       email: user.email,
       mobile: user.mobile,
-      token: generateToken(user._id),
+      isAdmin: user.isAdmin,
     });
   } else {
     res.status(400);
@@ -42,17 +69,28 @@ const registerUser = asyncHandler(async (req, res) => {
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  // Check user existence
   const user = await User.findOne({ email });
 
   if (user && (await bcrypt.compare(password, user.password))) {
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    // Set the refresh token in the cookies
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true, // Makes sure the cookie can't be accessed via JavaScript
+      secure: process.env.NODE_ENV === 'production', // Only set secure cookies in production
+      maxAge: 3 * 24 * 60 * 60 * 1000, // Cookie expiration (3 days)
+    });
+
     res.status(200).json({
       _id: user._id,
       firstname: user.firstname,
       lastname: user.lastname,
       email: user.email,
       mobile: user.mobile,
-      token: generateToken(user._id),
+      isAdmin: user.isAdmin,
+      isBlocked: user.isBlocked,
+      accessToken, // Return access token
     });
   } else {
     res.status(401);
@@ -60,18 +98,33 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 });
 
+// Refresh Access Token
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const refreshToken = req.cookies.refreshToken; // Get the refresh token from cookies
 
+  if (!refreshToken) {
+    res.status(400);
+    throw new Error('Refresh token is required');
+  }
+
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+
+    // Create a new access token based on the decoded user ID
+    const newAccessToken = generateAccessToken(decoded.id);
+
+    res.status(200).json({ accessToken: newAccessToken });
+  } catch (error) {
+    res.status(403);
+    throw new Error('Invalid refresh token');
+  }
+});
 
 // Get all users
 const getallUser = asyncHandler(async (req, res) => {
   try {
-    const users = await User.find({});
-
-    if (users && users.length > 0) {
-      res.status(200).json(users);
-    } else {
-      res.status(404).json({ message: 'No users found' });
-    }
+    const users = await User.find({}).select('-password'); // Exclude password
+    res.status(200).json(users);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -81,8 +134,11 @@ const getallUser = asyncHandler(async (req, res) => {
 const getSingleUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
+  // Validate the provided ID
+  validateMongoDBID(id); // Validate the ID
+
   try {
-    const user = await User.findById(id);
+    const user = await User.findById(id).select('-password');
 
     if (user) {
       res.status(200).json(user);
@@ -97,6 +153,9 @@ const getSingleUser = asyncHandler(async (req, res) => {
 // Delete a user by ID
 const deleteUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
+
+  // Validate the provided ID
+  validateMongoDBID(id); // Validate the ID
 
   try {
     const user = await User.findByIdAndDelete(id);
@@ -114,18 +173,38 @@ const deleteUser = asyncHandler(async (req, res) => {
 // Update user by ID
 const updateUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
+
+  // Validate the provided ID
+  validateMongoDBID(id); // Validate the ID
+
   const { firstname, lastname, email, mobile, password } = req.body;
 
   try {
     const user = await User.findById(id);
 
     if (user) {
+      if (email && email !== user.email) {
+        const emailExists = await User.findOne({ email });
+        if (emailExists) {
+          res.status(400);
+          throw new Error('Email already registered');
+        }
+      }
+
+      if (mobile && mobile !== user.mobile) {
+        const mobileExists = await User.findOne({ mobile });
+        if (mobileExists) {
+          res.status(400);
+          throw new Error('Mobile number already registered');
+        }
+      }
+
       if (firstname) user.firstname = firstname;
       if (lastname) user.lastname = lastname;
       if (email) user.email = email;
       if (mobile) user.mobile = mobile;
       if (password) {
-        user.password = await bcrypt.hash(password, 10);  // Hash new password
+        user.password = await bcrypt.hash(password, 10);
       }
 
       const updatedUser = await user.save();
@@ -136,7 +215,8 @@ const updateUser = asyncHandler(async (req, res) => {
         lastname: updatedUser.lastname,
         email: updatedUser.email,
         mobile: updatedUser.mobile,
-        token: generateToken(updatedUser._id),  // Regenerate the token
+        isAdmin: updatedUser.isAdmin,
+        isBlocked: updatedUser.isBlocked,
       });
     } else {
       res.status(404).json({ message: 'User not found' });
@@ -146,19 +226,58 @@ const updateUser = asyncHandler(async (req, res) => {
   }
 });
 
+// Block User
+const blockUser = asyncHandler(async (req, res) => {
+  const { id } = req.params;
 
-// Generate JWT Token
-const generateToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET, {
-      expiresIn: '30d',
-    });
-  };
+  // Validate the provided ID
+  validateMongoDBID(id); // Validate the ID
+
+  try {
+    const user = await User.findById(id);
+
+    if (user) {
+      user.isBlocked = true;
+      await user.save();
+      res.status(200).json({ message: 'User blocked successfully' });
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Unblock User
+const unblockUser = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  // Validate the provided ID
+  validateMongoDBID(id); // Validate the ID
+
+  try {
+    const user = await User.findById(id);
+
+    if (user) {
+      user.isBlocked = false;
+      await user.save();
+      res.status(200).json({ message: 'User unblocked successfully' });
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
 module.exports = {
   registerUser,
   loginUser,
+  refreshAccessToken,
   getallUser,
   getSingleUser,
   deleteUser,
   updateUser,
+  blockUser,
+  unblockUser,
 };
