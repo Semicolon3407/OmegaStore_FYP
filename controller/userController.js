@@ -1,4 +1,4 @@
-const User = require('../models/usermodel');
+const User = require('../models/userModel');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const asyncHandler = require('express-async-handler');
@@ -12,6 +12,9 @@ const generateAccessToken = (id) => {
   });
 };
 
+
+
+
 // Generate JWT Refresh Token
 const generateRefreshToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, {
@@ -19,7 +22,92 @@ const generateRefreshToken = (id) => {
   });
 };
 
-// Handel Refresh token
+
+
+
+
+// Handel refresh token
+const handleRefreshToken = asyncHandler(async (req, res) => {
+  const cookie = req.cookies;
+  console.log('Cookies:', cookie); // Debugging: Check if cookies are present
+
+  if (!cookie?.refreshToken) {
+    return res.status(401).json({ message: 'No refresh token found' });
+  }
+
+  const refreshToken = cookie.refreshToken;
+
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+
+    // Create a new access token based on the decoded user ID
+    const newAccessToken = generateAccessToken(decoded.id);
+
+    res.status(200).json({ accessToken: newAccessToken });
+  } catch (error) {
+    res.status(403).json({ message: 'Invalid refresh token' });
+  }
+});
+
+
+
+
+
+
+
+// Logout functionality
+const logoutUser = asyncHandler(async (req, res) => {
+  const cookie = req.cookies;  // Use req.cookies, not res.cookies
+  console.log("Cookies:", cookie); // Log cookies to check if refreshToken is there
+
+  // Check if refreshToken exists in cookies
+  if (!cookie.refreshToken) {
+    console.log("No refresh token in cookies");
+    throw new Error("No refresh token in cookies");
+  }
+
+  const refreshToken = cookie.refreshToken;
+
+  // Find the user based on refreshToken
+  const user = await User.findOne({ refreshToken });
+
+  if (!user) {
+    console.log("No user found with the refresh token");
+    // If no user found with refreshToken, clear the cookie and return status 204
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',  // Set secure based on environment
+      sameSite: "strict",  // SameSite for security
+    });
+    return res.status(200).json({ message: "Logged out successfully" });  // Added response body with message
+  }
+
+  // If user found, update user to clear refreshToken
+  await User.findOneAndUpdate(
+    { refreshToken },  // Use object for query
+    { refreshToken: "" },  // Clear the refreshToken field
+    { new: true }  // Ensure the updated user is returned
+  );
+
+  // Clear the refreshToken cookie
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: "strict",
+  });
+
+  console.log("User logged out successfully");
+  res.status(200).json({ message: "Logged out successfully" });  // Added response body with message
+});
+
+
+
+
+
+
+
+
+
 
 
 // Register User
@@ -64,6 +152,11 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new Error('Invalid user data');
   }
 });
+
+
+
+
+
 
 // Login User
 const loginUser = asyncHandler(async (req, res) => {
@@ -120,6 +213,13 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   }
 });
 
+
+
+
+
+
+
+
 // Get all users
 const getallUser = asyncHandler(async (req, res) => {
   try {
@@ -129,6 +229,12 @@ const getallUser = asyncHandler(async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+
+
+
+
+
 
 // Get a single user by ID
 const getSingleUser = asyncHandler(async (req, res) => {
@@ -150,6 +256,13 @@ const getSingleUser = asyncHandler(async (req, res) => {
   }
 });
 
+
+
+
+
+
+
+
 // Delete a user by ID
 const deleteUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -169,6 +282,13 @@ const deleteUser = asyncHandler(async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+
+
+
+
+
+
 
 // Update user by ID
 const updateUser = asyncHandler(async (req, res) => {
@@ -226,6 +346,13 @@ const updateUser = asyncHandler(async (req, res) => {
   }
 });
 
+
+
+
+
+
+
+
 // Block User
 const blockUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -247,6 +374,13 @@ const blockUser = asyncHandler(async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+
+
+
+
+
+
 
 // Unblock User
 const unblockUser = asyncHandler(async (req, res) => {
@@ -280,4 +414,6 @@ module.exports = {
   updateUser,
   blockUser,
   unblockUser,
-};
+  handleRefreshToken,
+  logoutUser,
+};  

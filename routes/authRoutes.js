@@ -8,8 +8,10 @@ const {
   deleteUser,
   updateUser,
   blockUser,
-  unblockUser
-} = require('../controller/authcontrol');
+  unblockUser,
+  handleRefreshToken,
+  logoutUser
+} = require('../controller/userController');
 
 const { authMiddleware, isAdmin } = require("../middlewares/authMiddleware");
 const router = express.Router();
@@ -20,8 +22,11 @@ router.post('/register', registerUser);
 // Route for user login
 router.post('/login', loginUser);
 
-// Refresh Access Token
-router.post('/refresh', refreshAccessToken);
+// Route for user logout
+router.get('/logout', logoutUser);
+
+// Refresh  Token
+router.get('/refresh', handleRefreshToken);
 
 // Route to get all users
 router.get('/all-users', authMiddleware, isAdmin, getallUser);
@@ -40,6 +45,7 @@ router.put('/block/:id', authMiddleware, isAdmin, blockUser);
 
 // Route to unblock a user (Admin only)
 router.put('/unblock/:id', authMiddleware, isAdmin, unblockUser);
+
 
 // Route to test admin access
 router.get("/admin-route", authMiddleware, isAdmin, (req, res) => {
