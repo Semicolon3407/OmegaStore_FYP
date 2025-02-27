@@ -2,14 +2,17 @@ require('dotenv').config();
 const express = require('express');
 const dbConnect = require('./config/dbconnect');
 const authRouter = require('./routes/authRoutes');
+const productRouter = require('./routes/productRoutes');
 const { notFound, errorHandler } = require('./middlewares/errorHandler');
 const cookieParser = require('cookie-parser');
-const cors = require('cors'); // Added CORS for handling cross-origin requests
+const cors = require('cors');
+const morgan = require('morgan');  // Importing Morgan for logging
 
 const app = express();
 const PORT = process.env.PORT || 5001;
 
 // Middleware
+app.use(morgan('dev'));  // Use Morgan with 'dev' format for logging HTTP requests
 app.use(cors({
     origin: 'http://localhost:3000', // Adjust this to your frontend URL
     credentials: true, // Allow cookies to be sent
@@ -28,6 +31,7 @@ dbConnect().then(() => {
 
 // Routes
 app.use("/api/user", authRouter);  // Registering auth routes
+app.use("/api/product", productRouter);
 
 // Error Handling Middlewares
 app.use(notFound);  // Not Found Error
