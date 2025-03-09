@@ -8,10 +8,11 @@ const {
 const { authMiddleware, isAdmin } = require("../middlewares/authMiddleware");
 const router = express.Router();
 
-router.post("/", authMiddleware, isAdmin, createCoupon);
-router.get("/", authMiddleware, isAdmin, getAllCoupons);
-router.get("/:id", authMiddleware, isAdmin, getAllCoupons);
-router.put("/:id", authMiddleware, isAdmin, updateCoupon);
-router.delete("/:id", authMiddleware, isAdmin, deleteCoupon);
+// Coupon management routes
+router.post("/", authMiddleware, isAdmin, createCoupon); // Create a new coupon (Admin only)
+router.get("/", authMiddleware, isAdmin, getAllCoupons); // Get all coupons (Admin only)
+router.get("/:id", authMiddleware, isAdmin, getAllCoupons); // Get a specific coupon by ID (Admin only)
+router.put("/:id", authMiddleware, isAdmin, updateCoupon); // Update a coupon (Admin only)
+router.delete("/:id", authMiddleware, isAdmin, deleteCoupon); // Delete a coupon (Admin only)
 
 module.exports = router;

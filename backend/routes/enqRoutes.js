@@ -9,10 +9,11 @@ const {
 const { authMiddleware, isAdmin } = require("../middlewares/authMiddleware");
 const router = express.Router();
 
-router.post("/", createEnquiry);
-router.put("/:id", authMiddleware, isAdmin, updateEnquiry);
-router.delete("/:id", authMiddleware, isAdmin, deleteEnquiry);
-router.get("/:id", getEnquiry);
-router.get("/", getallEnquiry);
+// Enquiry management routes
+router.post("/", createEnquiry); // Create a new enquiry
+router.put("/:id", authMiddleware, isAdmin, updateEnquiry); // Update an enquiry (Admin only)
+router.delete("/:id", authMiddleware, isAdmin, deleteEnquiry); // Delete an enquiry (Admin only)
+router.get("/:id", getEnquiry); // Get a specific enquiry by ID
+router.get("/", getallEnquiry); // Get all enquiries
 
 module.exports = router;
