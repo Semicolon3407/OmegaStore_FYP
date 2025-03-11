@@ -1,115 +1,152 @@
-"use client";
-
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
-import { User, Mail, Lock } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { User, Mail, Lock, Phone, MapPin, Eye, EyeOff } from "lucide-react";
+import axios from "axios";
+
+const formFields = [
+  { id: "firstname", label: "First Name", type: "text", placeholder: "Enter your first name", icon: User, required: true },
+  { id: "lastname", label: "Last Name", type: "text", placeholder: "Enter your last name", icon: User, required: true },
+  { id: "email", label: "Email", type: "email", placeholder: "Enter your email", icon: Mail, required: true },
+  { id: "mobile", label: "Mobile Number", type: "tel", placeholder: "Enter your mobile number", icon: Phone, required: true },
+  { id: "address", label: "Address", type: "text", placeholder: "Enter your address", icon: MapPin, required: false },
+];
 
 const CreateAccount = () => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [formData, setFormData] = useState({
+    firstname: "",
+    lastname: "",
+    email: "",
+    mobile: "",
+    address: "",
+    password: "",
+    confirmPassword: "",
+  });
 
-  const handleSubmit = (e) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    const { id, value } = e.target;
+    setFormData((prevData) => ({ ...prevData, [id]: value }));
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle account creation logic here
-    console.log("Create account with:", { name, email, password });
+    setError("");
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await axios.post("http://localhost:5001/api/user/register", formData);
+      alert("Account created successfully! Please log in.");
+      navigate("/sign-in");
+    } catch (error) {
+      setError(error.response?.data?.message || "Registration failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
       <motion.div
-        className="max-w-md mx-auto bg-white rounded-lg shadow-md p-8"
-        initial={{ opacity: 0, y: 20 }}
+        className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md"
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <h1 className="text-3xl font-bold mb-6 text-center">
-          Create an Account
-        </h1>
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label htmlFor="name" className="block text-gray-700 mb-2">
-              Full Name
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                id="name"
-                className="w-full px-4 py-2 pl-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600"
-                placeholder="Enter your full name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-              <User className="absolute left-3 top-3 text-gray-400" size={20} />
+        <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">Create Account</h2>
+
+        {error && <div className="bg-red-100 text-red-700 p-3 rounded-md text-sm mb-4">{error}</div>}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {formFields.map(({ id, label, type, placeholder, icon: Icon, required }) => (
+            <div key={id}>
+              <label className="block text-gray-700 font-medium">{label}</label>
+              <div className="relative mt-1">
+                <Icon className="absolute left-3 top-2.5 text-gray-400 w-5 h-5" />
+                <input
+                  type={type}
+                  id={id}
+                  className="w-full pl-10 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder={placeholder}
+                  value={formData[id]}
+                  onChange={handleChange}
+                  required={required}
+                />
+              </div>
             </div>
-          </div>
-          <div className="mb-4">
-            <label htmlFor="email" className="block text-gray-700 mb-2">
-              Email
-            </label>
-            <div className="relative">
+          ))}
+
+          {/* Password Field */}
+          <div>
+            <label className="block text-gray-700 font-medium">Password</label>
+            <div className="relative mt-1">
+              <Lock className="absolute left-3 top-2.5 text-gray-400 w-5 h-5" />
               <input
-                type="email"
-                id="email"
-                className="w-full px-4 py-2 pl-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-              <Mail className="absolute left-3 top-3 text-gray-400" size={20} />
-            </div>
-          </div>
-          <div className="mb-4">
-            <label htmlFor="password" className="block text-gray-700 mb-2">
-              Password
-            </label>
-            <div className="relative">
-              <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 id="password"
-                className="w-full px-4 py-2 pl-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600"
+                className="w-full pl-10 pr-10 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={formData.password}
+                onChange={handleChange}
                 required
               />
-              <Lock className="absolute left-3 top-3 text-gray-400" size={20} />
+              <button
+                type="button"
+                className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
             </div>
           </div>
-          <div className="mb-6">
-            <label
-              htmlFor="confirmPassword"
-              className="block text-gray-700 mb-2"
-            >
-              Confirm Password
-            </label>
-            <div className="relative">
+
+          {/* Confirm Password Field */}
+          <div>
+            <label className="block text-gray-700 font-medium">Confirm Password</label>
+            <div className="relative mt-1">
+              <Lock className="absolute left-3 top-2.5 text-gray-400 w-5 h-5" />
               <input
-                type="password"
+                type={showConfirmPassword ? "text" : "password"}
                 id="confirmPassword"
-                className="w-full px-4 py-2 pl-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600"
+                className="w-full pl-10 pr-10 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Confirm your password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                value={formData.confirmPassword}
+                onChange={handleChange}
                 required
               />
-              <Lock className="absolute left-3 top-3 text-gray-400" size={20} />
+              <button
+                type="button"
+                className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
             </div>
           </div>
-          <button
+
+          <motion.button
             type="submit"
-            className="w-full bg-primary-600 text-white py-2 rounded-md hover:bg-primary-700 transition-colors"
+            whileTap={{ scale: 0.97 }}
+            className="w-full flex items-center justify-center bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition duration-200"
+            disabled={loading}
           >
-            Create Account
-          </button>
+            {loading ? "Creating Account..." : "Create"}
+          </motion.button>
         </form>
-        <p className="mt-4 text-center text-gray-600">
+
+        <p className="text-center text-sm text-gray-600 mt-4">
           Already have an account?{" "}
-          <Link to="/sign-in" className="text-primary-600 hover:underline">
+          <Link to="/sign-in" className="text-blue-600 hover:underline">
             Sign in
           </Link>
         </p>

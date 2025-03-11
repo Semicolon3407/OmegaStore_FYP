@@ -18,10 +18,7 @@ const cors = require("cors");
 
 // Middleware
 app.use(morgan('dev'));  // Use Morgan with 'dev' format for logging HTTP requests
-app.use(cors({
-    origin: 'http://localhost:3000', // Adjust this to frontend URL
-    credentials: true, // Allow cookies to be sent
-}));
+app.use(cors());
 app.use(cookieParser());
 app.use(express.json());  // Replaced bodyParser.json() with express.json()
 app.use(express.urlencoded({ extended: false }));  // Replaced bodyParser.urlencoded() with express.urlencoded()

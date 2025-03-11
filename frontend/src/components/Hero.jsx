@@ -85,7 +85,7 @@ const Hero = () => {
         <img
           src={iphoneImage}
           alt="iPhone 16 Pro"
-          className="w-full max-w-[450px] mx-auto drop-shadow-2xl"
+          className="w-full max-w-[5000px] mx-auto drop-shadow-2xl"
         />
       </motion.div>
     </div>
