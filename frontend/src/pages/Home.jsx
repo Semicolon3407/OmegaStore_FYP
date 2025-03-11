@@ -1,19 +1,23 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Hero from "../components/Hero";
 import Image from "../components/Image";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
-import { ShoppingBag, ChevronRight, ChevronLeft } from "lucide-react";
+import { ChevronRight, ChevronLeft } from "lucide-react";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/navigation";
 
 const featuredProducts = [
   {
     id: 1,
     name: "Samsung Galaxy Z Fold5",
     price: 249999.0,
-    image:
-      "https://images.samsung.com/in/smartphones/galaxy-z-fold5/images/galaxy-z-fold5_highlights_kv.jpg",
+    image: "/assets/images/iphone16pro.png",
+   
+      
   },
   {
     id: 2,
@@ -36,8 +40,20 @@ const featuredProducts = [
     image:
       "https://images.samsung.com/in/smartphones/galaxy-z-fold5/images/galaxy-z-fold5_highlights_kv.jpg",
   },
-
-  
+  {
+    id: 5,
+    name: "Samsung Galaxy Z Fold5",
+    price: 249999.0,
+    image:
+      "https://images.samsung.com/in/smartphones/galaxy-z-fold5/images/galaxy-z-fold5_highlights_kv.jpg",
+  },
+  {
+    id: 6,
+    name: "Samsung Galaxy Z Fold5",
+    price: 249999.0,
+    image:
+      "https://images.samsung.com/in/smartphones/galaxy-z-fold5/images/galaxy-z-fold5_highlights_kv.jpg",
+  },
 ];
 
 const newArrivals = [
@@ -69,14 +85,28 @@ const newArrivals = [
     image:
       "https://dji-official-fe.djicdn.com/cms/uploads/5d052c3c23a3f0d24925cc5c0f012c5f.png",
   },
-    {
+  {
     id: 4,
     name: "DJI Mini 4K Drone Fly More Combo",
     price: 75500.0,
     image:
       "https://dji-official-fe.djicdn.com/cms/uploads/5d052c3c23a3f0d24925cc5c0f012c5f.png",
   },
-
+  {
+    id: 4,
+    name: "DJI Mini 4K Drone Fly More Combo",
+    price: 75500.0,
+    image:
+      "https://dji-official-fe.djicdn.com/cms/uploads/5d052c3c23a3f0d24925cc5c0f012c5f.png",
+  },
+  {
+    id: 4,
+    name: "DJI Mini 4K Drone Fly More Combo",
+    price: 75500.0,
+    image:
+      "https://dji-official-fe.djicdn.com/cms/uploads/5d052c3c23a3f0d24925cc5c0f012c5f.png",
+  },
+  
 ];
 
 const brands = [
@@ -84,6 +114,7 @@ const brands = [
     name: "Apple",
     logo: "https://www.apple.com/ac/structured-data/images/knowledge_graph_logo.png",
   },
+
   {
     name: "Apple",
     logo: "https://www.apple.com/ac/structured-data/images/knowledge_graph_logo.png",
@@ -103,42 +134,46 @@ const brands = [
   {
     name: "Apple",
     logo: "https://www.apple.com/ac/structured-data/images/knowledge_graph_logo.png",
-  }, 
+  },
+  {
+    name: "Apple",
+    logo: "https://www.apple.com/ac/structured-data/images/knowledge_graph_logo.png",
+  },
+  {
+    name: "Apple",
+    logo: "https://www.apple.com/ac/structured-data/images/knowledge_graph_logo.png",
+  },
+  
 ];
 
 const Home = () => {
-  const [showLeftArrow, setShowLeftArrow] = useState(false);
-  const [showRightArrow, setShowRightArrow] = useState(true);
-  const scrollContainer = useRef(null);
+  // Define navigation classes
+  const navigationPrevClass = "custom-swiper-button-prev";
+  const navigationNextClass = "custom-swiper-button-next";
 
-  const checkScrollPosition = () => {
-    if (scrollContainer.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollContainer.current;
-      setShowLeftArrow(scrollLeft > 0);
-      setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 1);
-    }
-  };
-
-  useEffect(() => {
-    checkScrollPosition();
-    window.addEventListener("resize", checkScrollPosition);
-    return () => window.removeEventListener("resize", checkScrollPosition);
-  }, []);
-
-  const scroll = (direction) => {
-    const container = scrollContainer.current;
-    if (container) {
-      const scrollAmount =
-        direction === "left" ? -container.clientWidth : container.clientWidth;
-      container.scrollBy({ left: scrollAmount, behavior: "smooth" });
-      setTimeout(checkScrollPosition, 500); // Check after animation
-    }
+  // Responsive breakpoints for Swiper
+  const swiperBreakpoints = {
+    320: {
+      slidesPerView: 1,
+      spaceBetween: 10,
+    },
+    640: {
+      slidesPerView: 2,
+      spaceBetween: 15,
+    },
+    768: {
+      slidesPerView: 3,
+      spaceBetween: 15,
+    },
+    1024: {
+      slidesPerView: 4,
+      spaceBetween: 20,
+    },
   };
 
   return (
     <div className="bg-gray-50">
       <Hero />
-
       {/* Featured Products */}
       <div className="container mx-auto px-4 py-12">
         <motion.section
@@ -147,37 +182,62 @@ const Home = () => {
           transition={{ duration: 0.5 }}
           className="mb-16"
         >
-          <h2 className="text-2xl font-bold mb-8 text-center">
+          <h2 className="text-2xl font-bold mb-8 text-center text-gray-800">
             FEATURED PRODUCTS
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredProducts.map((product) => (
-              <motion.div
-                key={product.id}
-                className="bg-white rounded-lg shadow-md overflow-hidden"
-                whileHover={{ y: -5 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Image
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-48"
-                />
-                <div className="p-4">
-                  <h3 className="text-sm font-semibold mb-2 h-12 line-clamp-2">
-                    {product.name}
-                  </h3>
-                  <div className="flex justify-between items-center">
-                    <p className="text-lg font-bold">
-                      Rs{product.price.toLocaleString()}
-                    </p>
-                    <button className="bg-primary-600 text-white px-4 py-2 rounded-md text-sm">
-                      ADD TO CART
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+          <div className="relative featured-products-slider">
+            <Swiper
+              modules={[Navigation]}
+              slidesPerView={4}
+              spaceBetween={20}
+              loop={true}
+              navigation={{
+                prevEl: `.featured-products-slider .${navigationPrevClass}`,
+                nextEl: `.featured-products-slider .${navigationNextClass}`,
+              }}
+              breakpoints={swiperBreakpoints}
+              className="flex space-x-6 overflow-x-auto scroll-smooth"
+            >
+              {featuredProducts.map((product) => (
+                <SwiperSlide key={product.id}>
+                  <motion.div
+                    className="bg-white rounded-lg shadow-lg overflow-hidden w-full"
+                    whileHover={{ y: -5 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Image
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-48 object-cover"
+                    />
+                    <div className="p-4">
+                      <h3 className="text-sm font-semibold mb-2 h-12 line-clamp-2 text-gray-700">
+                        {product.name}
+                      </h3>
+                      <div className="flex justify-between items-center">
+                        <p className="text-lg font-bold text-gray-900">
+                          Rs{product.price.toLocaleString()}
+                        </p>
+                        <button className="bg-primary-600 text-white px-4 py-2 rounded-md text-sm hover:bg-primary-700 transition">
+                          ADD TO CART
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+            {/* Custom Navigation Arrows for Featured Products */}
+            <div
+              className={`${navigationPrevClass} text-gray-600 hover:text-gray-900 bg-gray-100 p-3 rounded-full absolute top-1/2 left-4 transform -translate-y-1/2 cursor-pointer z-10 transition-all duration-300 ease-in-out shadow-md hover:shadow-lg`}
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </div>
+            <div
+              className={`${navigationNextClass} text-gray-600 hover:text-gray-900 bg-gray-100 p-3 rounded-full absolute top-1/2 right-4 transform -translate-y-1/2 cursor-pointer z-10 transition-all duration-300 ease-in-out shadow-md hover:shadow-lg`}
+            >
+              <ChevronRight className="w-5 h-5" />
+            </div>
           </div>
         </motion.section>
 
@@ -188,59 +248,62 @@ const Home = () => {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="mb-16"
         >
-          <h2 className="text-2xl font-bold mb-8 text-center">NEW ARRIVALS</h2>
-          <div className="relative">
-            {showLeftArrow && (
-              <button
-                onClick={() => scroll("left")}
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 p-2 rounded-full shadow-md"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
-            )}
-            <div
-              ref={scrollContainer}
-              className="flex overflow-x-auto gap-6 scroll-smooth hide-scrollbar"
-              style={{ scrollSnapType: "x mandatory" }}
-              onScroll={checkScrollPosition}
+          <h2 className="text-2xl font-bold mb-8 text-center text-gray-800">
+            NEW ARRIVALS
+          </h2>
+          <div className="relative new-arrivals-slider">
+            <Swiper
+              modules={[Navigation]}
+              slidesPerView={4}
+              spaceBetween={20}
+              loop={true}
+              navigation={{
+                prevEl: `.new-arrivals-slider .${navigationPrevClass}`,
+                nextEl: `.new-arrivals-slider .${navigationNextClass}`,
+              }}
+              breakpoints={swiperBreakpoints}
+              className="flex space-x-6 overflow-x-auto scroll-smooth"
             >
               {newArrivals.map((product) => (
-                <motion.div
-                  key={product.id}
-                  className="flex-none w-[250px] bg-white rounded-lg shadow-md overflow-hidden"
-                  whileHover={{ y: -5 }}
-                  transition={{ duration: 0.2 }}
-                  style={{ scrollSnapAlign: "start" }}
-                >
-                  <Image
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-48"
-                  />
-                  <div className="p-4">
-                    <h3 className="text-sm font-semibold mb-2 h-12 line-clamp-2">
-                      {product.name}
-                    </h3>
-                    <div className="flex justify-between items-center">
-                      <p className="text-lg font-bold">
-                        Rs{product.price.toLocaleString()}
-                      </p>
-                      <button className="bg-primary-600 text-white px-4 py-2 rounded-md text-sm">
-                        ADD TO CART
-                      </button>
+                <SwiperSlide key={product.id}>
+                  <motion.div
+                    className="bg-white rounded-lg shadow-lg overflow-hidden w-full"
+                    whileHover={{ y: -5 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Image
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-48 object-cover"
+                    />
+                    <div className="p-4">
+                      <h3 className="text-sm font-semibold mb-2 h-12 line-clamp-2 text-gray-700">
+                        {product.name}
+                      </h3>
+                      <div className="flex justify-between items-center">
+                        <p className="text-lg font-bold text-gray-900">
+                          Rs{product.price.toLocaleString()}
+                        </p>
+                        <button className="bg-primary-600 text-white px-4 py-2 rounded-md text-sm hover:bg-primary-700 transition">
+                          ADD TO CART
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
+                  </motion.div>
+                </SwiperSlide>
               ))}
+            </Swiper>
+            {/* Custom Navigation Arrows for New Arrivals */}
+            <div
+              className={`${navigationPrevClass} text-gray-600 hover:text-gray-900 bg-gray-100 p-3 rounded-full absolute top-1/2 left-4 transform -translate-y-1/2 cursor-pointer z-10 transition-all duration-300 ease-in-out shadow-md hover:shadow-lg`}
+            >
+              <ChevronLeft className="w-5 h-5" />
             </div>
-            {showRightArrow && (
-              <button
-                onClick={() => scroll("right")}
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 p-2 rounded-full shadow-md"
-              >
-                <ChevronRight className="w-6 h-6" />
-              </button>
-            )}
+            <div
+              className={`${navigationNextClass} text-gray-600 hover:text-gray-900 bg-gray-100 p-3 rounded-full absolute top-1/2 right-4 transform -translate-y-1/2 cursor-pointer z-10 transition-all duration-300 ease-in-out shadow-md hover:shadow-lg`}
+            >
+              <ChevronRight className="w-5 h-5" />
+            </div>
           </div>
         </motion.section>
 
@@ -251,24 +314,66 @@ const Home = () => {
           transition={{ duration: 0.5, delay: 0.4 }}
           className="mb-16"
         >
-          <h2 className="text-2xl font-bold mb-8 text-center">
+          <h2 className="text-2xl font-bold mb-8 text-center text-gray-800">
             FEATURED BRANDS
           </h2>
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-8">
-            {brands.map((brand) => (
-              <motion.div
-                key={brand.name}
-                className="flex items-center justify-center"
-                whileHover={{ scale: 1.05 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Image
-                  src={brand.logo}
-                  alt={brand.name}
-                  className="max-w-[120px] h-auto grayscale hover:grayscale-0 transition-all duration-300"
-                />
-              </motion.div>
-            ))}
+          <div className="relative brands-slider">
+            <Swiper
+              modules={[Navigation]}
+              slidesPerView={5}
+              spaceBetween={20}
+              loop={true}
+              navigation={{
+                prevEl: `.brands-slider .${navigationPrevClass}`,
+                nextEl: `.brands-slider .${navigationNextClass}`,
+              }}
+              breakpoints={{
+                320: {
+                  slidesPerView: 2,
+                  spaceBetween: 10,
+                },
+                640: {
+                  slidesPerView: 3,
+                  spaceBetween: 15,
+                },
+                768: {
+                  slidesPerView: 4,
+                  spaceBetween: 15,
+                },
+                1024: {
+                  slidesPerView: 5,
+                  spaceBetween: 20,
+                },
+              }}
+              className="flex space-x-6 overflow-x-auto scroll-smooth"
+            >
+              {brands.map((brand) => (
+                <SwiperSlide key={brand.name}>
+                  <motion.div
+                    className="flex items-center justify-center w-full"
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Image
+                      src={brand.logo}
+                      alt={brand.name}
+                      className="max-w-[120px] h-auto grayscale hover:grayscale-0 transition-all duration-300"
+                    />
+                  </motion.div>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+            {/* Custom Navigation Arrows for Brands */}
+            <div
+              className={`${navigationPrevClass} text-gray-600 hover:text-gray-900 bg-gray-100 p-3 rounded-full absolute top-1/2 left-4 transform -translate-y-1/2 cursor-pointer z-10 transition-all duration-300 ease-in-out shadow-md hover:shadow-lg`}
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </div>
+            <div
+              className={`${navigationNextClass} text-gray-600 hover:text-gray-900 bg-gray-100 p-3 rounded-full absolute top-1/2 right-4 transform -translate-y-1/2 cursor-pointer z-10 transition-all duration-300 ease-in-out shadow-md hover:shadow-lg`}
+            >
+              <ChevronRight className="w-5 h-5" />
+            </div>
           </div>
         </motion.section>
       </div>
@@ -277,3 +382,5 @@ const Home = () => {
 };
 
 export default Home;
+
+
