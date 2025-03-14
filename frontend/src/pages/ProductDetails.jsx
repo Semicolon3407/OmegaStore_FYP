@@ -36,7 +36,7 @@ const ProductDetails = () => {
 
   // Find related products (same category, excluding current product)
   const relatedProducts = products
-    .filter((p) => p.category === product.category && p.id !== product.id)
+    .filter((p) => p.category === product?.category && p.id !== product?.id)
     .slice(0, 4);
 
   if (!product) {
@@ -98,13 +98,32 @@ const ProductDetails = () => {
               >
                 {product.description}
               </motion.p>
+
+              {/* Display Product Color and Brand */}
               <motion.div
-                className="text-3xl font-bold mb-6 text-primary-600"
+                className="text-gray-600 mb-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.7 }}
+              >
+                <strong>Color:</strong> {product.color}
+              </motion.div>
+              <motion.div
+                className="text-gray-600 mb-6"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.8 }}
               >
-                Rs{product.price.toFixed(2)}
+                <strong>Brand:</strong> {product.brand}
+              </motion.div>
+
+              <motion.div
+                className="text-3xl font-bold mb-6 text-primary-600"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.9 }}
+              >
+                Rs {product.price.toFixed(2)}
               </motion.div>
               <div className="flex items-center mb-6">
                 <label htmlFor="quantity" className="mr-4 text-gray-700">
@@ -186,7 +205,7 @@ const ProductDetails = () => {
                     {relatedProduct.name}
                   </h3>
                   <p className="text-gray-600 mb-2">
-                    ${relatedProduct.price.toFixed(2)}
+                    Rs {relatedProduct.price.toFixed(2)}
                   </p>
                   <button className="bg-primary-600 text-white px-4 py-2 rounded-full hover:bg-primary-700 transition-colors w-full">
                     View Details

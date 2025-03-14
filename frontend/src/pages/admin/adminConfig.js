@@ -1,4 +1,4 @@
-// src/config/adminConfig.js
+
 export const adminConfig = {
     credentials: {
       email: "admin@gmail.com",
