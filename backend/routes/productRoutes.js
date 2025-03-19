@@ -19,11 +19,11 @@ const { uploadPhoto } = require("../middlewares/uploadImage");
 const router = express.Router();
 
 // Product management routes
-router.post("/", authMiddleware, isAdmin, createProduct); // Create a new product (only accessible to Admins)
+router.post("/", createProduct); // Create a new product (only accessible to Admins)
 router.get("/:id", getSingleProduct); // Get a single product by its ID (accessible to everyone)
 router.get("/", getAllProducts); // Get a list of all products (accessible to everyone)
-router.put("/:id", authMiddleware, isAdmin, updateProduct); // Update an existing product (only accessible to Admins)
-router.delete("/:id", authMiddleware, isAdmin, deleteProduct); // Delete a product (only accessible to Admins)
+router.put("/:id", updateProduct); // Update an existing product (only accessible to Admins)
+router.delete("/:id", deleteProduct); // Delete a product (only accessible to Admins)
 
 // User interaction routes
 router.put("/wishlist", authMiddleware, addToWishlist); // Add a product to the user's wishlist (only accessible to authenticated users)

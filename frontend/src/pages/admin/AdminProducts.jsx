@@ -1,44 +1,39 @@
-import React, { useState } from "react";
-import { motion } from "framer-motion";
+import React, { useState, useEffect } from "react";
 import { Plus, Edit2, Trash2 } from "lucide-react";
-import Navbar from "../../components/AdminNav"; // Import the Navbar component
+import Navbar from "../../components/AdminNav";
+import axios from "axios";
 
 const AdminProducts = () => {
-  const [products, setProducts] = useState([
-    {
-      id: 1,
-      name: "Macbook Pro",
-      price: 199.99,
-      stock: 50,
-      category: "Laptop",
-      image: "",
-    },
-    {
-      id: 2,
-      name: "I phone 16",
-      price: 89.99,
-      stock: 30,
-      category: "Mobile",
-      image: "",
-    },
-    {
-      id: 3,
-      name: "Minimalist Table",
-      price: 299.99,
-      stock: 20,
-      category: "Furniture",
-      image: "",
-    },
-  ]);
-
+  const [products, setProducts] = useState([]);
   const [newProduct, setNewProduct] = useState({
-    name: "",
+    title: "", // Update to title
     price: "",
-    stock: "",
+    quantity: "", // Update to quantity
     category: "",
-    image: "",
+    brand: "",
+    color: "",
+    description: "",
+    images: [], // Change image to images (array)
   });
   const [editingProduct, setEditingProduct] = useState(null);
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const response = await axios.get("http://localhost:5001/api/products");
+      if (Array.isArray(response.data.products)) {
+        setProducts(response.data.products);
+      } else {
+        setProducts([]);
+      }
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      setProducts([]);
+    }
+  };
 
   const handleInputChange = (e, isEditing = false) => {
     const { name, value } = e.target;
@@ -49,232 +44,122 @@ const AdminProducts = () => {
     }
   };
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setNewProduct({ ...newProduct, image: reader.result });
-      };
-      reader.readAsDataURL(file);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", "your_upload_preset");
+
+      try {
+        const res = await axios.post(`https://api.cloudinary.com/v1_1/de9o7sdbs/image/upload`, formData);
+        setNewProduct({ ...newProduct, images: [...newProduct.images, res.data.secure_url] });
+      } catch (error) {
+        console.error("Error uploading image:", error);
+      }
     }
   };
 
-  const addProduct = (e) => {
+  const addProduct = async (e) => {
     e.preventDefault();
-    setProducts([
-      ...products,
-      {
-        ...newProduct,
-        id: products.length + 1,
-        price: parseFloat(newProduct.price),
-        stock: parseInt(newProduct.stock),
-      },
-    ]);
-    setNewProduct({ name: "", price: "", stock: "", category: "", image: "" });
+    try {
+      const response = await axios.post("http://localhost:5001/api/products", newProduct);
+      setProducts([...products, response.data.product]);
+      setNewProduct({
+        title: "",
+        price: "",
+        quantity: "",
+        category: "",
+        brand: "",
+        color: "",
+        description: "",
+        images: [],
+      });
+    } catch (error) {
+      console.error("Error adding product:", error);
+    }
   };
 
   const startEditing = (product) => {
     setEditingProduct(product);
   };
 
-  const saveEdit = () => {
-    setProducts(
-      products.map((p) =>
-        p.id === editingProduct.id
-          ? {
-              ...editingProduct,
-              price: parseFloat(editingProduct.price),
-              stock: parseInt(editingProduct.stock),
-            }
-          : p
-      )
-    );
-    setEditingProduct(null);
+  const saveEdit = async () => {
+    try {
+      const response = await axios.put(`http://localhost:5001/api/products/${editingProduct._id}`, editingProduct);
+      setProducts(products.map(p => p._id === editingProduct._id ? response.data.product : p));
+      setEditingProduct(null);
+    } catch (error) {
+      console.error("Error updating product:", error);
+    }
   };
 
-  const deleteProduct = (id) => {
-    setProducts(products.filter((p) => p.id !== id));
+  const deleteProduct = async (id) => {
+    try {
+      await axios.delete(`http://localhost:5001/api/products/${id}`);
+      setProducts(products.filter(p => p._id !== id));
+    } catch (error) {
+      console.error("Error deleting product:", error);
+    }
   };
 
   return (
     <div>
-      <Navbar /> {/* Add the Navbar component */}
+      <Navbar />
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-6">Manage Products</h1>
 
-        {/* Add Product Form */}
-        <form
-          onSubmit={addProduct}
-          className="mb-8 bg-white p-6 rounded-lg shadow-md"
-        >
+        <form onSubmit={addProduct} className="mb-8 bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4">Add New Product</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <input
-              type="text"
-              name="name"
-              value={newProduct.name}
-              onChange={handleInputChange}
-              placeholder="Product Name"
-              className="border p-2 rounded"
-              required
-            />
-            <input
-              type="number"
-              name="price"
-              value={newProduct.price}
-              onChange={handleInputChange}
-              placeholder="Price"
-              className="border p-2 rounded"
-              required
-            />
-            <input
-              type="number"
-              name="stock"
-              value={newProduct.stock}
-              onChange={handleInputChange}
-              placeholder="Stock"
-              className="border p-2 rounded"
-              required
-            />
-            <input
-              type="text"
-              name="category"
-              value={newProduct.category}
-              onChange={handleInputChange}
-              placeholder="Category"
-              className="border p-2 rounded"
-              required
-            />
-            <input
-              type="file"
-              name="image"
-              onChange={handleImageChange}
-              className="border p-2 rounded"
-            />
+            <input type="text" name="title" value={newProduct.title} onChange={handleInputChange} placeholder="Product Title" className="border p-2 rounded" required />
+            <input type="number" name="price" value={newProduct.price} onChange={handleInputChange} placeholder="Price" className="border p-2 rounded" required />
+            <input type="number" name="quantity" value={newProduct.quantity} onChange={handleInputChange} placeholder="Quantity" className="border p-2 rounded" required />
+            <input type="text" name="category" value={newProduct.category} onChange={handleInputChange} placeholder="Category" className="border p-2 rounded" required />
+            <input type="text" name="brand" value={newProduct.brand} onChange={handleInputChange} placeholder="Brand" className="border p-2 rounded" required />
+            <input type="text" name="color" value={newProduct.color} onChange={handleInputChange} placeholder="Color" className="border p-2 rounded" required />
+            <textarea name="description" value={newProduct.description} onChange={handleInputChange} placeholder="Description" className="border p-2 rounded" required></textarea>
+            <input type="file" name="image" onChange={handleImageChange} className="border p-2 rounded" />
           </div>
-          <button
-            type="submit"
-            className="mt-4 bg-primary-600 text-white px-4 py-2 rounded hover:bg-primary-700"
-          >
-            Add Product
-          </button>
+          <button type="submit" className="mt-4 bg-primary-600 text-white px-4 py-2 rounded hover:bg-primary-700">Add Product</button>
         </form>
 
-        {/* Product List */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Price
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Stock
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Category
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Image
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
+                <th>Title</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Category</th>
+                <th>Brand</th>
+                <th>Color</th>
+                <th>Description</th>
+                <th>Images</th>
+                <th>Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {products.map((product) => (
-                <tr key={product.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {editingProduct && editingProduct.id === product.id ? (
-                      <input
-                        type="text"
-                        name="name"
-                        value={editingProduct.name}
-                        onChange={(e) => handleInputChange(e, true)}
-                        className="border p-1 rounded"
-                      />
-                    ) : (
-                      product.name
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {editingProduct && editingProduct.id === product.id ? (
-                      <input
-                        type="number"
-                        name="price"
-                        value={editingProduct.price}
-                        onChange={(e) => handleInputChange(e, true)}
-                        className="border p-1 rounded w-24"
-                      />
-                    ) : (
-                      `Rs${product.price.toFixed(2)}`
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {editingProduct && editingProduct.id === product.id ? (
-                      <input
-                        type="number"
-                        name="stock"
-                        value={editingProduct.stock}
-                        onChange={(e) => handleInputChange(e, true)}
-                        className="border p-1 rounded w-20"
-                      />
-                    ) : (
-                      product.stock
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {editingProduct && editingProduct.id === product.id ? (
-                      <input
-                        type="text"
-                        name="category"
-                        value={editingProduct.category}
-                        onChange={(e) => handleInputChange(e, true)}
-                        className="border p-1 rounded"
-                      />
-                    ) : (
-                      product.category
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {product.image && (
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="w-20 h-20 object-cover rounded"
-                      />
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    {editingProduct && editingProduct.id === product.id ? (
-                      <button
-                        onClick={saveEdit}
-                        className="text-indigo-600 hover:text-indigo-900 mr-4"
-                      >
-                        Save
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => startEditing(product)}
-                        className="text-indigo-600 hover:text-indigo-900 mr-4"
-                      >
-                        <Edit2 size={18} />
-                      </button>
-                    )}
-                    <button
-                      onClick={() => deleteProduct(product.id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+            <tbody>
+              {products.length > 0 ? (
+                products.map((product) => (
+                  <tr key={product._id}>
+                    <td>{product.title}</td>
+                    <td>Rs {product.price.toFixed(2)}</td>
+                    <td>{product.quantity}</td>
+                    <td>{product.category}</td>
+                    <td>{product.brand}</td>
+                    <td>{product.color}</td>
+                    <td>{product.description}</td>
+                    <td>{product.images && product.images.length > 0 && <img src={product.images[0]} alt={product.title} className="w-20 h-20 object-cover rounded" />}</td>
+                    <td>
+                      <button onClick={() => startEditing(product)} className="text-indigo-600 hover:text-indigo-900 mr-4"><Edit2 size={18} /></button>
+                      <button onClick={() => deleteProduct(product._id)} className="text-red-600 hover:text-red-900"><Trash2 size={18} /></button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr><td colSpan="9" className="text-center text-gray-500">No products available.</td></tr>
+              )}
             </tbody>
           </table>
         </div>

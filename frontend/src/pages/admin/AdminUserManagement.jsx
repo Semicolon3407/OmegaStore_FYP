@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Edit2, Trash2 } from "lucide-react";
 import axios from "axios";
-import Navbar from "../../components/AdminNav"; // Import the Navbar component
+import Navbar from "../../components/AdminNav";
 
 const initialUserState = { name: "", email: "", role: "User", mobile: "", address: "", photo: null };
 
@@ -153,9 +153,92 @@ const AdminUserManagement = () => {
     }
   };
 
+  // Modal for editing user
+  const EditUserModal = () => {
+    if (!isEditing) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+          <h2 className="text-xl font-semibold mb-4">Edit User</h2>
+          <div className="space-y-4">
+            <input
+              type="text"
+              value={newUser.name}
+              onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+              placeholder="Full Name"
+              className="border p-2 rounded w-full"
+              required
+            />
+            <input
+              type="email"
+              value={newUser.email}
+              onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+              placeholder="Email"
+              className="border p-2 rounded w-full"
+              required
+            />
+            <input
+              type="tel"
+              value={newUser.mobile}
+              onChange={(e) => setNewUser({ ...newUser, mobile: e.target.value })}
+              placeholder="Mobile Number"
+              className="border p-2 rounded w-full"
+            />
+            <input
+              type="text"
+              value={newUser.address}
+              onChange={(e) => setNewUser({ ...newUser, address: e.target.value })}
+              placeholder="Address"
+              className="border p-2 rounded w-full"
+            />
+            <select
+              value={newUser.role}
+              onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+              className="border p-2 rounded w-full"
+              required
+            >
+              <option value="User">User</option>
+              <option value="Admin">Admin</option>
+            </select>
+            <div>
+              <input
+                type="file"
+                onChange={handlePhotoChange}
+                accept="image/*"
+                className="border p-2 rounded w-full"
+              />
+              {newUser.photo && (
+                <img src={newUser.photo} alt="Preview" className="mt-2 w-20 h-20 object-cover rounded" />
+              )}
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2 mt-6">
+            <button
+              onClick={() => {
+                setIsEditing(false);
+                setNewUser(initialUserState);
+              }}
+              className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleUpdateUser}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              disabled={loading}
+            >
+              {loading ? "Updating..." : "Update"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div>
-      <Navbar /> {/* Add the Navbar component */}
+      <Navbar />
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-6">Manage Users</h1>
 
@@ -217,7 +300,9 @@ const AdminUserManagement = () => {
                 accept="image/*"
                 className="border p-2 rounded w-full"
               />
-              {newUser.photo && <img src={newUser.photo} alt="Preview" className="mt-2 w-20 h-20 object-cover rounded" />}
+              {newUser.photo && (
+                <img src={newUser.photo} alt="Preview" className="mt-2 w-20 h-20 object-cover rounded" />
+              )}
             </div>
           </div>
           <button
@@ -238,7 +323,7 @@ const AdminUserManagement = () => {
                 <th className="px-6 py-3 text-left">Email</th>
                 <th className="px-6 py-3 text-left">Mobile</th>
                 <th className="px-6 py-3 text-left">Role</th>
-                <th className="px-6 py-3 text-left">Address</th>
+                <th className="px-6 py-3 text-left">Status</th>
                 <th className="px-6 py-3 text-left">Photo</th>
                 <th className="px-6 py-3 text-left">Actions</th>
               </tr>
@@ -256,7 +341,15 @@ const AdminUserManagement = () => {
                   <td className="px-6 py-4">{user.email}</td>
                   <td className="px-6 py-4">{user.mobile || "N/A"}</td>
                   <td className="px-6 py-4">{user.role || "User"}</td>
-                  <td className="px-6 py-4">{user.address || "N/A"}</td>
+                  <td className="px-6 py-4">
+                    <span
+                      className={`px-2 py-1 rounded ${
+                        user.isBlocked ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"
+                      }`}
+                    >
+                      {user.isBlocked ? "Blocked" : "Active"}
+                    </span>
+                  </td>
                   <td className="px-6 py-4">
                     {user.photo ? (
                       <img src={user.photo} alt="User" className="w-10 h-10 rounded-full object-cover" />
@@ -264,11 +357,12 @@ const AdminUserManagement = () => {
                       <span>No Photo</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 flex">
+                  <td className="px-6 py-4 flex space-x-2">
                     <button
                       onClick={() => handleEditUser(user)}
-                      className="text-yellow-600 hover:text-yellow-800 mr-2"
+                      className="text-yellow-600 hover:text-yellow-800"
                       disabled={loading}
+                      title="Edit User"
                     >
                       <Edit2 size={20} />
                     </button>
@@ -276,6 +370,7 @@ const AdminUserManagement = () => {
                       onClick={() => handleDeleteUser(user._id)}
                       className="text-red-600 hover:text-red-800"
                       disabled={loading}
+                      title="Delete User"
                     >
                       <Trash2 size={20} />
                     </button>
@@ -293,6 +388,9 @@ const AdminUserManagement = () => {
           </table>
         </div>
       </div>
+
+      {/* Edit User Modal */}
+      {EditUserModal()}
     </div>
   );
 };
