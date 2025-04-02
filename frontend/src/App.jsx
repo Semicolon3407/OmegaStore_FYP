@@ -108,9 +108,10 @@ const Layout = () => {
 
   const hideHeaderFooterRoutes = ['/sign-in', '/account/create'];
   const isAdminRoute = location.pathname.startsWith('/admin');
-  const shouldHideForAdmin = isAdminRoute && auth.isAdmin;
+  
+  // Fixed condition - we want to hide header/footer on admin routes
   const shouldShowHeaderFooter =
-    !hideHeaderFooterRoutes.includes(location.pathname) && !shouldHideForAdmin;
+    !hideHeaderFooterRoutes.includes(location.pathname) && !isAdminRoute;
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">

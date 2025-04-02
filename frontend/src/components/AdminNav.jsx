@@ -20,42 +20,67 @@ const Navbar = () => {
   ];
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const role = localStorage.getItem("role");
-    setIsLoggedIn(!!token);
-    setUserRole(role || "");
+    // Check auth status on mount and when localStorage changes
+    const checkAuthStatus = () => {
+      const token = localStorage.getItem("token");
+      const role = localStorage.getItem("admin");
+      setIsLoggedIn(!!token);
+      setUserRole(role || "");
+    };
+    
+    checkAuthStatus();
+    
+    // Listen for storage events (in case logout happens in another tab)
+    window.addEventListener("storage", checkAuthStatus);
+    
+    // Close mobile menu when route changes
     const handleRouteChange = () => setIsMenuOpen(false);
     window.addEventListener("popstate", handleRouteChange);
-    return () => window.removeEventListener("popstate", handleRouteChange);
+    
+    return () => {
+      window.removeEventListener("storage", checkAuthStatus);
+      window.removeEventListener("popstate", handleRouteChange);
+    };
   }, []);
+
+  // Additional effect to close menu when route changes
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     try {
-      const response = await axios.get("http://localhost:5001/api/user/logout", {
+      await axios.get("http://localhost:5001/api/user/logout", {
         withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
       });
-      console.log("Logout response:", response.status); // Debug log
-      localStorage.clear();
-      setIsLoggedIn(false);
-      setUserRole("");
-      navigate("/");
     } catch (error) {
       console.error("Logout failed:", error.response?.data || error.message);
-      // Fallback: Clear localStorage and redirect even if the request fails
-      localStorage.clear();
+    } finally {
+      // Always clean up local storage and redirect regardless of server response
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("user");
       setIsLoggedIn(false);
       setUserRole("");
-      navigate("/");
-    } finally {
-      // Ensure menu closes on logout
       setIsMenuOpen(false);
+      navigate("/sign-in", { replace: true });
     }
   };
 
-  const isActive = (path) => location.pathname === path || (path !== "/admin" && location.pathname.startsWith(path));
+  // Improved active link detection
+  const isActive = (path) => {
+    if (path === "/admin") {
+      return location.pathname === "/admin";
+    }
+    return location.pathname.startsWith(path);
+  };
 
   return (
     <>
+      {/* Desktop Navigation */}
       <nav className="hidden md:block bg-gray-800 text-white sticky top-0 z-50 shadow-md">
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <Link to="/admin" className="text-2xl font-bold flex items-center gap-2 hover:text-yellow-400 transition-colors">
@@ -88,6 +113,8 @@ const Navbar = () => {
           )}
         </div>
       </nav>
+      
+      {/* Mobile Navigation */}
       <nav className="md:hidden bg-gray-800 text-white sticky top-0 z-50 shadow-md">
         <div className="flex justify-between items-center p-4">
           <Link to="/admin" className="text-xl font-bold flex items-center gap-1">
@@ -102,44 +129,43 @@ const Navbar = () => {
             {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
-        <div
-          className={`absolute top-full left-0 right-0 bg-gray-800 shadow-lg transform transition-all duration-300 ease-in-out ${
-            isMenuOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2 pointer-events-none"
-          }`}
-        >
-          <ul className="flex flex-col border-t border-gray-700">
-            {navLinks.map((link, index) => (
-              <li key={index}>
-                <Link
-                  to={link.path}
-                  onClick={() => setIsMenuOpen(false)}
-                  className={`flex items-center justify-between px-4 py-3 border-b border-gray-700 hover:bg-gray-700 transition-colors ${
-                    isActive(link.path) ? "text-yellow-400 bg-gray-700" : ""
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    {link.icon}
-                    <span>{link.title}</span>
-                  </div>
-                  <ChevronRight size={16} className={isActive(link.path) ? "text-yellow-400" : "text-gray-400"} />
-                </Link>
-              </li>
-            ))}
-            {isLoggedIn && (
-              <li>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center justify-between w-full text-left px-4 py-3 hover:bg-gray-700 text-red-400 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <LogOut size={18} />
-                    <span>Logout</span>
-                  </div>
-                </button>
-              </li>
-            )}
-          </ul>
-        </div>
+        
+        {/* Mobile menu */}
+        {isMenuOpen && (
+          <div className="absolute top-full left-0 right-0 bg-gray-800 shadow-lg z-50">
+            <ul className="flex flex-col border-t border-gray-700">
+              {navLinks.map((link, index) => (
+                <li key={index}>
+                  <Link
+                    to={link.path}
+                    className={`flex items-center justify-between px-4 py-3 border-b border-gray-700 hover:bg-gray-700 transition-colors ${
+                      isActive(link.path) ? "text-yellow-400 bg-gray-700" : ""
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {link.icon}
+                      <span>{link.title}</span>
+                    </div>
+                    <ChevronRight size={16} className={isActive(link.path) ? "text-yellow-400" : "text-gray-400"} />
+                  </Link>
+                </li>
+              ))}
+              {isLoggedIn && (
+                <li>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center justify-between w-full text-left px-4 py-3 hover:bg-gray-700 text-red-400 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <LogOut size={18} />
+                      <span>Logout</span>
+                    </div>
+                  </button>
+                </li>
+              )}
+            </ul>
+          </div>
+        )}
       </nav>
     </>
   );

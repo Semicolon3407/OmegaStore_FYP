@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Plus, Edit2, Trash2, Save, X, Search, Image as ImageIcon } from "lucide-react";
 import axios from "axios";
-import Navbar from "../../components/AdminNav";
-
+import Navbar from "../../components/AdminNav"; 
 const initialProductState = {
   title: "",
   price: "",
@@ -42,6 +41,7 @@ const AdminProducts = () => {
       setProducts(response.data.products || []);
       setError("");
     } catch (err) {
+      console.error("Fetch products error:", err);
       setError("Failed to fetch products: " + (err.response?.data?.message || "Please try again."));
     } finally {
       setIsLoading(false);
@@ -50,25 +50,25 @@ const AdminProducts = () => {
 
   const handleImageChange = async (e, isEditing = false) => {
     const file = e.target.files[0];
-    if (file) {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("upload_preset", "your_upload_preset"); // Replace with your Cloudinary preset
+    if (!file) return;
 
-      try {
-        const res = await axios.post(
-          `https://api.cloudinary.com/v1_1/de9o7sdbs/image/upload`,
-          formData
-        );
-        const imageUrl = res.data.secure_url;
-        if (isEditing) {
-          setNewProduct({ ...newProduct, images: [...newProduct.images, imageUrl] });
-        } else {
-          setNewProduct({ ...newProduct, images: [...newProduct.images, imageUrl] });
-        }
-      } catch (error) {
-        setError("Error uploading image: " + (error.response?.data?.message || "Please try again."));
-      }
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "your_upload_preset"); // Replace with actual Cloudinary preset
+
+    try {
+      const res = await axios.post(
+        "https://api.cloudinary.com/v1_1/de9o7sdbs/image/upload",
+        formData
+      );
+      const imageUrl = res.data.secure_url;
+      setNewProduct(prev => ({
+        ...prev,
+        images: [...prev.images, imageUrl]
+      }));
+    } catch (error) {
+      console.error("Image upload error:", error);
+      setError("Error uploading image: " + (error.response?.data?.message || "Please try again."));
     }
   };
 
@@ -85,9 +85,10 @@ const AdminProducts = () => {
       setNewProduct(initialProductState);
       setSuccess("Product added successfully!");
       setError("");
-      fetchProducts();
+      await fetchProducts();
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
+      console.error("Add product error:", err);
       setError("Failed to add product: " + (err.response?.data?.message || "Please try again."));
     } finally {
       setIsLoading(false);
@@ -97,10 +98,10 @@ const AdminProducts = () => {
   const handleEditProduct = (product) => {
     const editProduct = {
       id: product._id,
-      title: product.title,
-      price: product.price,
-      quantity: product.quantity,
-      category: product.category,
+      title: product.title || "",
+      price: product.price || "",
+      quantity: product.quantity || "",
+      category: product.category || "",
       brand: product.brand || "",
       color: product.color || "",
       description: product.description || "",
@@ -126,9 +127,10 @@ const AdminProducts = () => {
       setNewProduct(initialProductState);
       setSuccess("Product updated successfully!");
       setError("");
-      fetchProducts();
+      await fetchProducts();
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
+      console.error("Update product error:", err);
       setError("Failed to update product: " + (err.response?.data?.message || "Please try again."));
     } finally {
       setIsLoading(false);
@@ -143,9 +145,10 @@ const AdminProducts = () => {
       await axios.delete(`${API_URL}/${id}`, getAuthConfig());
       setSuccess("Product deleted successfully!");
       setError("");
-      fetchProducts();
+      await fetchProducts();
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
+      console.error("Delete product error:", err);
       setError("Failed to delete product: " + (err.response?.data?.message || "Please try again."));
     } finally {
       setIsLoading(false);
@@ -153,9 +156,9 @@ const AdminProducts = () => {
   };
 
   const filteredProducts = products.filter((product) =>
-    product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (product.brand && product.brand.toLowerCase().includes(searchTerm.toLowerCase()))
+    (product.title?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+    (product.category?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+    (product.brand?.toLowerCase() || "").includes(searchTerm.toLowerCase())
   );
 
   const EditProductModal = () => {
@@ -170,7 +173,7 @@ const AdminProducts = () => {
       >
         <motion.div
           initial={{ scale: 0.95, y: 20 }}
-          animate={{ scalecompscale: 1, y: 0 }}
+          animate={{ scale: 1, y: 0 }}
           className="bg-white p-6 rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
         >
           <div className="flex justify-between items-center mb-6">
@@ -332,6 +335,24 @@ const AdminProducts = () => {
     );
   };
 
+  if (isLoading && !products.length) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <svg className="animate-spin h-8 w-8 text-blue-600 mx-auto" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
+          </svg>
+          <p className="mt-2 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -383,7 +404,6 @@ const AdminProducts = () => {
           </div>
         )}
 
-        {/* Add Product Form */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -525,7 +545,6 @@ const AdminProducts = () => {
           </form>
         </motion.div>
 
-        {/* Products Table */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
