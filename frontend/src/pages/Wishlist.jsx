@@ -63,11 +63,13 @@ const Wishlist = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {wishlistItems.map((item) => (
-              <div
-                key={item._id}
-                className="bg-white rounded-2xl shadow-md overflow-hidden transition-transform hover:shadow-lg"
-              >
+            {wishlistItems.map((item) => {
+  console.log("Wishlist item:", item); // Debug log
+  return (
+    <div
+      key={item._id}
+      className="bg-white rounded-2xl shadow-md overflow-hidden transition-transform hover:shadow-lg"
+    >
                 <div className="relative">
                   <Link to={`/products/${item._id}`}>
                     <img
@@ -124,8 +126,9 @@ const Wishlist = () => {
                     </button>
                   </div>
                 </div>
-              </div>
-            ))}
+                </div>
+  );
+})}
           </div>
         )}
       </div>

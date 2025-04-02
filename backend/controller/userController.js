@@ -303,24 +303,37 @@ const userCart = asyncHandler(async (req, res) => {
   }
 });
 
+
+
+
 const getUserCart = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   validateMongoDbId(_id);
-  
+
   try {
     const cart = await Cart.findOne({ orderby: _id }).populate("products.product");
     if (!cart) {
-      return res.json({ products: [], cartTotal: 0, message: "Cart is empty" });
+      return res.json({
+        products: [],
+        cartTotal: 0,
+        totalAfterDiscount: 0,
+        message: "Cart is empty",
+      });
     }
     res.json({
-      products: cart(products || []),
+      products: cart.products || [], // Fixed typo: cart.products instead of cart(products || [])
       cartTotal: cart.cartTotal || 0,
-      totalAfterDiscount: cart.totalAfterDiscount || 0
+      totalAfterDiscount: cart.totalAfterDiscount || 0,
     });
   } catch (error) {
+    console.error("GetUserCart Error:", error); // Log for debugging
     res.status(500).json({ message: "Failed to fetch cart", error: error.message });
   }
 });
+
+
+
+
 
 const removeFromCart = asyncHandler(async (req, res) => {
   const { productId } = req.params;
@@ -422,7 +435,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
 const getWishlist = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   validateMongoDbId(_id);
-  
+
   try {
     const user = await User.findById(_id).populate("wishlist");
     if (!user) {
@@ -430,9 +443,10 @@ const getWishlist = asyncHandler(async (req, res) => {
     }
     res.json({
       wishlist: user.wishlist || [],
-      message: "Wishlist retrieved successfully"
+      message: "Wishlist retrieved successfully",
     });
   } catch (error) {
+    console.error("GetWishlist Error:", error); // Log for debugging
     res.status(500).json({ message: "Server error fetching wishlist", error: error.message });
   }
 });

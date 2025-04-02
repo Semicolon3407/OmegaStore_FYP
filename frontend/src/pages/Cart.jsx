@@ -96,49 +96,49 @@ const Cart = () => {
           </div>
 
           {cartItems.map((item) => (
-            <motion.div
-              key={item.product?._id || item._id}
-              className="flex items-center justify-between border-b py-4 last:border-b-0"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="flex items-center">
-                <img
-                  src={item.product?.images?.[0] || '/placeholder.jpg'}
-                  alt={item.product?.title || 'Product'}
-                  className="w-16 h-16 object-cover rounded-md mr-4"
-                />
-                <div>
-                  <h2 className="text-lg font-semibold">{item.product?.title || 'Product'}</h2>
-                  <p className="text-gray-600">Rs {(item.price || 0).toFixed(2)}</p>
-                  <p className="text-gray-500">Color: {item.color || 'N/A'}</p>
-                </div>
-              </div>
-              <div className="flex items-center">
-                <button
-                  onClick={() => handleUpdateQuantity(item.product?._id, -1)}
-                  className="text-gray-500 hover:text-gray-700"
-                  disabled={item.count <= 1}
-                >
-                  <Minus size={20} />
-                </button>
-                <span className="mx-2 w-8 text-center">{item.count || 0}</span>
-                <button
-                  onClick={() => handleUpdateQuantity(item.product?._id, 1)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <Plus size={20} />
-                </button>
-                <button
-                  onClick={() => removeFromCart(item.product?._id)}
-                  className="ml-4 text-red-500 hover:text-red-700"
-                >
-                  <Trash2 size={20} />
-                </button>
-              </div>
-            </motion.div>
-          ))}
+  <motion.div
+    key={item.product?._id || item._id} // Fallback to item._id if product is missing
+    className="flex items-center justify-between border-b py-4 last:border-b-0"
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.3 }}
+  >
+    <div className="flex items-center">
+      <img
+        src={item.product?.images?.[0] || '/placeholder.jpg'}
+        alt={item.product?.title || 'Product'}
+        className="w-16 h-16 object-cover rounded-md mr-4"
+      />
+      <div>
+        <h2 className="text-lg font-semibold">{item.product?.title || 'Unknown Product'}</h2>
+        <p className="text-gray-600">Rs {(item.price || 0).toFixed(2)}</p>
+        <p className="text-gray-500">Color: {item.color || 'N/A'}</p>
+      </div>
+    </div>
+    <div className="flex items-center">
+      <button
+        onClick={() => handleUpdateQuantity(item.product?._id || item._id, -1)}
+        className="text-gray-500 hover:text-gray-700"
+        disabled={item.count <= 1}
+      >
+        <Minus size={20} />
+      </button>
+      <span className="mx-2 w-8 text-center">{item.count || 0}</span>
+      <button
+        onClick={() => handleUpdateQuantity(item.product?._id || item._id, 1)}
+        className="text-gray-500 hover:text-gray-700"
+      >
+        <Plus size={20} />
+      </button>
+      <button
+        onClick={() => removeFromCart(item.product?._id || item._id)}
+        className="ml-4 text-red-500 hover:text-red-700"
+      >
+        <Trash2 size={20} />
+      </button>
+    </div>
+  </motion.div>
+))}
 
           <div className="mt-6 flex justify-between items-center">
             <p className="text-xl font-semibold">Total: Rs {total.toFixed(2)}</p>

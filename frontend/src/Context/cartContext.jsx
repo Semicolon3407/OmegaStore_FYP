@@ -16,19 +16,26 @@ export const CartProvider = ({ children }) => {
       setCartLoading(true);
       setCartError(null);
       const token = localStorage.getItem('token');
-      
+  
       if (!token) {
+        console.log("No token found, setting empty cart");
         setCartItems([]);
         return;
       }
-
+  
       const { data } = await axios.get('http://localhost:5001/api/user/cart', {
         headers: { Authorization: `Bearer ${token}` },
       });
-
+      console.log("Cart API response:", data);
       setCartItems(data.products || []);
     } catch (error) {
-      setCartError(error.response?.data?.message || 'Failed to load cart');
+      const errorMsg = error.response?.data?.message || error.message || 'Unknown error';
+      console.error("Cart fetch error:", {
+        status: error.response?.status,
+        message: errorMsg,
+        fullError: error.response || error,
+      });
+      setCartError(errorMsg);
       if (error.response?.status === 401) {
         toast.info('Session expired, please login');
         navigate('/sign-in');
@@ -37,6 +44,7 @@ export const CartProvider = ({ children }) => {
       setCartLoading(false);
     }
   }, [navigate]);
+  
 
   const addToCart = async (productId, quantity = 1, color = '') => {
     try {

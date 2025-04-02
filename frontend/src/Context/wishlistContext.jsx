@@ -16,8 +16,9 @@ export const WishlistProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       const token = localStorage.getItem('token');
-      
+
       if (!token) {
+        console.log("No token found, setting empty wishlist");
         setWishlistItems([]);
         return;
       }
@@ -26,9 +27,16 @@ export const WishlistProvider = ({ children }) => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      console.log("Wishlist API response:", data);
       setWishlistItems(data.wishlist || []);
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to fetch wishlist');
+      const errorMsg = error.response?.data?.message || error.message || 'Unknown error';
+      console.error("Wishlist fetch error:", {
+        status: error.response?.status,
+        message: errorMsg,
+        fullError: error.response || error,
+      });
+      setError(errorMsg);
       if (error.response?.status === 401) {
         toast.info('Session expired, please login');
         navigate('/sign-in');
@@ -49,14 +57,16 @@ export const WishlistProvider = ({ children }) => {
 
       const { data } = await axios.put(
         'http://localhost:5001/api/user/wishlist',
-        { prodId: productId },
+        { productId }, // Changed from prodId to productId
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
+      console.log("Add to wishlist response:", data); // Debug log
       setWishlistItems(data.wishlist || []);
       toast.success('Added to wishlist!');
       return true;
     } catch (error) {
+      console.error("Add to wishlist error:", error.response || error); // Debug log
       toast.error(error.response?.data?.message || 'Failed to add to wishlist');
       if (error.response?.status === 401) navigate('/sign-in');
       return false;

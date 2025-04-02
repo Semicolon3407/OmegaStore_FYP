@@ -63,7 +63,7 @@ const startServer = async () => {
       console.log(`CORS enabled for origin: ${FRONTEND_ORIGIN}`);
     });
   } catch (err) {
-    console.error("Database connection failed:", err.message);
+    console.error("Database connection failed:", err); // Enhanced logging with full error object
     process.exit(1); // Exit process on failure
   }
 };

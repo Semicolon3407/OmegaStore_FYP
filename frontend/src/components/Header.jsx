@@ -18,6 +18,14 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Check if current path is admin path
+  const isAdminRoute = location.pathname.includes('/admin');
+  
+  // If we're on an admin route, don't render the regular header
+  if (isAdminRoute) {
+    return null;
+  }
+
   const checkAuthStatus = useCallback(() => {
     const token = localStorage.getItem("token");
     const role = localStorage.getItem("role");
