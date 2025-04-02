@@ -23,11 +23,19 @@ export const CartProvider = ({ children }) => {
         return;
       }
   
-      const { data } = await axios.get('http://localhost:5001/api/user/cart', {
+      const { data } = await axios.get('http://localhost:5001/api/user/user-cart', {
         headers: { Authorization: `Bearer ${token}` },
       });
+  
       console.log("Cart API response:", data);
-      setCartItems(data.products || []);
+  
+      // Handle if the cart response doesn't have products
+      if (data && data.products) {
+        setCartItems(data.products);
+      } else {
+        console.error('Unexpected cart data:', data);
+        setCartItems([]);
+      }
     } catch (error) {
       const errorMsg = error.response?.data?.message || error.message || 'Unknown error';
       console.error("Cart fetch error:", {
@@ -44,6 +52,9 @@ export const CartProvider = ({ children }) => {
       setCartLoading(false);
     }
   }, [navigate]);
+  
+
+  
   
 
   const addToCart = async (productId, quantity = 1, color = '') => {

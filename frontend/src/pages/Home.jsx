@@ -19,6 +19,7 @@ const Home = () => {
 
   const brands = [
     { name: "Apple", logo: "https://www.apple.com/ac/structured-data/images/knowledge_graph_logo.png" },
+    { name: "Apple", logo: "https://www.apple.com/ac/structured-data/images/knowledge_graph_logo.png" },
     { name: "Samsung", logo: "https://upload.wikimedia.org/wikipedia/commons/2/24/Samsung_Logo.svg" },
     { name: "Google", logo: "https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" },
     { name: "Microsoft", logo: "https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg" },
@@ -58,7 +59,7 @@ const Home = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-600"></div>
       </div>
     );
@@ -75,7 +76,7 @@ const Home = () => {
             <div className="text-center mb-10 md:mb-14">
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">Featured Products</h2>
               <p className="mt-2 text-sm md:text-base text-gray-600 max-w-2xl mx-auto">
-                Explore our handpicked selection of top-tier technology
+                Explore our handpicked selection of top-tier technology.
               </p>
             </div>
 
@@ -91,7 +92,7 @@ const Home = () => {
                 {featuredProducts.map((product) => (
                   <SwiperSlide key={product._id}>
                     <motion.div
-                      className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden"
+                      className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100 overflow-hidden"
                       whileHover={{ y: -8 }}
                     >
                       <div className="relative h-48 sm:h-56 md:h-64 overflow-hidden group">
@@ -142,7 +143,7 @@ const Home = () => {
             <div className="text-center mb-10 md:mb-14">
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">New Arrivals</h2>
               <p className="mt-2 text-sm md:text-base text-gray-600 max-w-2xl mx-auto">
-                Check out the latest additions to our collection
+                Check out the latest additions to our collection.
               </p>
             </div>
 
@@ -158,7 +159,7 @@ const Home = () => {
                 {newArrivals.map((product) => (
                   <SwiperSlide key={product._id}>
                     <motion.div
-                      className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden"
+                      className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100 overflow-hidden"
                       whileHover={{ y: -8 }}
                     >
                       <div className="relative h-48 sm:h-56 md:h-64 overflow-hidden group">

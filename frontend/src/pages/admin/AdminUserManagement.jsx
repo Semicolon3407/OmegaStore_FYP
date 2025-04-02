@@ -54,7 +54,7 @@ const AdminUserManagement = () => {
         email: newUser.email,
         mobile: newUser.mobile || "",
         address: newUser.address || "",
-        password: "password123", // Temporary password
+        password: "password123", 
         role: newUser.role,
         photo: newUser.photo || null,
       };
@@ -127,7 +127,7 @@ const AdminUserManagement = () => {
 
     try {
       setLoading(true);
-      await axios.delete(`${API_URL}/${id}`, getAuthConfig());
+      await axios.delete(`${API_URL}/delete-user/${id}`, getAuthConfig());
       setSuccess("User deleted successfully!");
       setError("");
       fetchUsers();

@@ -304,15 +304,29 @@ const userCart = asyncHandler(async (req, res) => {
 });
 
 
-
-
-const getUserCart = asyncHandler(async (req, res) => {
-  const { _id } = req.user;
-  validateMongoDbId(_id);
-
+const getUserCarts = asyncHandler(async (req, res) => {
   try {
-    const cart = await Cart.findOne({ orderby: _id }).populate("products.product");
-    if (!cart) {
+    // Check if user is authenticated
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const userId = req.user._id;
+    console.log("User ID from auth middleware:", userId);
+
+    // Use try-catch specifically around validation
+    try {
+      validateMongoDbId(userId);
+    } catch (validationError) {
+      return res.status(400).json({ message: "Invalid user ID", error: validationError.message });
+    }
+
+    // Query the cart using the user ID
+    const cart = await Cart.findOne({ orderby: userId }).populate("products.product");
+    console.log("Cart found:", cart ? "Yes" : "No");
+
+    // If no cart found or cart is empty
+    if (!cart || !cart.products.length) {
       return res.json({
         products: [],
         cartTotal: 0,
@@ -320,16 +334,33 @@ const getUserCart = asyncHandler(async (req, res) => {
         message: "Cart is empty",
       });
     }
+
+    // Map the cart products
+    const products = cart.products.map((item) => ({
+      _id: item._id,
+      product: item.product,
+      count: item.count,
+      color: item.color,
+      price: item.price,
+    }));
+
+    // Respond with the cart data
     res.json({
-      products: cart.products || [], // Fixed typo: cart.products instead of cart(products || [])
-      cartTotal: cart.cartTotal || 0,
-      totalAfterDiscount: cart.totalAfterDiscount || 0,
+      products,
+      cartTotal: cart.cartTotal,
+      totalAfterDiscount: cart.totalAfterDiscount || cart.cartTotal,
     });
   } catch (error) {
-    console.error("GetUserCart Error:", error); // Log for debugging
+    console.error("GetUserCart Error:", error);
     res.status(500).json({ message: "Failed to fetch cart", error: error.message });
   }
 });
+
+
+
+
+
+
 
 
 
@@ -364,6 +395,8 @@ const emptyCart = asyncHandler(async (req, res) => {
   res.json(cart || { message: "Cart emptied" });
 });
 
+
+
 const applyCoupon = asyncHandler(async (req, res) => {
   const { coupon } = req.body;
   const { _id } = req.user;
@@ -376,6 +409,8 @@ const applyCoupon = asyncHandler(async (req, res) => {
   await Cart.findOneAndUpdate({ orderby: user._id }, { totalAfterDiscount }, { new: true });
   res.json(totalAfterDiscount);
 });
+
+
 
 const createOrder = asyncHandler(async (req, res) => {
   const { COD, couponApplied } = req.body;
@@ -407,6 +442,8 @@ const createOrder = asyncHandler(async (req, res) => {
   res.json({ message: "success" });
 });
 
+
+
 const getOrders = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   validateMongoDbId(_id);
@@ -419,6 +456,7 @@ const getAllOrders = asyncHandler(async (req, res) => {
   res.json(allUserOrders);
 });
 
+
 const updateOrderStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
   const { id } = req.params;
@@ -430,6 +468,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
   );
   res.json(updateOrderStatus);
 });
+
 
 // Get Wishlist
 const getWishlist = asyncHandler(async (req, res) => {
@@ -511,7 +550,7 @@ module.exports = {
   getWishlist,
   saveAddress,
   userCart,
-  getUserCart,
+  getUserCarts,
   emptyCart,
   removeFromCart,
   applyCoupon,

@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { ShoppingCart, Heart, Phone, Search, ChevronDown, Menu, User, BarChart, LogOut } from "lucide-react";
 import { useCart } from "../Context/cartContext";
-import { useWishlist } from "../Context/wishlistContext";
 import { toast } from "react-toastify";
 
 const Header = () => {
@@ -13,65 +12,57 @@ const Header = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState("");
   const [isScrolled, setIsScrolled] = useState(false);
+  const [wishlistCount, setWishlistCount] = useState(0);
   const { cartItems } = useCart();
-  const { wishlistItems, fetchWishlist } = useWishlist();
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Check if current path is admin path
-  const isAdminRoute = location.pathname.includes('/admin');
-  
-  // If we're on an admin route, don't render the regular header
-  if (isAdminRoute) {
-    return null;
-  }
-
-  const checkAuthStatus = useCallback(() => {
+  useEffect(() => {
     const token = localStorage.getItem("token");
     const role = localStorage.getItem("role");
     setIsLoggedIn(!!token);
     setUserRole(role || "");
     
     if (token) {
-      fetchWishlist().catch(console.error);
+      fetchWishlistCount();
     }
-  }, [fetchWishlist]);
 
-  useEffect(() => {
-    checkAuthStatus();
-    
-    const handleStorageChange = () => checkAuthStatus();
-    window.addEventListener('storage', handleStorageChange);
-    
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, [checkAuthStatus]);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const fetchWishlistCount = async () => {
+    try {
+      const response = await axios.get("http://localhost:5001/api/user/wishlist", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      setWishlistCount(response.data.wishlist?.length || 0);
+    } catch (error) {
+      console.error("Failed to fetch wishlist count:", error);
+    }
+  };
 
   const handleLogout = async () => {
     try {
-      await axios.get("http://localhost:5001/api/user/logout", {
+      await axios.get("http://localhost:5001/api/user/logout", { 
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        withCredentials: true,
+        withCredentials: true 
       });
       localStorage.clear();
       setIsLoggedIn(false);
       setUserRole("");
+      setWishlistCount(0);
       toast.success("Logged out successfully");
       navigate("/");
-      window.dispatchEvent(new Event('storage'));
     } catch (error) {
       console.error("Logout failed:", error);
       localStorage.clear();
       setIsLoggedIn(false);
       setUserRole("");
+      setWishlistCount(0);
       toast.info("Session cleared");
       navigate("/");
-      window.dispatchEvent(new Event('storage'));
     }
   };
 
@@ -169,7 +160,7 @@ const Header = () => {
         <div className="flex items-center space-x-2 sm:space-x-4 lg:space-x-6">
           {isLoggedIn ? (
             <>
-              <IconLink to="/wishlist" count={wishlistItems.length} icon={<Heart className="w-5 h-5 sm:w-6 sm:h-6" />}>
+              <IconLink to="/wishlist" count={wishlistCount} icon={<Heart className="w-5 h-5 sm:w-6 sm:h-6" />}>
                 Wishlist
               </IconLink>
               <IconLink to="/cart" count={cartItems.length} icon={<ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />}>
@@ -200,10 +191,7 @@ const Header = () => {
               </div>
             </>
           ) : (
-            <Link
-              to="/sign-in"
-              className="flex items-center space-x-1 sm:space-x-2 text-gray-700 hover:text-blue-600 transition-colors duration-200 p-2"
-            >
+            <Link to="/sign-in" className="flex items-center space-x-1 sm:space-x-2 text-gray-700 hover:text-blue-600 transition-colors duration-200 p-2">
               <User className="w-5 h-5 sm:w-6 sm:h-6" />
               <span className="hidden sm:inline text-sm">Sign In</span>
             </Link>
@@ -241,6 +229,7 @@ const Header = () => {
       {isMenuOpen && (
         <div className="md:hidden px-4 py-4 bg-gray-50 border-t border-gray-200">
           <div className="space-y-4">
+            {/* Mobile Search */}
             <form onSubmit={handleSearch}>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -252,6 +241,7 @@ const Header = () => {
                   className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none bg-white text-sm"
                 />
               </div>
+              {/* Mobile Categories */}
               <select
                 className="w-full mt-2 py-2.5 px-3 rounded-lg border border-gray-200 bg-white text-sm text-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
                 value={searchCategory}
@@ -265,6 +255,7 @@ const Header = () => {
                 <option>Earbuds</option>
               </select>
             </form>
+            {/* Mobile Login Links */}
             {!isLoggedIn && (
               <div className="space-y-2">
                 <Link

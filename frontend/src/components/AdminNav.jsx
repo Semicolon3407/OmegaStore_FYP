@@ -53,20 +53,23 @@ const Navbar = () => {
       await axios.get("http://localhost:5001/api/user/logout", {
         withCredentials: true,
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`
-        }
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       });
+      toast.success("Logged out successfully");
     } catch (error) {
       console.error("Logout failed:", error.response?.data || error.message);
+      toast.info("Session cleared");
     } finally {
       // Always clean up local storage and redirect regardless of server response
       localStorage.removeItem("token");
       localStorage.removeItem("role");
-      localStorage.removeItem("user");
+      localStorage.removeItem("admin");
       setIsLoggedIn(false);
       setUserRole("");
       setIsMenuOpen(false);
-      navigate("/sign-in", { replace: true });
+      navigate("/", { replace: true });
+      window.dispatchEvent(new Event("storage"));
     }
   };
 

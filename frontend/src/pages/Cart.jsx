@@ -21,9 +21,10 @@ const Cart = () => {
         setLoading(false);
       }
     };
-
+  
     loadCart();
-  }, [fetchCart]);
+  }, []);
+  
 
   const handleUpdateQuantity = async (productId, change) => {
     const item = cartItems.find((item) => item.product?._id === productId);
