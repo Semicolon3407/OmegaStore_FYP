@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
-import { adminConfig } from "../pages/admin/adminConfig"; // Import admin config
 
 const SignIn = () => {
   const [email, setEmail] = useState("");
@@ -12,18 +11,12 @@ const SignIn = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  // Check if user is already logged in
   useEffect(() => {
     const token = localStorage.getItem("token");
     const role = localStorage.getItem("role");
-
     if (token) {
-      // Redirect based on role if already logged in
-      if (role === "admin") {
-        navigate("/admin");
-      } else {
-        navigate("/");
-      }
+      if (role === "admin") navigate("/admin");
+      else navigate("/");
     }
   }, [navigate]);
 
@@ -33,32 +26,19 @@ const SignIn = () => {
     setError("");
 
     try {
-      let role = "user"; // Default role
-      let token = "dummy-user-token"; // Placeholder token
-
-      // Check if the entered credentials match the admin config
-      if (
-        email === adminConfig.credentials.email &&
-        password === adminConfig.credentials.password
-      ) {
-        role = "admin";
-        token = "dummy-admin-token"; // Placeholder token for admin
+      const response = await axios.post(
+        "http://localhost:5001/api/user/login",
+        { email, password },
+        { withCredentials: true }
+      );
+      if (response.data.token) {
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("role", response.data.role || "user");
+        localStorage.setItem("userId", response.data._id);
+        if (response.data.role === "admin") navigate("/admin");
+        else navigate("/");
       } else {
-        // If not admin, proceed with API authentication
-        const { data } = await axios.post("http://localhost:5001/api/user/login", { email, password });
-        role = data.role;
-        token = data.token;
-      }
-
-      // Store authentication details
-      localStorage.setItem("token", token);
-      localStorage.setItem("role", role);
-
-      // Redirect based on role
-      if (role === "admin") {
-        navigate("/admin");
-      } else {
-        navigate("/");
+        throw new Error("Invalid response from server");
       }
     } catch (error) {
       setError(error.response?.data?.message || "Login failed. Please try again.");
@@ -71,13 +51,7 @@ const SignIn = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
       <div className="bg-white shadow-md rounded-lg p-8 w-full max-w-md">
         <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Sign In</h2>
-
-        {error && (
-          <div className="bg-red-100 text-red-700 p-3 rounded-md text-sm mb-4">
-            {error}
-          </div>
-        )}
-
+        {error && <div className="bg-red-100 text-red-700 p-3 rounded-md text-sm mb-4">{error}</div>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-gray-700 font-medium">Email</label>
@@ -92,7 +66,6 @@ const SignIn = () => {
               />
             </div>
           </div>
-
           <div>
             <label className="block text-gray-700 font-medium">Password</label>
             <div className="relative mt-1">
@@ -118,7 +91,6 @@ const SignIn = () => {
               </a>
             </div>
           </div>
-
           <button
             type="submit"
             className="w-full flex items-center justify-center bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 transition duration-200"
@@ -127,7 +99,6 @@ const SignIn = () => {
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Sign In"}
           </button>
         </form>
-
         <p className="text-center text-sm text-gray-600 mt-4">
           Don't have an account?{" "}
           <a href="/account/create" className="text-blue-600 hover:underline">
