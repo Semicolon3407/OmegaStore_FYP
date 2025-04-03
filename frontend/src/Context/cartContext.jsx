@@ -16,33 +16,25 @@ export const CartProvider = ({ children }) => {
       setCartLoading(true);
       setCartError(null);
       const token = localStorage.getItem('token');
-  
+
       if (!token) {
-        console.log("No token found, setting empty cart");
         setCartItems([]);
         return;
       }
-  
+
       const { data } = await axios.get('http://localhost:5001/api/user/user-cart', {
         headers: { Authorization: `Bearer ${token}` },
       });
-  
+
       console.log("Cart API response:", data);
-  
-      // Handle if the cart response doesn't have products
+
       if (data && data.products) {
         setCartItems(data.products);
       } else {
-        console.error('Unexpected cart data:', data);
         setCartItems([]);
       }
     } catch (error) {
-      const errorMsg = error.response?.data?.message || error.message || 'Unknown error';
-      console.error("Cart fetch error:", {
-        status: error.response?.status,
-        message: errorMsg,
-        fullError: error.response || error,
-      });
+      const errorMsg = error.response?.data?.message || 'Failed to fetch cart';
       setCartError(errorMsg);
       if (error.response?.status === 401) {
         toast.info('Session expired, please login');
@@ -52,10 +44,6 @@ export const CartProvider = ({ children }) => {
       setCartLoading(false);
     }
   }, [navigate]);
-  
-
-  
-  
 
   const addToCart = async (productId, quantity = 1, color = '') => {
     try {
@@ -72,8 +60,8 @@ export const CartProvider = ({ children }) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
+      // Update cart items with the latest data from the server
       setCartItems(data.products || []);
-      toast.success('Item added to cart!');
       return true;
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to add item to cart');
@@ -96,7 +84,6 @@ export const CartProvider = ({ children }) => {
       });
 
       setCartItems(data.products || []);
-      toast.success('Item removed from cart');
       return true;
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to remove item');
@@ -121,7 +108,6 @@ export const CartProvider = ({ children }) => {
       );
 
       setCartItems(data.products || []);
-      toast.success('Cart updated');
       return true;
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update quantity');
@@ -144,7 +130,6 @@ export const CartProvider = ({ children }) => {
       });
 
       setCartItems([]);
-      toast.success('Cart emptied successfully');
       return true;
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to empty cart');
@@ -162,7 +147,7 @@ export const CartProvider = ({ children }) => {
 
   useEffect(() => {
     fetchCart();
-    
+
     const handleAuthChange = () => {
       if (!localStorage.getItem('token')) {
         setCartItems([]);
@@ -170,7 +155,7 @@ export const CartProvider = ({ children }) => {
         fetchCart();
       }
     };
-    
+
     window.addEventListener('storage', handleAuthChange);
     return () => window.removeEventListener('storage', handleAuthChange);
   }, [fetchCart]);

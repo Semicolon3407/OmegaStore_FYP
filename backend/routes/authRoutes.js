@@ -27,6 +27,10 @@ const {
   removeFromCart,
   addToWishlist,
   removeFromWishlist,
+  getCompare, // New
+  addToCompare, // New
+  removeFromCompare, // New
+  clearCompare, // New
 } = require("../controller/userController");
 const { authMiddleware, isAdmin } = require("../middlewares/authMiddleware");
 const router = express.Router();
@@ -45,16 +49,16 @@ router.put("/password", authMiddleware, updatePassword);
 
 // User management
 router.get("/all-users", authMiddleware, isAdmin, getallUser);
-router.get("/get-user/:id", authMiddleware, getaUser); // Changed route to avoid param conflict
+router.get("/get-user/:id", authMiddleware, getaUser);
 router.put("/edit-user", authMiddleware, updatedUser);
-router.delete("/delete-user/:id", authMiddleware, isAdmin, deleteaUser); // Changed route to avoid param conflict
+router.delete("/delete-user/:id", authMiddleware, isAdmin, deleteaUser);
 router.put("/save-address", authMiddleware, saveAddress);
 router.put("/block-user/:id", authMiddleware, isAdmin, blockUser);
 router.put("/unblock-user/:id", authMiddleware, isAdmin, unblockUser);
 
 // Cart routes
 router.post("/cart", authMiddleware, userCart);
-router.get("/user-cart", authMiddleware, getUserCarts); // Changed route name to be clearer
+router.get("/user-cart", authMiddleware, getUserCarts);
 router.delete("/empty-cart", authMiddleware, emptyCart);
 router.post("/cart/applycoupon", authMiddleware, applyCoupon);
 router.post("/cart/cash-order", authMiddleware, createOrder);
@@ -69,5 +73,11 @@ router.put("/order/update-order/:id", authMiddleware, isAdmin, updateOrderStatus
 router.get("/wishlist", authMiddleware, getWishlist);
 router.put("/wishlist", authMiddleware, addToWishlist);
 router.delete("/wishlist/:productId", authMiddleware, removeFromWishlist);
+
+// Compare routes
+router.get("/compare", authMiddleware, getCompare);
+router.put("/compare", authMiddleware, addToCompare);
+router.delete("/compare/:productId", authMiddleware, removeFromCompare);
+router.delete("/compare/clear", authMiddleware, clearCompare);
 
 module.exports = router;

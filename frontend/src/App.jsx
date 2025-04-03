@@ -16,6 +16,7 @@ import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import OrderConfirmation from './pages/OrderConfirmation';
 import Wishlist from './pages/Wishlist';
+import Compare from './pages/Compare';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminOrders from './pages/admin/AdminOrders';
@@ -31,6 +32,7 @@ import Warranty from './pages/Warranty';
 import UserProfile from './pages/UserProfile';
 import { CartProvider } from './Context/cartContext';
 import { WishlistProvider } from './Context/wishlistContext';
+import { CompareProvider } from './Context/compareContext';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -109,7 +111,6 @@ const Layout = () => {
   const hideHeaderFooterRoutes = ['/sign-in', '/account/create'];
   const isAdminRoute = location.pathname.startsWith('/admin');
   
-  // Fixed condition - we want to hide header/footer on admin routes
   const shouldShowHeaderFooter =
     !hideHeaderFooterRoutes.includes(location.pathname) && !isAdminRoute;
 
@@ -137,6 +138,7 @@ const Layout = () => {
                 element={<ProtectedRoute><OrderConfirmation /></ProtectedRoute>}
               />
               <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
+              <Route path="/compare" element={<ProtectedRoute><Compare /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
               <Route
                 path="/admin"
@@ -207,8 +209,10 @@ function App() {
     <Router>
       <CartProvider>
         <WishlistProvider>
-          <ToastContainer position="bottom-right" autoClose={3000} />
-          <Layout />
+          <CompareProvider>
+            <ToastContainer position="bottom-right" autoClose={3000} />
+            <Layout />
+          </CompareProvider>
         </WishlistProvider>
       </CartProvider>
     </Router>

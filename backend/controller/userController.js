@@ -532,6 +532,106 @@ const removeFromWishlist = asyncHandler(async (req, res) => {
 });
 
 
+// Get Compare List
+const getCompare = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  validateMongoDbId(_id);
+
+  try {
+    const user = await User.findById(_id).populate("compare");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json({
+      compare: user.compare || [],
+      message: "Compare list retrieved successfully",
+    });
+  } catch (error) {
+    console.error("GetCompare Error:", error);
+    res.status(500).json({ message: "Server error fetching compare list", error: error.message });
+  }
+});
+
+// Add to Compare
+const addToCompare = asyncHandler(async (req, res) => {
+  const { productId } = req.body; // Expect productId in the request body
+  const { _id } = req.user;
+  validateMongoDbId(_id);
+  validateMongoDbId(productId);
+
+  try {
+    const user = await User.findById(_id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    if (user.compare.length >= 4) {
+      return res.status(400).json({ message: "You can only compare up to 4 products" });
+    }
+
+    if (!user.compare.includes(productId)) {
+      user.compare.push(productId);
+      await user.save();
+    }
+
+    await user.populate("compare");
+    res.json({ compare: user.compare, message: "Added to compare list" });
+  } catch (error) {
+    console.error("AddToCompare Error:", error);
+    res.status(500).json({ message: "Server error adding to compare list", error: error.message });
+  }
+});
+
+// Remove from Compare
+const removeFromCompare = asyncHandler(async (req, res) => {
+  const { productId } = req.params; // Expect productId in URL params
+  const { _id } = req.user;
+  validateMongoDbId(_id);
+  validateMongoDbId(productId);
+
+  try {
+    const user = await User.findById(_id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.compare = user.compare.filter((id) => id.toString() !== productId);
+    await user.save();
+    await user.populate("compare");
+    res.json({ compare: user.compare, message: "Removed from compare list" });
+  } catch (error) {
+    console.error("RemoveFromCompare Error:", error);
+    res.status(500).json({ message: "Server error removing from compare list", error: error.message });
+  }
+});
+
+// Clear Compare List
+const clearCompare = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  validateMongoDbId(_id);
+
+  try {
+    const user = await User.findById(_id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.compare = [];
+    await user.save();
+    res.json({ compare: user.compare, message: "Compare list cleared" });
+  } catch (error) {
+    console.error("ClearCompare Error:", error);
+    res.status(500).json({ message: "Server error clearing compare list", error: error.message });
+  }
+});
+
+// ... (Existing functions like userCart, getUserCarts, etc. remain unchanged)
+
 module.exports = {
   createUser,
   loginUser,
@@ -558,5 +658,11 @@ module.exports = {
   getOrders,
   updateOrderStatus,
   getAllOrders,
-  getWishlist, addToWishlist, removeFromWishlist
+  getWishlist,
+  addToWishlist,
+  removeFromWishlist,
+  getCompare, // New
+  addToCompare, // New
+  removeFromCompare, // New
+  clearCompare, // New
 };

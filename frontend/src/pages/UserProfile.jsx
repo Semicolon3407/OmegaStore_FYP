@@ -1,18 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, Phone, MapPin, Edit, Save, X, Check, Lock, Eye, EyeOff } from "lucide-react";
+import { User, Mail, Phone, MapPin, Edit, Lock, Eye, EyeOff, Save, X } from "lucide-react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const UserProfile = () => {
   const [user, setUser] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [tempUser, setTempUser] = useState({});
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const navigate = useNavigate();
-  const { token } = useParams(); // For reset password token (optional for forgot-password flow)
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [tempUser, setTempUser] = useState({});
   const [resetPasswordData, setResetPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -23,13 +20,15 @@ const UserProfile = () => {
     newPassword: false,
     confirmPassword: false,
   });
+  const navigate = useNavigate();
+  const { token } = useParams(); // For reset password token (optional)
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const token = localStorage.getItem("token");
         const userId = localStorage.getItem("userId");
-        
+
         if (!token || !userId) {
           navigate("/sign-in");
           return;
@@ -38,7 +37,7 @@ const UserProfile = () => {
         const response = await axios.get(`http://localhost:5001/api/user/get-user/${userId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        
+
         const userData = response.data.getaUser;
         setUser(userData);
         setTempUser({
@@ -49,7 +48,7 @@ const UserProfile = () => {
           address: userData.address || "",
         });
       } catch (err) {
-        setError("Failed to fetch user data");
+        toast.error("Failed to fetch user data");
         if (err.response?.status === 401) {
           localStorage.clear();
           navigate("/sign-in");
@@ -70,27 +69,8 @@ const UserProfile = () => {
     setResetPasswordData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleEditClick = () => {
-    setIsEditing(true);
-  };
-
-  const handleCancel = () => {
-    setIsEditing(false);
-    setIsResettingPassword(false);
-    setTempUser({
-      firstname: user.firstname,
-      lastname: user.lastname,
-      email: user.email,
-      mobile: user.mobile,
-      address: user.address || "",
-    });
-    setResetPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
-  };
-
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
     try {
       const token = localStorage.getItem("token");
       const userId = localStorage.getItem("userId");
@@ -103,19 +83,16 @@ const UserProfile = () => {
 
       setUser(response.data.user);
       setIsEditing(false);
-      setSuccess("Profile updated successfully");
+      toast.success("Profile updated successfully");
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to update profile");
+      toast.error(err.response?.data?.message || "Failed to update profile");
     }
   };
 
   const handleResetPasswordSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
-
     if (resetPasswordData.newPassword !== resetPasswordData.confirmPassword) {
-      setError("New passwords don't match");
+      toast.error("New passwords don't match");
       return;
     }
 
@@ -130,11 +107,11 @@ const UserProfile = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setSuccess("Password updated successfully");
+      toast.success("Password updated successfully");
       setIsResettingPassword(false);
       setResetPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to update password");
+      toast.error(err.response?.data?.message || "Failed to update password");
     }
   };
 
@@ -143,300 +120,305 @@ const UserProfile = () => {
   };
 
   if (!user) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="bg-gray-100 min-h-screen pt-40 lg:pt-32 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600 text-lg">Loading profile...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
-      <motion.div
-        className="max-w-md mx-auto"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="text-center mb-8">
-          <motion.h1
-            className="text-3xl font-extrabold text-gray-900"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            User Profile
-          </motion.h1>
-          <p className="mt-2 text-sm text-gray-600">
-            {isEditing || isResettingPassword ? "Update your information" : "View and manage your profile"}
-          </p>
-        </div>
-
-        {error && <div className="bg-red-100 text-red-700 p-3 rounded-md mb-4">{error}</div>}
-        {success && <div className="bg-green-100 text-green-700 p-3 rounded-md mb-4">{success}</div>}
-
+    <div className="bg-gray-100 min-h-screen pt-40 lg:pt-32">
+      <div className="container mx-auto px-6 py-16">
         <motion.div
-          className="bg-white rounded-2xl shadow-xl overflow-hidden"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="max-w-2xl mx-auto"
         >
-          <div className="p-6 sm:p-8">
-            <div className="flex justify-between items-start mb-6">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
+              Your Profile
+            </h1>
+            <p className="text-lg text-gray-600 max-w-xl mx-auto leading-relaxed">
+              Manage your personal information and account settings
+            </p>
+          </div>
+
+          <motion.div
+            className="bg-white rounded-2xl shadow-lg p-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+          >
+            <div className="flex items-center justify-between mb-8">
               <div className="flex items-center">
-                <div className="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center mr-4">
-                  <User className="text-indigo-600" size={24} />
+                <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mr-4">
+                  <User size={32} className="text-blue-600" />
                 </div>
-                <h2 className="text-xl font-bold text-gray-800">
-                  {user.firstname} {user.lastname}
-                </h2>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    {user.firstname} {user.lastname}
+                  </h2>
+                  <p className="text-gray-500 text-sm">Account Member</p>
+                </div>
               </div>
-              {!isEditing && !isResettingPassword && (
-                <div className="space-x-2">
-                  <button
-                    onClick={handleEditClick}
-                    className="flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
-                  >
-                    <Edit className="mr-1" size={16} />
-                    Edit Profile
-                  </button>
-                  <button
-                    onClick={() => setIsResettingPassword(true)}
-                    className="flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
-                  >
-                    <Lock className="mr-1" size={16} />
-                    Change Password
-                  </button>
-                </div>
-              )}
+              <div className="space-x-4">
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="text-blue-600 hover:text-blue-800 flex items-center font-medium transition-colors duration-300"
+                >
+                  <Edit size={20} className="mr-2" />
+                  Edit Profile
+                </button>
+                <button
+                  onClick={() => setIsResettingPassword(true)}
+                  className="text-blue-600 hover:text-blue-800 flex items-center font-medium transition-colors duration-300"
+                >
+                  <Lock size={20} className="mr-2" />
+                  Change Password
+                </button>
+              </div>
             </div>
 
-            {isResettingPassword ? (
-              <form onSubmit={handleResetPasswordSubmit}>
-                <div className="space-y-5">
-                  <div className="relative">
-                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                      Current Password
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Lock className="text-gray-400" size={18} />
-                      </div>
-                      <input
-                        className="block w-full pl-10 pr-10 py-2 rounded-lg border-2 border-gray-200 focus:border-indigo-500 focus:ring-0 transition-colors"
-                        type={showPassword.currentPassword ? "text" : "password"}
-                        name="currentPassword"
-                        value={resetPasswordData.currentPassword}
-                        onChange={handleResetPasswordChange}
-                        required
-                      />
-                      <div
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
-                        onClick={() => togglePasswordVisibility("currentPassword")}
-                      >
-                        {showPassword.currentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </div>
-                    </div>
-                  </div>
+            <div className="space-y-6">
+              <div className="flex items-center">
+                <Mail size={20} className="text-gray-500 mr-4" />
+                <div>
+                  <p className="text-sm text-gray-500">Email</p>
+                  <p className="text-gray-900 font-medium">{user.email}</p>
+                </div>
+              </div>
+              <div className="flex items-center">
+                <Phone size={20} className="text-gray-500 mr-4" />
+                <div>
+                  <p className="text-sm text-gray-500">Phone</p>
+                  <p className="text-gray-900 font-medium">{user.mobile || "Not provided"}</p>
+                </div>
+              </div>
+              <div className="flex items-center">
+                <MapPin size={20} className="text-gray-500 mr-4" />
+                <div>
+                  <p className="text-sm text-gray-500">Address</p>
+                  <p className="text-gray-900 font-medium">{user.address || "Not provided"}</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
 
+        {/* Edit Profile Modal */}
+        {isEditing && (
+          <motion.div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Edit Profile</h2>
+              <form onSubmit={handleProfileSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
                   <div className="relative">
-                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                      New Password
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Lock className="text-gray-400" size={18} />
-                      </div>
-                      <input
-                        className="block w-full pl-10 pr-10 py-2 rounded-lg border-2 border-gray-200 focus:border-indigo-500 focus:ring-0 transition-colors"
-                        type={showPassword.newPassword ? "text" : "password"}
-                        name="newPassword"
-                        value={resetPasswordData.newPassword}
-                        onChange={handleResetPasswordChange}
-                        required
-                      />
-                      <div
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
-                        onClick={() => togglePasswordVisibility("newPassword")}
-                      >
-                        {showPassword.newPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="relative">
-                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                      Confirm New Password
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Lock className="text-gray-400" size={18} />
-                      </div>
-                      <input
-                        className="block w-full pl-10 pr-10 py-2 rounded-lg border-2 border-gray-200 focus:border-indigo-500 focus:ring-0 transition-colors"
-                        type={showPassword.confirmPassword ? "text" : "password"}
-                        name="confirmPassword"
-                        value={resetPasswordData.confirmPassword}
-                        onChange={handleResetPasswordChange}
-                        required
-                      />
-                      <div
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
-                        onClick={() => togglePasswordVisibility("confirmPassword")}
-                      >
-                        {showPassword.confirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </div>
-                    </div>
+                    <User size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      name="firstname"
+                      value={tempUser.firstname}
+                      onChange={handleInputChange}
+                      className="w-full pl-10 pr-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-200 focus:border-blue-500"
+                      required
+                    />
                   </div>
                 </div>
-
-                <div className="mt-8 flex justify-end space-x-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                  <div className="relative">
+                    <User size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      name="lastname"
+                      value={tempUser.lastname}
+                      onChange={handleInputChange}
+                      className="w-full pl-10 pr-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-200 focus:border-blue-500"
+                      required
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <div className="relative">
+                    <Mail size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="email"
+                      name="email"
+                      value={tempUser.email}
+                      onChange={handleInputChange}
+                      className="w-full pl-10 pr-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-200 focus:border-blue-500"
+                      required
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                  <div className="relative">
+                    <Phone size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="tel"
+                      name="mobile"
+                      value={tempUser.mobile}
+                      onChange={handleInputChange}
+                      className="w-full pl-10 pr-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-200 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                  <div className="relative">
+                    <MapPin size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      name="address"
+                      value={tempUser.address}
+                      onChange={handleInputChange}
+                      className="w-full pl-10 pr-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-200 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end space-x-4 mt-6">
                   <button
                     type="button"
-                    onClick={handleCancel}
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    onClick={() => setIsEditing(false)}
+                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors duration-300 flex items-center"
                   >
-                    <X className="mr-2" size={16} />
+                    <X size={18} className="mr-2" />
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full hover:from-blue-700 hover:to-purple-700 transition-all duration-300 flex items-center shadow-md"
                   >
-                    <Check className="mr-2" size={16} />
+                    <Save size={18} className="mr-2" />
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Reset Password Modal */}
+        {isResettingPassword && (
+          <motion.div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Change Password</h2>
+              <form onSubmit={handleResetPasswordSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                  <div className="relative">
+                    <Lock size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input
+                      type={showPassword.currentPassword ? "text" : "password"}
+                      name="currentPassword"
+                      value={resetPasswordData.currentPassword}
+                      onChange={handleResetPasswordChange}
+                      className="w-full pl-10 pr-10 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-200 focus:border-blue-500"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => togglePasswordVisibility("currentPassword")}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                    >
+                      {showPassword.currentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                  <div className="relative">
+                    <Lock size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input
+                      type={showPassword.newPassword ? "text" : "password"}
+                      name="newPassword"
+                      value={resetPasswordData.newPassword}
+                      onChange={handleResetPasswordChange}
+                      className="w-full pl-10 pr-10 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-200 focus:border-blue-500"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => togglePasswordVisibility("newPassword")}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                    >
+                      {showPassword.newPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                  <div className="relative">
+                    <Lock size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input
+                      type={showPassword.confirmPassword ? "text" : "password"}
+                      name="confirmPassword"
+                      value={resetPasswordData.confirmPassword}
+                      onChange={handleResetPasswordChange}
+                      className="w-full pl-10 pr-10 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-200 focus:border-blue-500"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => togglePasswordVisibility("confirmPassword")}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                    >
+                      {showPassword.confirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+                <div className="flex justify-end space-x-4 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setIsResettingPassword(false)}
+                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors duration-300 flex items-center"
+                  >
+                    <X size={18} className="mr-2" />
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full hover:from-blue-700 hover:to-purple-700 transition-all duration-300 flex items-center shadow-md"
+                  >
+                    <Save size={18} className="mr-2" />
                     Update Password
                   </button>
                 </div>
               </form>
-            ) : (
-              <form onSubmit={handleProfileSubmit}>
-                <div className="space-y-5">
-                  <div className="relative">
-                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                      First Name
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <User className="text-gray-400" size={18} />
-                      </div>
-                      <input
-                        className={`block w-full pl-10 pr-3 py-2 rounded-lg border-2 ${
-                          isEditing ? "border-gray-200 focus:border-indigo-500" : "border-transparent bg-gray-50"
-                        } focus:ring-0 transition-colors`}
-                        type="text"
-                        name="firstname"
-                        value={tempUser.firstname}
-                        onChange={handleInputChange}
-                        readOnly={!isEditing}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="relative">
-                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                      Last Name
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <User className="text-gray-400" size={18} />
-                      </div>
-                      <input
-                        className={`block w-full pl-10 pr-3 py-2 rounded-lg border-2 ${
-                          isEditing ? "border-gray-200 focus:border-indigo-500" : "border-transparent bg-gray-50"
-                        } focus:ring-0 transition-colors`}
-                        type="text"
-                        name="lastname"
-                        value={tempUser.lastname}
-                        onChange={handleInputChange}
-                        readOnly={!isEditing}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="relative">
-                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                      Email Address
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Mail className="text-gray-400" size={18} />
-                      </div>
-                      <input
-                        className={`block w-full pl-10 pr-3 py-2 rounded-lg border-2 ${
-                          isEditing ? "border-gray-200 focus:border-indigo-500" : "border-transparent bg-gray-50"
-                        } focus:ring-0 transition-colors`}
-                        type="email"
-                        name="email"
-                        value={tempUser.email}
-                        onChange={handleInputChange}
-                        readOnly={!isEditing}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="relative">
-                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                      Phone Number
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Phone className="text-gray-400" size={18} />
-                      </div>
-                      <input
-                        className={`block w-full pl-10 pr-3 py-2 rounded-lg border-2 ${
-                          isEditing ? "border-gray-200 focus:border-indigo-500" : "border-transparent bg-gray-50"
-                        } focus:ring-0 transition-colors`}
-                        type="tel"
-                        name="mobile"
-                        value={tempUser.mobile}
-                        onChange={handleInputChange}
-                        readOnly={!isEditing}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="relative">
-                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                      Address
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <MapPin className="text-gray-400" size={18} />
-                      </div>
-                      <input
-                        className={`block w-full pl-10 pr-3 py-2 rounded-lg border-2 ${
-                          isEditing ? "border-gray-200 focus:border-indigo-500" : "border-transparent bg-gray-50"
-                        } focus:ring-0 transition-colors`}
-                        type="text"
-                        name="address"
-                        value={tempUser.address}
-                        onChange={handleInputChange}
-                        readOnly={!isEditing}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {isEditing && (
-                  <div className="mt-8 flex justify-end space-x-3">
-                    <button
-                      type="button"
-                      onClick={handleCancel}
-                      className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    >
-                      <X className="mr-2" size={16} />
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    >
-                      <Save className="mr-2" size={16} />
-                      Save Changes
-                    </button>
-                  </div>
-                )}
-              </form>
-            )}
-          </div>
-        </motion.div>
-      </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
+      </div>
     </div>
   );
 };
