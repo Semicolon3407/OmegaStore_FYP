@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Search, ShoppingCart, Filter, X, ChevronDown, ChevronUp, Heart, Star, GitCompare } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom'; // Add useLocation
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useCart } from '../Context/cartContext';
@@ -13,6 +13,7 @@ const ProductListing = () => {
   const { wishlistItems, addToWishlist, removeFromWishlist } = useWishlist();
   const { addToCompare } = useCompare();
   const navigate = useNavigate();
+  const location = useLocation(); // Use location to get URL parameters
 
   const [products, setProducts] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
@@ -20,8 +21,13 @@ const ProductListing = () => {
   const [error, setError] = useState(null);
   const [wishlistLoading, setWishlistLoading] = useState({});
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('All');
+  // Initialize state from URL parameters
+  const queryParams = new URLSearchParams(location.search);
+  const initialSearch = queryParams.get('search') || '';
+  const initialCategory = queryParams.get('category') || 'All';
+
+  const [searchTerm, setSearchTerm] = useState(initialSearch);
+  const [categoryFilter, setCategoryFilter] = useState(initialCategory);
   const [colorFilter, setColorFilter] = useState('All');
   const [brandFilter, setBrandFilter] = useState('All');
   const [minPrice, setMinPrice] = useState('');
@@ -60,6 +66,7 @@ const ProductListing = () => {
       if (maxPrice) params.append('maxPrice', maxPrice);
       if (sortBy) params.append('sortBy', sortBy);
       if (sortOrder) params.append('sortOrder', sortOrder);
+      if (searchTerm) params.append('search', searchTerm); // Add search term to API call
       params.append('limit', limit);
       params.append('page', page);
 
@@ -72,12 +79,21 @@ const ProductListing = () => {
     } finally {
       setLoading(false);
     }
-  }, [categoryFilter, brandFilter, colorFilter, minPrice, maxPrice, sortBy, sortOrder, limit, page]);
+  }, [categoryFilter, brandFilter, colorFilter, minPrice, maxPrice, sortBy, sortOrder, searchTerm, limit, page]);
 
   useEffect(() => {
     fetchAllProducts();
     fetchProducts();
   }, [fetchAllProducts, fetchProducts]);
+
+  // Update state when URL parameters change
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const newSearch = params.get('search') || '';
+    const newCategory = params.get('category') || 'All';
+    setSearchTerm(newSearch);
+    setCategoryFilter(newCategory);
+  }, [location.search]);
 
   const handleSearch = useCallback(() => {
     if (!searchTerm.trim()) {
@@ -127,9 +143,13 @@ const ProductListing = () => {
     try {
       if (isInWishlist(productId)) {
         await removeFromWishlist(productId);
+        toast.success("Removed from wishlist");
       } else {
         await addToWishlist(productId);
+        toast.success("Added to wishlist");
       }
+    } catch (err) {
+      toast.error("Failed to update wishlist");
     } finally {
       setWishlistLoading((prev) => ({ ...prev, [productId]: false }));
     }
@@ -177,6 +197,7 @@ const ProductListing = () => {
     setSortBy('');
     setSortOrder('asc');
     setPage(1);
+    navigate('/products'); // Reset URL parameters
   };
 
   const toggleSection = (section) =>
@@ -245,7 +266,13 @@ const ProductListing = () => {
               type="text"
               placeholder="Search for products..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                const params = new URLSearchParams();
+                if (e.target.value) params.append('search', e.target.value);
+                if (categoryFilter !== 'All') params.append('category', categoryFilter);
+                navigate(`/products?${params.toString()}`);
+              }}
               className="w-full pl-12 pr-6 py-4 border-0 focus:ring-2 focus:ring-blue-200 focus:outline-none text-gray-700"
             />
           </div>
@@ -299,7 +326,13 @@ const ProductListing = () => {
                       id={`cat-${category}`}
                       name="category"
                       checked={categoryFilter === category}
-                      onChange={() => setCategoryFilter(category)}
+                      onChange={() => {
+                        setCategoryFilter(category);
+                        const params = new URLSearchParams();
+                        if (searchTerm) params.append('search', searchTerm);
+                        if (category !== 'All') params.append('category', category);
+                        navigate(`/products?${params.toString()}`);
+                      }}
                       className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                     />
                     <label

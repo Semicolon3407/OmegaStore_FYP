@@ -2,26 +2,34 @@ const nodemailer = require("nodemailer");
 const asyncHandler = require("express-async-handler");
 
 const sendEmail = asyncHandler(async (data) => {
-  // Create a transporter using Gmail's SMTP settings
   const transporter = nodemailer.createTransport({
-    service: 'gmail', // Use 'service' instead of host and port for Gmail
+    service: "gmail",
     auth: {
-      user: process.env.MAIL_ID, // Your Gmail address
-      pass: process.env.MP,      // Your Google App Password
+      user: process.env.MAIL_ID, // sanup3407@gmail.com
+      pass: process.env.MP,      // dwij kfux dtmd yvtq
     },
   });
 
-  // Send mail with defined transport object
-  const info = await transporter.sendMail({
-    from: `"Omega Store" <${process.env.MAIL_ID}>`, // Sender address
-    to: data.to, // List of receivers
-    subject: data.subject, // Subject line
-    text: data.text, // Plain text body
-    html: data.html, // HTML body
-  });
+  const mailOptions = {
+    from: `"Omega Store" <${process.env.MAIL_ID}>`,
+    to: data.to,
+    subject: data.subject,
+    text: data.text,
+    html: data.html,
+  };
 
-  console.log("Message sent: %s", info.messageId);
-  console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
+  // Log the email content before sending
+  console.log("Sending email with the following details:");
+  console.log("To:", data.to);
+  console.log("Subject:", data.subject);
+  console.log("Text:", data.text);
+  console.log("HTML:", data.html);
+
+  const info = await transporter.sendMail(mailOptions);
+
+  console.log("Email sent successfully:");
+  console.log("Message ID:", info.messageId);
+  console.log("Response:", info.response);
 });
 
 module.exports = sendEmail;

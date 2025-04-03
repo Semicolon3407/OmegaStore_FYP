@@ -1,48 +1,50 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   useLocation,
   Navigate,
-} from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import Header from './components/Header';
-import Footer from './components/Footer';
-import Home from './pages/Home';
-import ProductListing from './pages/ProductListing';
-import ProductDetails from './pages/ProductDetails';
-import Cart from './pages/Cart';
-import Checkout from './pages/Checkout';
-import OrderConfirmation from './pages/OrderConfirmation';
-import Wishlist from './pages/Wishlist';
-import Compare from './pages/Compare';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminProducts from './pages/admin/AdminProducts';
-import AdminOrders from './pages/admin/AdminOrders';
-import AdminUserManagement from './pages/admin/AdminUserManagement';
-import AdminRevenue from './pages/admin/AdminRevenue';
-import AdminAnalytics from './pages/admin/AdminAnalytics';
-import Locations from './pages/Locations';
-import SaleProducts from './pages/SaleProducts';
-import SignIn from './pages/SignIn';
-import Contact from './pages/Contact';
-import CreateAccount from './pages/CreateAccount';
-import Warranty from './pages/Warranty';
-import UserProfile from './pages/UserProfile';
-import { CartProvider } from './Context/cartContext';
-import { WishlistProvider } from './Context/wishlistContext';
-import { CompareProvider } from './Context/compareContext';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+} from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import Header from "./components/Header";
+import Footer from "./components/Footer";
+import Home from "./pages/Home";
+import ProductListing from "./pages/ProductListing";
+import ProductDetails from "./pages/ProductDetails";
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
+import OrderConfirmation from "./pages/OrderConfirmation";
+import Wishlist from "./pages/Wishlist";
+import Compare from "./pages/Compare";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminProducts from "./pages/admin/AdminProducts";
+import AdminOrders from "./pages/admin/AdminOrders";
+import AdminUserManagement from "./pages/admin/AdminUserManagement";
+import AdminRevenue from "./pages/admin/AdminRevenue";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import Locations from "./pages/Locations";
+import SaleProducts from "./pages/SaleProducts";
+import SignIn from "./pages/SignIn";
+import Contact from "./pages/Contact";
+import CreateAccount from "./pages/CreateAccount";
+import Warranty from "./pages/Warranty";
+import UserProfile from "./pages/UserProfile";
+import ForgotPassword from "./pages/ForgotPassword"; // New
+import ResetPassword from "./pages/ResetPassword"; // New
+import { CartProvider } from "./Context/cartContext";
+import { WishlistProvider } from "./Context/wishlistContext";
+import { CompareProvider } from "./Context/compareContext";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const getAuthStatus = () => {
-  const token = localStorage.getItem('token');
-  const role = localStorage.getItem('role');
+  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
   return {
     isLoggedIn: !!token,
-    isAdmin: !!token && role === 'admin',
-    role: role || '',
+    isAdmin: !!token && role === "admin",
+    role: role || "",
   };
 };
 
@@ -52,8 +54,8 @@ const ProtectedRoute = ({ children, requireAdmin = false }) => {
   useEffect(() => {
     const updateAuth = () => setAuth(getAuthStatus());
     updateAuth();
-    window.addEventListener('storage', updateAuth);
-    return () => window.removeEventListener('storage', updateAuth);
+    window.addEventListener("storage", updateAuth);
+    return () => window.removeEventListener("storage", updateAuth);
   }, []);
 
   if (auth.isLoggedIn === null || auth.isAdmin === null) {
@@ -79,7 +81,7 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error('ErrorBoundary caught:', error, errorInfo);
+    console.error("ErrorBoundary caught:", error, errorInfo);
   }
 
   render() {
@@ -104,15 +106,14 @@ const Layout = () => {
   useEffect(() => {
     const updateAuth = () => setAuth(getAuthStatus());
     updateAuth();
-    window.addEventListener('storage', updateAuth);
-    return () => window.removeEventListener('storage', updateAuth);
+    window.addEventListener("storage", updateAuth);
+    return () => window.removeEventListener("storage", updateAuth);
   }, []);
 
-  const hideHeaderFooterRoutes = ['/sign-in', '/account/create'];
-  const isAdminRoute = location.pathname.startsWith('/admin');
-  
-  const shouldShowHeaderFooter =
-    !hideHeaderFooterRoutes.includes(location.pathname) && !isAdminRoute;
+  const hideHeaderFooterRoutes = ["/sign-in", "/account/create", "/forgot-password", "/reset-password"];
+  const isAdminRoute = location.pathname.startsWith("/admin");
+
+  const shouldShowHeaderFooter = !hideHeaderFooterRoutes.includes(location.pathname) && !isAdminRoute;
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -142,51 +143,27 @@ const Layout = () => {
               <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
               <Route
                 path="/admin"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                }
+                element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>}
               />
               <Route
                 path="/admin/products"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <AdminProducts />
-                  </ProtectedRoute>
-                }
+                element={<ProtectedRoute requireAdmin><AdminProducts /></ProtectedRoute>}
               />
               <Route
                 path="/admin/orders"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <AdminOrders />
-                  </ProtectedRoute>
-                }
+                element={<ProtectedRoute requireAdmin><AdminOrders /></ProtectedRoute>}
               />
               <Route
                 path="/admin/revenue"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <AdminRevenue />
-                  </ProtectedRoute>
-                }
+                element={<ProtectedRoute requireAdmin><AdminRevenue /></ProtectedRoute>}
               />
               <Route
                 path="/admin/analytics"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <AdminAnalytics />
-                  </ProtectedRoute>
-                }
+                element={<ProtectedRoute requireAdmin><AdminAnalytics /></ProtectedRoute>}
               />
               <Route
                 path="/admin/users"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <AdminUserManagement />
-                  </ProtectedRoute>
-                }
+                element={<ProtectedRoute requireAdmin><AdminUserManagement /></ProtectedRoute>}
               />
               <Route path="/locations" element={<Locations />} />
               <Route path="/sale" element={<SaleProducts />} />
@@ -194,6 +171,8 @@ const Layout = () => {
               <Route path="/contact" element={<Contact />} />
               <Route path="/account/create" element={<CreateAccount />} />
               <Route path="/warranty" element={<Warranty />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </ErrorBoundary>
