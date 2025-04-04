@@ -1,11 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  useLocation,
-  Navigate,
-} from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
@@ -23,6 +17,8 @@ import AdminOrders from "./pages/admin/AdminOrders";
 import AdminUserManagement from "./pages/admin/AdminUserManagement";
 import AdminRevenue from "./pages/admin/AdminRevenue";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import AdminChat from "./pages/admin/AdminChat";
+import UserChat from "./pages/UserChat";
 import Locations from "./pages/Locations";
 import SaleProducts from "./pages/SaleProducts";
 import SignIn from "./pages/SignIn";
@@ -30,11 +26,12 @@ import Contact from "./pages/Contact";
 import CreateAccount from "./pages/CreateAccount";
 import Warranty from "./pages/Warranty";
 import UserProfile from "./pages/UserProfile";
-import ForgotPassword from "./pages/ForgotPassword"; // New
-import ResetPassword from "./pages/ResetPassword"; // New
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import { CartProvider } from "./Context/cartContext";
 import { WishlistProvider } from "./Context/wishlistContext";
 import { CompareProvider } from "./Context/compareContext";
+import { ChatProvider } from "./Context/chatContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -140,6 +137,7 @@ const Layout = () => {
               />
               <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
               <Route path="/compare" element={<ProtectedRoute><Compare /></ProtectedRoute>} />
+              <Route path="/chat" element={<ProtectedRoute><UserChat /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
               <Route
                 path="/admin"
@@ -165,6 +163,10 @@ const Layout = () => {
                 path="/admin/users"
                 element={<ProtectedRoute requireAdmin><AdminUserManagement /></ProtectedRoute>}
               />
+              <Route
+                path="/admin/chat"
+                element={<ProtectedRoute requireAdmin><AdminChat /></ProtectedRoute>}
+              />
               <Route path="/locations" element={<Locations />} />
               <Route path="/sale" element={<SaleProducts />} />
               <Route path="/sign-in" element={<SignIn />} />
@@ -189,8 +191,10 @@ function App() {
       <CartProvider>
         <WishlistProvider>
           <CompareProvider>
-            <ToastContainer position="bottom-right" autoClose={3000} />
-            <Layout />
+            <ChatProvider>
+              <ToastContainer position="bottom-right" autoClose={3000} />
+              <Layout />
+            </ChatProvider>
           </CompareProvider>
         </WishlistProvider>
       </CartProvider>

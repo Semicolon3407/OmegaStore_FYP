@@ -26,6 +26,7 @@
     "nodemailer": "^6.10.0",
     "sharp": "^0.33.5",
     "slugify": "^1.6.6",
+    "socket.io": "^4.8.1",
     "uniqid": "^5.4.0"
   },
   "devDependencies": {
@@ -34,4 +35,3 @@
   "keywords": [],
   "description": ""
 }
-
