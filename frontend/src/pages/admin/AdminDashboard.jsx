@@ -2,18 +2,20 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Package, ShoppingCart, Users, IndianRupee, BarChart, ChevronRight } from "lucide-react";
+import { Package, ShoppingCart, Users, IndianRupee, BarChart, ChevronRight, MessageSquare } from "lucide-react";
 import axios from "axios";
-import Navbar from "../../components/AdminNav"; // Import the Navbar component
+import Navbar from "../../components/AdminNav";
 
 const AdminDashboard = () => {
   const [totalProducts, setTotalProducts] = useState(0);
   const [totalUsers, setTotalUsers] = useState(0);
+  const [unreadMessages, setUnreadMessages] = useState(0);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   const API_PRODUCTS_URL = "http://localhost:5001/api/products";
   const API_USERS_URL = "http://localhost:5001/api/user/all-users";
+  const API_CHAT_URL = "http://localhost:5001/api/chat/unread-count";
 
   const fetchStats = async () => {
     try {
@@ -30,6 +32,14 @@ const AdminDashboard = () => {
         },
       });
       setTotalUsers(usersResponse.data.length);
+
+      // Fetch unread messages count
+      const chatResponse = await axios.get(API_CHAT_URL, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      setUnreadMessages(chatResponse.data.count || 0);
     } catch (error) {
       console.error("Failed to fetch stats:", error);
     } finally {
@@ -61,11 +71,17 @@ const AdminDashboard = () => {
     { title: "User Management", icon: Users, link: "/admin/users" },
     { title: "View Analytics", icon: BarChart, link: "/admin/analytics" },
     { title: "View Revenue", icon: IndianRupee, link: "/admin/revenue" },
+    { 
+      title: "Chat Support", 
+      icon: MessageSquare, 
+      link: "/admin/chat",
+      badge: unreadMessages > 0 ? unreadMessages : null
+    },
   ];
 
   return (
     <div>
-      <Navbar /> {/* Add the Navbar component */}
+      <Navbar />
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
 
@@ -100,13 +116,20 @@ const AdminDashboard = () => {
             <Link
               key={index}
               to={link.link}
-              className="bg-white text-primary-600 rounded-lg shadow-md p-6 hover:bg-primary-50 transition-colors flex items-center justify-between"
+              className="bg-white text-primary-600 rounded-lg shadow-md p-6 hover:bg-primary-50 transition-colors flex items-center justify-between relative"
             >
               <div className="flex items-center">
                 {link.icon && <link.icon size={24} className="mr-3" />}
                 <span className="font-semibold">{link.title}</span>
               </div>
-              <ChevronRight size={20} />
+              <div className="flex items-center">
+                {link.badge && (
+                  <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center mr-2">
+                    {link.badge}
+                  </span>
+                )}
+                <ChevronRight size={20} />
+              </div>
             </Link>
           ))}
         </div>

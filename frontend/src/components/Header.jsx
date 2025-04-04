@@ -1,9 +1,10 @@
+// src/components/Header.jsx
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { ShoppingCart, Heart, Phone, Search, ChevronDown, Menu, User, LogOut, GitCompare, MessageSquare } from "lucide-react";
 import { useCart } from "../Context/cartContext";
-import { useCompare } from "../Context/compareContext";
+import { useCompare } from "../Context/compareContext.jsx";
 import { useWishlist } from "../Context/wishlistContext";
 import { useChat } from "../Context/chatContext";
 import { toast } from "react-toastify";
@@ -97,7 +98,7 @@ const Header = () => {
 
   return (
     <header
-      className={`w-full sticky top-0 z-50 transition-all duration-300 ${
+      className={`w-full fixed top-0 z-50 transition-all duration-300 ${
         isScrolled ? "bg-white shadow-lg" : "bg-white shadow-sm"
       }`}
     >
@@ -188,16 +189,32 @@ const Header = () => {
           <div className="flex items-center space-x-6">
             {isLoggedIn ? (
               <>
-                <IconLink to="/wishlist" count={wishlistItems.length} icon={<Heart size={24} />}>
+                <IconLink
+                  to="/wishlist"
+                  count={wishlistItems.length}
+                  icon={<Heart size={24} />}
+                >
                   Wishlist
                 </IconLink>
-                <IconLink to="/cart" count={cartItems.length} icon={<ShoppingCart size={24} />}>
+                <IconLink
+                  to="/cart"
+                  count={cartItems.length}
+                  icon={<ShoppingCart size={24} />}
+                >
                   Cart
                 </IconLink>
-                <IconLink to="/compare" count={compareItems.length} icon={<GitCompare size={24} />}>
+                <IconLink
+                  to="/compare"
+                  count={compareItems.length}
+                  icon={<GitCompare size={24} />}
+                >
                   Compare
                 </IconLink>
-                <IconLink to="/chat" count={unreadCount} icon={<MessageSquare size={24} />}>
+                <IconLink
+                  to="/chat"
+                  count={unreadCount}
+                  icon={<MessageSquare size={24} />}
+                >
                   Chat
                 </IconLink>
                 <div className="relative group">
@@ -211,7 +228,9 @@ const Header = () => {
                     <div className="p-4 space-y-2">
                       <MenuItem to="/profile">My Profile</MenuItem>
                       <MenuItem to="/order-history">Order History</MenuItem>
-                      {userRole === "admin" && <MenuItem to="/admin">Admin Panel</MenuItem>}
+                      {userRole === "admin" && (
+                        <MenuItem to="/admin">Admin Panel</MenuItem>
+                      )}
                       <button
                         onClick={handleLogout}
                         className="w-full flex items-center px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -236,7 +255,11 @@ const Header = () => {
         </div>
       </div>
 
-      <nav className={`bg-white border-t border-gray-100 ${isMenuOpen ? "block" : "hidden lg:block"}`}>
+      <nav
+        className={`bg-white border-t border-gray-100 ${
+          isMenuOpen ? "block" : "hidden lg:block"
+        }`}
+      >
         <div className="container mx-auto px-6 py-2">
           <ul className="flex flex-col lg:flex-row lg:items-center lg:space-x-8">
             <NavItem to="/" isActive={isActive} onClick={closeMenu}>
@@ -257,16 +280,7 @@ const Header = () => {
             <NavItem to="/warranty" isActive={isActive} onClick={closeMenu}>
               Support
             </NavItem>
-            {isLoggedIn && (
-              <NavItem to="/chat" isActive={isActive} onClick={closeMenu}>
-                Chat
-                {unreadCount > 0 && (
-                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    {unreadCount}
-                  </span>
-                )}
-              </NavItem>
-            )}
+           
           </ul>
         </div>
       </nav>
@@ -341,7 +355,9 @@ const NavItem = ({ to, isActive, children, onClick }) => (
 
 const IconLink = ({ to, count, icon, children }) => (
   <Link to={to} className="relative p-2 group">
-    <span className="text-gray-700 hover:text-blue-600 transition-colors">{icon}</span>
+    <span className="text-gray-700 hover:text-blue-600 transition-colors">
+      {icon}
+    </span>
     {count > 0 && (
       <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs font-medium rounded-full w-5 h-5 flex items-center justify-center">
         {count}
