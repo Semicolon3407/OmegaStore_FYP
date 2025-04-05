@@ -14,6 +14,7 @@ const enqRouter = require("./routes/enqRoutes");
 const couponRouter = require("./routes/couponRoutes");
 const uploadRouter = require("./routes/uploadRoutes");
 const chatRouter = require("./routes/chatRoutes");
+const saleProductRouter = require("./routes/saleProductRoutes"); // New import for sale products
 const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
 const cors = require("cors");
@@ -60,6 +61,7 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Register routes
 app.use("/api/user", authRouter);
 app.use("/api/products", productRouter);
 app.use("/api/category", categoryRouter);
@@ -69,6 +71,7 @@ app.use("/api/color", colorRouter);
 app.use("/api/enquiry", enqRouter);
 app.use("/api/upload", uploadRouter);
 app.use("/api/chat", chatRouter);
+app.use("/api/sale-products", saleProductRouter); // New route for sale products
 
 app.use(notFound);
 app.use(errorHandler);

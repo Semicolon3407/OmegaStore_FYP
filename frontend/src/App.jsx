@@ -18,9 +18,11 @@ import AdminUserManagement from "./pages/admin/AdminUserManagement";
 import AdminRevenue from "./pages/admin/AdminRevenue";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminChat from "./pages/admin/AdminChat";
+import AdminSaleProducts from "./pages/admin/AdminSaleProducts"; // New import
 import UserChat from "./pages/UserChat";
 import Locations from "./pages/Locations";
-import SaleProducts from "./pages/SaleProducts";
+import SaleProducts from "./pages/SaleProducts"; // Updated import
+import SaleProductDetails from "./pages/SaleProductDetails"; // New import
 import SignIn from "./pages/SignIn";
 import Contact from "./pages/Contact";
 import CreateAccount from "./pages/CreateAccount";
@@ -167,8 +169,13 @@ const Layout = () => {
                 path="/admin/chat"
                 element={<ProtectedRoute requireAdmin><AdminChat /></ProtectedRoute>}
               />
+              <Route
+                path="/admin/sale-products"
+                element={<ProtectedRoute requireAdmin><AdminSaleProducts /></ProtectedRoute>}
+              />
               <Route path="/locations" element={<Locations />} />
               <Route path="/sale" element={<SaleProducts />} />
+              <Route path="/sale-products/:id" element={<SaleProductDetails />} />
               <Route path="/sign-in" element={<SignIn />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/account/create" element={<CreateAccount />} />
