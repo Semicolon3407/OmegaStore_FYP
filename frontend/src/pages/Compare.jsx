@@ -52,7 +52,7 @@ const Compare = () => {
     return (
       <div className="bg-gray-100 min-h-screen pt-40 lg:pt-32 flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-900"></div>
           <p className="mt-4 text-gray-600 text-lg">Loading your compare list...</p>
         </div>
       </div>
@@ -62,13 +62,13 @@ const Compare = () => {
   if (error) {
     return (
       <div className="bg-gray-100 min-h-screen pt-40 lg:pt-32 flex items-center justify-center">
-        <div className="text-center max-w-md p-8 bg-white rounded-2xl shadow-lg">
+        <div className="text-center max-w-md p-8 bg-white rounded-xl shadow-lg">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Compare List Error</h2>
           <p className="text-red-600 mb-6">{error}</p>
           {!localStorage.getItem('token') && (
             <Link
               to="/sign-in"
-              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-full hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-md inline-block"
+              className="bg-blue-900 text-white px-6 py-3 rounded-full hover:bg-blue-800 transition-all duration-300 shadow-md inline-block"
             >
               Login to View Compare List
             </Link>
@@ -89,7 +89,7 @@ const Compare = () => {
         >
           <Link
             to="/products"
-            className="flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors duration-300"
+            className="flex items-center text-blue-900 hover:text-blue-700 font-medium transition-colors duration-300"
           >
             <ChevronLeft size={20} className="mr-2" />
             Back to Products
@@ -115,7 +115,7 @@ const Compare = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-center py-16 bg-white rounded-2xl shadow-lg"
+            className="text-center py-16 bg-white rounded-xl shadow-lg"
           >
             <GitCompare size={80} className="mx-auto mb-6 text-gray-300" />
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">Your compare list is empty</h2>
@@ -124,7 +124,7 @@ const Compare = () => {
             </p>
             <Link
               to="/products"
-              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-full hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-md inline-block"
+              className="bg-blue-900 text-white px-6 py-3 rounded-full hover:bg-blue-800 transition-all duration-300 shadow-md inline-block"
             >
               Explore Products
             </Link>
@@ -134,7 +134,7 @@ const Compare = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="bg-white rounded-2xl shadow-lg overflow-hidden"
+            className="bg-white rounded-xl shadow-lg overflow-hidden"
           >
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -160,7 +160,7 @@ const Compare = () => {
                                 className="h-full object-contain"
                               />
                             </div>
-                            <h3 className="text-lg font-semibold text-gray-900 mb-2 hover:text-blue-600 transition-colors">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2 hover:text-blue-900 transition-colors">
                               {item.title || 'Product Name'}
                             </h3>
                           </Link>
@@ -192,7 +192,7 @@ const Compare = () => {
                                   ? 'bg-green-100 text-green-700'
                                   : (item.quantity ?? 0) <= 0
                                   ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                  : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700'
+                                  : 'bg-blue-900 text-white hover:bg-blue-800'
                               }`}
                             >
                               <ShoppingCart size={18} className="mr-2" />
@@ -234,7 +234,7 @@ const Compare = () => {
                           {item.description || 'No description available'}
                         </p>
                         {item.description && item.description.length > 150 && (
-                          <Link to={`/products/${item._id}`} className="text-blue-600 text-sm hover:underline">
+                          <Link to={`/products/${item._id}`} className="text-blue-900 text-sm hover:underline">
                             Read more
                           </Link>
                         )}
@@ -297,7 +297,7 @@ const Compare = () => {
           >
             <Link
               to="/products"
-              className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors duration-300"
+              className="inline-flex items-center text-blue-900 hover:text-blue-700 font-medium transition-colors duration-300"
             >
               <Info size={18} className="mr-2" />
               You can compare up to 4 products. Add more from our Products page!

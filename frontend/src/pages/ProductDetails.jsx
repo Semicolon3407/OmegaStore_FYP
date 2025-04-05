@@ -11,7 +11,7 @@ import { useCompare } from '../Context/compareContext';
 const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { cartItems, addToCart } = useCart();
+  const { addToCart } = useCart();
   const { wishlistItems, addToWishlist, removeFromWishlist } = useWishlist();
   const { addToCompare } = useCompare();
 
@@ -121,16 +121,16 @@ const ProductDetails = () => {
     setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
 
   const FilterSection = ({ title, section, children }) => (
-    <div className="mb-8 border-b border-gray-200/50 pb-6">
+    <div className="mb-8 border-b border-gray-200 pb-6">
       <div
         className="flex justify-between items-center mb-4 cursor-pointer"
         onClick={() => toggleSection(section)}
       >
         <h3 className="font-semibold text-gray-900 text-xl">{title}</h3>
         {expandedSections[section] ? (
-          <ChevronUp size={20} className="text-gray-500" />
+          <ChevronUp size={20} className="text-gray-600" />
         ) : (
-          <ChevronDown size={20} className="text-gray-500" />
+          <ChevronDown size={20} className="text-gray-600" />
         )}
       </div>
       {expandedSections[section] && children}
@@ -141,8 +141,8 @@ const ProductDetails = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 pt-40">
         <div className="grid grid-cols-1 gap-8">
-          <div className="bg-white rounded-2xl shadow-md p-6 h-96 animate-pulse">
-            <div className="bg-gray-200 h-56 rounded-xl mb-4"></div>
+          <div className="bg-white rounded-xl shadow-md p-6 h-96 animate-pulse">
+            <div className="bg-gray-200 h-56 rounded-lg mb-4"></div>
             <div className="bg-gray-200 h-4 rounded w-3/4 mb-2"></div>
             <div className="bg-gray-200 h-4 rounded w-1/2 mb-3"></div>
             <div className="bg-gray-200 h-10 rounded-full"></div>
@@ -155,11 +155,11 @@ const ProductDetails = () => {
   if (error || !product) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 pt-40">
-        <div className="text-center max-w-md p-8 bg-white rounded-2xl shadow-lg">
+        <div className="text-center max-w-md p-8 bg-white rounded-xl shadow-lg">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">{error || 'Product not found'}</h2>
           <Link
             to="/products"
-            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-full hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-md inline-block"
+            className="bg-blue-900 text-white px-6 py-3 rounded-full hover:bg-blue-800 transition-all duration-300 shadow-md inline-block"
           >
             Back to Products
           </Link>
@@ -179,7 +179,7 @@ const ProductDetails = () => {
         >
           <Link
             to="/products"
-            className="flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors duration-300"
+            className="flex items-center text-blue-900 hover:text-blue-500 font-medium transition-colors duration-300"
           >
             <ChevronLeft size={20} className="mr-2" />
             Back to Products
@@ -190,27 +190,25 @@ const ProductDetails = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="bg-white rounded-2xl shadow-lg overflow-hidden"
+          className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200"
         >
           <div className="lg:flex">
             <div className="lg:w-1/2 p-8 relative">
               <button
                 onClick={handleWishlistToggle}
                 disabled={wishlistLoading}
-                className={`absolute top-10 right-10 z-10 p-2 rounded-full backdrop-blur-md shadow-md ${
-                  isInWishlist
-                    ? 'text-red-500 bg-red-50/90'
-                    : 'text-gray-500 bg-white/90 hover:text-red-500'
+                className={`absolute top-10 right-10 z-10 p-2 rounded-full shadow-md ${
+                  isInWishlist ? 'text-red-500 bg-red-50' : 'text-gray-600 bg-white hover:text-red-500'
                 } transition-all duration-300`}
               >
                 <Heart size={20} fill={isInWishlist ? 'currentColor' : 'none'} />
               </button>
 
-              <div className="relative h-80 lg:h-[28rem] bg-gray-50 rounded-xl overflow-hidden flex items-center justify-center shadow-inner">
+              <div className="relative h-80 lg:h-[28rem] bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center shadow-inner">
                 <img
                   src={product.images?.[currentImageIndex] || '/placeholder.jpg'}
                   alt={product.title}
-                  className="w-full h-full object-contain p-8 transition-transform duration-500 hover:scale-105"
+                  className="w-full h-full object-contain p-8 transition-transform duration-300 hover:scale-105"
                 />
                 {product.quantity <= 0 && (
                   <div className="absolute top-4 left-4 bg-red-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
@@ -225,7 +223,7 @@ const ProductDetails = () => {
                     src={img}
                     alt={`${product.title} thumbnail ${idx}`}
                     className={`w-20 h-20 object-cover rounded-lg cursor-pointer border-2 ${
-                      currentImageIndex === idx ? 'border-blue-600' : 'border-gray-200'
+                      currentImageIndex === idx ? 'border-blue-900' : 'border-gray-200'
                     }`}
                     onClick={() => setCurrentImageIndex(idx)}
                     whileHover={{ scale: 1.05 }}
@@ -253,7 +251,7 @@ const ProductDetails = () => {
                   ({product.ratings?.length || 0} reviews)
                 </span>
               </div>
-              <p className="text-gray-500 text-sm mb-4 capitalize">
+              <p className="text-gray-600 text-sm mb-4 capitalize">
                 {product.brand} • {product.category}
               </p>
               <p className="text-2xl font-bold text-gray-900 mb-6">
@@ -263,19 +261,19 @@ const ProductDetails = () => {
               {product.quantity > 0 && (
                 <div className="flex items-center mb-6">
                   <span className="mr-4 font-medium text-gray-700">Quantity:</span>
-                  <div className="flex border border-gray-200 rounded-full overflow-hidden bg-gray-50">
+                  <div className="flex border border-gray-200 rounded-full overflow-hidden bg-gray-100">
                     <button
                       onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                      className="w-12 h-12 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors duration-300"
+                      className="w-12 h-12 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors duration-300"
                     >
                       -
                     </button>
-                    <span className="w-12 h-12 flex items-center justify-center text-gray-800 font-medium">
+                    <span className="w-12 h-12 flex items-center justify-center text-gray-900 font-medium">
                       {quantity}
                     </span>
                     <button
                       onClick={() => setQuantity((q) => Math.min(product.quantity, q + 1))}
-                      className="w-12 h-12 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors duration-300"
+                      className="w-12 h-12 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors duration-300"
                     >
                       +
                     </button>
@@ -289,7 +287,7 @@ const ProductDetails = () => {
                 className={`w-full py-3 rounded-full flex items-center justify-center transition-all duration-300 shadow-md ${
                   product.quantity <= 0
                     ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700'
+                    : 'bg-blue-900 text-white hover:bg-blue-800'
                 }`}
               >
                 <ShoppingCart size={18} className="mr-2" />
@@ -305,7 +303,7 @@ const ProductDetails = () => {
                   addToCompare(product);
                   toast.success(`${product.title} added to compare`);
                 }}
-                className="w-full mt-4 py-3 rounded-full flex items-center justify-center text-blue-600 border border-blue-600 hover:bg-blue-50 transition-all duration-300 shadow-md"
+                className="w-full mt-4 py-3 rounded-full flex items-center justify-center text-blue-900 border border-blue-900 hover:bg-blue-50 transition-all duration-300 shadow-md"
               >
                 <GitCompare size={18} className="mr-2" />
                 Add to Compare
@@ -316,7 +314,7 @@ const ProductDetails = () => {
                 {product.quantity > 0 ? (
                   <span className="text-green-600">{product.quantity} in stock</span>
                 ) : (
-                  <span className="text-red-600">Out of stock</span>
+                  <span className="text-red-500">Out of stock</span>
                 )}
               </p>
             </div>
@@ -361,7 +359,7 @@ const ProductDetails = () => {
               )}
               <button
                 onClick={() => setShowReviewForm(!showReviewForm)}
-                className="mt-6 text-blue-600 hover:text-blue-800 font-medium transition-colors duration-300"
+                className="mt-6 text-blue-900 hover:text-blue-500 font-medium transition-colors duration-300"
               >
                 {showReviewForm ? 'Cancel' : 'Write a Review'}
               </button>
@@ -387,7 +385,7 @@ const ProductDetails = () => {
                     <textarea
                       value={comment}
                       onChange={(e) => setComment(e.target.value)}
-                      className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-500 bg-gray-50"
+                      className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100"
                       rows="4"
                       placeholder="Share your thoughts..."
                     />
@@ -395,7 +393,7 @@ const ProductDetails = () => {
                   <button
                     type="submit"
                     disabled={rating === 0 || !comment.trim()}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-full hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    className="bg-blue-900 text-white px-6 py-3 rounded-full hover:bg-blue-800 transition-all duration-300 shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed"
                   >
                     Submit Review
                   </button>
@@ -409,7 +407,7 @@ const ProductDetails = () => {
                   {relatedProducts.map((related) => (
                     <motion.div
                       key={related._id}
-                      className="bg-gray-50 rounded-xl shadow-md p-4 hover:shadow-lg transition-all duration-300"
+                      className="bg-white rounded-xl shadow-md p-4 hover:shadow-lg transition-all duration-300 border border-gray-200"
                       whileHover={{ y: -5 }}
                     >
                       <Link to={`/products/${related._id}`}>
@@ -418,7 +416,7 @@ const ProductDetails = () => {
                           alt={related.title}
                           className="w-full h-40 object-contain rounded-lg mb-4"
                         />
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1 hover:text-blue-600 transition-colors">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1 hover:text-blue-500 transition-colors">
                           {related.title}
                         </h3>
                         <p className="text-xl font-bold text-gray-900">

@@ -22,7 +22,7 @@ const Wishlist = () => {
     return (
       <div className="bg-gray-100 min-h-screen pt-40 lg:pt-32 flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-900"></div>
           <p className="mt-4 text-gray-600 text-lg">Loading your wishlist...</p>
         </div>
       </div>
@@ -32,13 +32,13 @@ const Wishlist = () => {
   if (error) {
     return (
       <div className="bg-gray-100 min-h-screen pt-40 lg:pt-32 flex items-center justify-center">
-        <div className="text-center max-w-md p-8 bg-white rounded-2xl shadow-lg">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Wishlist Error</h2>
+        <div className="text-center max-w-md p-8 bg-white rounded-xl shadow-lg border border-gray-200">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4 tracking-tight">Wishlist Error</h2>
           <p className="text-red-600 mb-6">{error}</p>
           {!localStorage.getItem('token') && (
             <Link
               to="/sign-in"
-              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-full hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-md inline-block"
+              className="bg-blue-900 text-white px-6 py-3 rounded-full hover:bg-blue-800 transition-all duration-300 shadow-md inline-block"
             >
               Login to View Wishlist
             </Link>
@@ -57,7 +57,7 @@ const Wishlist = () => {
           transition={{ duration: 0.6 }}
           className="mb-12 text-center"
         >
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 tracking-tight">
             Your Wishlist
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
@@ -70,16 +70,18 @@ const Wishlist = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-center py-16 bg-white rounded-2xl shadow-lg"
+            className="text-center py-16 bg-white rounded-xl shadow-lg border border-gray-200"
           >
             <Heart size={80} className="mx-auto mb-6 text-gray-300" />
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Your wishlist is empty</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4 tracking-tight">
+              Your Wishlist is Empty
+            </h2>
             <p className="text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
               Add some products you love to keep track of them here!
             </p>
             <Link
               to="/products"
-              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-full hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-md inline-block"
+              className="bg-blue-900 text-white px-6 py-3 rounded-full hover:bg-blue-800 transition-all duration-300 shadow-md inline-block"
             >
               Explore Products
             </Link>
@@ -94,7 +96,7 @@ const Wishlist = () => {
             {wishlistItems.map((item) => (
               <motion.div
                 key={item._id}
-                className="bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 relative group"
+                className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 hover:shadow-xl transition-all duration-300 relative group"
                 whileHover={{ y: -5 }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -102,31 +104,31 @@ const Wishlist = () => {
               >
                 <div className="relative">
                   <Link to={`/products/${item._id}`}>
-                    <div className="h-64 bg-gray-50 flex items-center justify-center">
+                    <div className="h-64 bg-gray-100 flex items-center justify-center">
                       <img
                         src={item.images?.[0] || '/assets/images/placeholder.png'}
                         alt={item.title || 'Product'}
-                        className="w-full h-full object-contain p-6 transition-transform duration-500 group-hover:scale-105"
+                        className="w-full h-full object-contain p-6 transition-transform duration-300 group-hover:scale-105"
                       />
                     </div>
                   </Link>
                   <button
                     onClick={() => removeFromWishlist(item._id)}
-                    className="absolute top-4 right-4 p-2 rounded-full backdrop-blur-md shadow-md text-red-500 bg-red-50/90 hover:text-red-600 transition-all duration-300"
+                    className="absolute top-4 right-4 p-2 rounded-full bg-gray-100 text-red-500 hover:text-red-600 transition-all duration-300 shadow-md"
                   >
                     <Heart size={20} fill="currentColor" />
                   </button>
                 </div>
                 <div className="p-6">
                   <Link to={`/products/${item._id}`}>
-                    <h2 className="text-xl font-semibold text-gray-900 mb-2 line-clamp-1 group-hover:text-blue-600 transition-colors duration-300">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1 hover:text-blue-500 transition-colors duration-300">
                       {item.title || 'Product'}
                     </h2>
                   </Link>
-                  <p className="text-xl font-bold text-gray-900 mb-3">
+                  <p className="text-lg font-bold text-blue-900 mb-3">
                     Rs {(item.price || 0).toLocaleString()}
                   </p>
-                  <p className="text-gray-500 text-sm mb-4 capitalize">
+                  <p className="text-gray-600 text-sm mb-4 capitalize">
                     {item.brand || 'N/A'} • {item.color || 'N/A'}
                   </p>
                   <div className="flex justify-between items-center">
@@ -136,12 +138,12 @@ const Wishlist = () => {
                         cartItems.some((cartItem) => cartItem.product?._id === item._id) ||
                         (item.quantity ?? 0) <= 0
                       }
-                      className={`flex items-center px-4 py-2 rounded-full transition-all duration-300 shadow-md ${
+                      className={`flex items-center px-4 py-2 rounded-full transition-all duration-300 shadow-md text-sm font-medium ${
                         cartItems.some((cartItem) => cartItem.product?._id === item._id)
                           ? 'bg-green-100 text-green-700'
                           : (item.quantity ?? 0) <= 0
                           ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                          : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700'
+                          : 'bg-blue-900 text-white hover:bg-blue-800'
                       }`}
                     >
                       <ShoppingCart size={18} className="mr-2" />

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Search, ShoppingCart, Filter, X, ChevronDown, ChevronUp, Heart, Star, GitCompare } from 'lucide-react';
-import { Link, useNavigate, useLocation } from 'react-router-dom'; // Add useLocation
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useCart } from '../Context/cartContext';
@@ -13,7 +13,7 @@ const ProductListing = () => {
   const { wishlistItems, addToWishlist, removeFromWishlist } = useWishlist();
   const { addToCompare } = useCompare();
   const navigate = useNavigate();
-  const location = useLocation(); // Use location to get URL parameters
+  const location = useLocation();
 
   const [products, setProducts] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
@@ -21,7 +21,6 @@ const ProductListing = () => {
   const [error, setError] = useState(null);
   const [wishlistLoading, setWishlistLoading] = useState({});
 
-  // Initialize state from URL parameters
   const queryParams = new URLSearchParams(location.search);
   const initialSearch = queryParams.get('search') || '';
   const initialCategory = queryParams.get('category') || 'All';
@@ -66,7 +65,7 @@ const ProductListing = () => {
       if (maxPrice) params.append('maxPrice', maxPrice);
       if (sortBy) params.append('sortBy', sortBy);
       if (sortOrder) params.append('sortOrder', sortOrder);
-      if (searchTerm) params.append('search', searchTerm); // Add search term to API call
+      if (searchTerm) params.append('search', searchTerm);
       params.append('limit', limit);
       params.append('page', page);
 
@@ -86,7 +85,6 @@ const ProductListing = () => {
     fetchProducts();
   }, [fetchAllProducts, fetchProducts]);
 
-  // Update state when URL parameters change
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const newSearch = params.get('search') || '';
@@ -197,23 +195,23 @@ const ProductListing = () => {
     setSortBy('');
     setSortOrder('asc');
     setPage(1);
-    navigate('/products'); // Reset URL parameters
+    navigate('/products');
   };
 
   const toggleSection = (section) =>
     setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
 
   const FilterSection = ({ title, section, children }) => (
-    <div className="mb-6 border-b border-gray-200/50 pb-6">
+    <div className="mb-6 border-b border-gray-200 pb-6">
       <div
         className="flex justify-between items-center mb-4 cursor-pointer"
         onClick={() => toggleSection(section)}
       >
         <h3 className="font-semibold text-gray-900 text-lg">{title}</h3>
         {expandedSections[section] ? (
-          <ChevronUp size={20} className="text-gray-500" />
+          <ChevronUp size={20} className="text-gray-600" />
         ) : (
-          <ChevronDown size={20} className="text-gray-500" />
+          <ChevronDown size={20} className="text-gray-600" />
         )}
       </div>
       {expandedSections[section] && children}
@@ -222,13 +220,13 @@ const ProductListing = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 pt-40">
-        <div className="text-center max-w-md p-8 bg-white rounded-2xl shadow-lg">
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 pt-40">
+        <div className="text-center max-w-md p-8 bg-white rounded-xl shadow-lg">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Something went wrong</h2>
           <p className="text-gray-600 mb-6">{error}</p>
           <button
             onClick={fetchProducts}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-full hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-md"
+            className="bg-blue-900 text-white px-6 py-3 rounded-full hover:bg-blue-800 transition-all duration-300 shadow-md"
           >
             Try Again
           </button>
@@ -260,8 +258,8 @@ const ProductListing = () => {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="max-w-3xl mx-auto mb-10"
         >
-          <div className="relative shadow-md rounded-full overflow-hidden bg-white">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <div className="relative shadow-md rounded-full overflow-hidden bg-gray-200">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-600" size={20} />
             <input
               type="text"
               placeholder="Search for products..."
@@ -273,7 +271,7 @@ const ProductListing = () => {
                 if (categoryFilter !== 'All') params.append('category', categoryFilter);
                 navigate(`/products?${params.toString()}`);
               }}
-              className="w-full pl-12 pr-6 py-4 border-0 focus:ring-2 focus:ring-blue-200 focus:outline-none text-gray-700"
+              className="w-full pl-12 pr-6 py-4 border-0 focus:ring-2 focus:ring-blue-500 focus:outline-none text-gray-700"
             />
           </div>
         </motion.div>
@@ -286,16 +284,16 @@ const ProductListing = () => {
         >
           <button
             onClick={() => setShowMobileFilters(!showMobileFilters)}
-            className="w-full flex items-center justify-between bg-white px-6 py-3 rounded-full shadow-md border border-gray-200 hover:bg-gray-50 transition-all duration-300"
+            className="w-full flex items-center justify-between bg-white px-6 py-3 rounded-full shadow-md border border-gray-200 hover:bg-gray-200 transition-all duration-300"
           >
             <div className="flex items-center">
-              <Filter size={20} className="mr-3 text-blue-600" />
+              <Filter size={20} className="mr-3 text-blue-900" />
               <span className="font-medium text-gray-900">{showMobileFilters ? 'Hide Filters' : 'Show Filters'}</span>
             </div>
             {showMobileFilters ? (
-              <X size={20} className="text-gray-500" />
+              <X size={20} className="text-gray-600" />
             ) : (
-              <ChevronDown size={20} className="text-gray-500" />
+              <ChevronDown size={20} className="text-gray-600" />
             )}
           </button>
         </motion.div>
@@ -305,13 +303,13 @@ const ProductListing = () => {
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className={`w-full lg:w-80 bg-white p-6 rounded-2xl shadow-lg ${showMobileFilters ? 'block' : 'hidden lg:block'}`}
+            className={`w-full lg:w-80 bg-white p-6 rounded-xl shadow-lg ${showMobileFilters ? 'block' : 'hidden lg:block'}`}
           >
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-2xl font-bold text-gray-900">Filters</h2>
               <button
                 onClick={resetFilters}
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors duration-300"
+                className="text-sm text-blue-900 hover:text-blue-500 font-medium transition-colors duration-300"
               >
                 Reset All
               </button>
@@ -333,7 +331,7 @@ const ProductListing = () => {
                         if (category !== 'All') params.append('category', category);
                         navigate(`/products?${params.toString()}`);
                       }}
-                      className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                      className="h-4 w-4 text-blue-900 border-gray-300 focus:ring-blue-500"
                     />
                     <label
                       htmlFor={`cat-${category}`}
@@ -356,7 +354,7 @@ const ProductListing = () => {
                       name="brand"
                       checked={brandFilter === brand}
                       onChange={() => setBrandFilter(brand)}
-                      className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                      className="h-4 w-4 text-blue-900 border-gray-300 focus:ring-blue-500"
                     />
                     <label
                       htmlFor={`brand-${brand}`}
@@ -379,7 +377,7 @@ const ProductListing = () => {
                       name="color"
                       checked={colorFilter === color}
                       onChange={() => setColorFilter(color)}
-                      className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                      className="h-4 w-4 text-blue-900 border-gray-300 focus:ring-blue-500"
                     />
                     <label
                       htmlFor={`color-${color}`}
@@ -403,7 +401,7 @@ const ProductListing = () => {
                     onChange={(e) => setMinPrice(e.target.value)}
                     min={priceRange.min}
                     max={priceRange.max}
-                    className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-500 bg-gray-50"
+                    className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100"
                   />
                 </div>
                 <div>
@@ -415,7 +413,7 @@ const ProductListing = () => {
                     onChange={(e) => setMaxPrice(e.target.value)}
                     min={priceRange.min}
                     max={priceRange.max}
-                    className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-500 bg-gray-50"
+                    className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100"
                   />
                 </div>
               </div>
@@ -426,7 +424,7 @@ const ProductListing = () => {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-500 bg-gray-50"
+                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100"
                 >
                   <option value="">Default</option>
                   <option value="price">Price</option>
@@ -436,7 +434,7 @@ const ProductListing = () => {
                   <select
                     value={sortOrder}
                     onChange={(e) => setSortOrder(e.target.value)}
-                    className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-500 bg-gray-50"
+                    className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100"
                   >
                     <option value="asc">Ascending</option>
                     <option value="desc">Descending</option>
@@ -457,9 +455,9 @@ const ProductListing = () => {
                 {[...Array(6)].map((_, i) => (
                   <div
                     key={i}
-                    className="bg-white rounded-2xl shadow-md p-6 h-96 animate-pulse"
+                    className="bg-white rounded-xl shadow-md p-6 h-96 animate-pulse"
                   >
-                    <div className="bg-gray-200 h-56 rounded-xl mb-4"></div>
+                    <div className="bg-gray-200 h-56 rounded-lg mb-4"></div>
                     <div className="bg-gray-200 h-4 rounded w-3/4 mb-2"></div>
                     <div className="bg-gray-200 h-4 rounded w-1/2 mb-3"></div>
                     <div className="bg-gray-200 h-10 rounded-full"></div>
@@ -467,7 +465,7 @@ const ProductListing = () => {
                 ))}
               </div>
             ) : products.length === 0 ? (
-              <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
+              <div className="bg-white rounded-xl shadow-lg p-12 text-center">
                 <div className="max-w-md mx-auto">
                   <div className="text-5xl mb-6 text-gray-400">🔍</div>
                   <h3 className="text-2xl font-bold text-gray-900 mb-4">No products found</h3>
@@ -476,7 +474,7 @@ const ProductListing = () => {
                   </p>
                   <button
                     onClick={resetFilters}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-full hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-md"
+                    className="bg-blue-900 text-white px-6 py-3 rounded-full hover:bg-blue-800 transition-all duration-300 shadow-md"
                   >
                     Reset All Filters
                   </button>
@@ -488,7 +486,7 @@ const ProductListing = () => {
                   {products.map((product) => (
                     <motion.div
                       key={product._id}
-                      className="bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 relative group"
+                      className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 relative group border border-gray-200"
                       whileHover={{ y: -5 }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -500,10 +498,10 @@ const ProductListing = () => {
                           toggleWishlist(product._id);
                         }}
                         disabled={wishlistLoading[product._id]}
-                        className={`absolute top-4 right-4 z-10 p-2 rounded-full backdrop-blur-md shadow-md ${
+                        className={`absolute top-4 right-4 z-10 p-2 rounded-full shadow-md ${
                           isInWishlist(product._id)
-                            ? 'text-red-500 bg-red-50/90'
-                            : 'text-gray-500 bg-white/90 hover:text-red-500'
+                            ? 'text-red-500 bg-red-50'
+                            : 'text-gray-600 bg-white hover:text-red-500'
                         } transition-all duration-300`}
                       >
                         <Heart
@@ -513,11 +511,11 @@ const ProductListing = () => {
                       </button>
 
                       <Link to={`/products/${product._id}`} className="block">
-                        <div className="relative h-64 overflow-hidden bg-gray-50 flex items-center justify-center">
+                        <div className="relative h-64 overflow-hidden bg-gray-100 flex items-center justify-center">
                           <img
                             src={product.images?.[0] || '/placeholder.jpg'}
                             alt={product.title}
-                            className="w-full h-full object-contain p-6 transition-transform duration-500 group-hover:scale-105"
+                            className="w-full h-full object-contain p-6 transition-transform duration-300 group-hover:scale-105"
                           />
                           {product.quantity <= 0 && (
                             <div className="absolute top-4 left-4 bg-red-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
@@ -540,10 +538,10 @@ const ProductListing = () => {
                               />
                             ))}
                           </div>
-                          <h3 className="font-semibold text-lg text-gray-900 mb-2 line-clamp-1 group-hover:text-blue-600 transition-colors">
+                          <h3 className="font-semibold text-lg text-gray-900 mb-2 line-clamp-1 group-hover:text-blue-500 transition-colors">
                             {product.title}
                           </h3>
-                          <p className="text-gray-500 text-sm mb-3 capitalize">
+                          <p className="text-gray-600 text-sm mb-3 capitalize">
                             {product.brand} • {product.category}
                           </p>
                           <p className="text-xl font-bold text-gray-900">
@@ -559,7 +557,7 @@ const ProductListing = () => {
                               e.preventDefault();
                               handleAddToCompare(product);
                             }}
-                            className="flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+                            className="flex items-center text-blue-900 hover:text-blue-500 transition-colors"
                           >
                             <GitCompare size={16} className="mr-2" />
                             Add to Compare
@@ -574,7 +572,7 @@ const ProductListing = () => {
                           className={`w-full py-3 rounded-full flex items-center justify-center transition-all duration-300 shadow-md ${
                             product.quantity <= 0
                               ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                              : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700'
+                              : 'bg-blue-900 text-white hover:bg-blue-800'
                           }`}
                         >
                           <ShoppingCart size={18} className="mr-2" />
@@ -596,7 +594,7 @@ const ProductListing = () => {
                       <button
                         onClick={() => setPage((p) => Math.max(1, p - 1))}
                         disabled={page === 1}
-                        className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-full transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-full transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Previous
                       </button>
@@ -606,7 +604,7 @@ const ProductListing = () => {
                       <button
                         onClick={() => setPage((p) => p + 1)}
                         disabled={products.length < limit}
-                        className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-full transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-full transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Next
                       </button>

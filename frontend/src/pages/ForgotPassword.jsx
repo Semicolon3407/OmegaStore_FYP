@@ -26,26 +26,26 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen flex items-center justify-center px-6">
+    <div className="bg-gray-100 min-h-screen pt-40 lg:pt-32 flex items-center justify-center px-6">
       <motion.div
-        className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md"
+        className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md border border-gray-200"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <h2 className="text-3xl font-bold text-gray-900 text-center mb-6">Forgot Password</h2>
-        <p className="text-gray-600 text-center mb-6">
-          Enter your email to receive a one-time password (OTP).
-        </p>
+        <div className="text-center mb-8">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">Forgot Password</h2>
+          <p className="text-gray-600 mt-2">Enter your email to receive a one-time password (OTP).</p>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 w-5 h-5" />
               <input
                 type="email"
-                className="w-full pl-10 pr-3 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-300"
+                className="w-full pl-10 pr-3 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100 transition-all duration-300"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -56,7 +56,7 @@ const ForgotPassword = () => {
 
           <button
             type="submit"
-            className="w-full flex items-center justify-center bg-blue-600 text-white py-3 rounded-full hover:bg-blue-700 transition-all duration-300 shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center bg-blue-900 text-white py-3 rounded-full hover:bg-blue-800 transition-all duration-300 shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={loading}
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}

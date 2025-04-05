@@ -68,9 +68,9 @@ const Home = () => {
   const isInWishlist = (productId) => wishlistItems.some((item) => item._id === productId);
 
   const handleWishlistToggle = async (productId) => {
-    if (!localStorage.getItem('token')) {
-      toast.info('Please login to manage your wishlist');
-      navigate('/sign-in');
+    if (!localStorage.getItem("token")) {
+      toast.info("Please login to manage your wishlist");
+      navigate("/sign-in");
       return;
     }
 
@@ -90,7 +90,7 @@ const Home = () => {
     return (
       <div className="bg-gray-100 min-h-screen pt-40 lg:pt-32 flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-900"></div>
           <p className="mt-4 text-gray-600 text-lg">Loading...</p>
         </div>
       </div>
@@ -124,7 +124,7 @@ const Home = () => {
                   <SwiperSlide key={product._id}>
                     <Link to={`/products/${product._id}`}>
                       <motion.div
-                        className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group relative"
+                        className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden group relative border border-gray-200"
                         whileHover={{ y: -8 }}
                       >
                         <div className="absolute top-4 right-4 z-10 flex space-x-2">
@@ -134,51 +134,50 @@ const Home = () => {
                               handleWishlistToggle(product._id);
                             }}
                             disabled={wishlistLoading[product._id]}
-                            className={`p-2 rounded-full backdrop-blur-md shadow-md ${
+                            className={`p-2 rounded-full shadow-md ${
                               isInWishlist(product._id)
-                                ? 'text-red-500 bg-red-50/90'
-                                : 'text-gray-500 bg-white/90 hover:text-red-500'
+                                ? "text-red-500 bg-red-50"
+                                : "text-gray-600 bg-white hover:text-red-500"
                             } transition-all duration-300`}
                           >
-                            <Heart size={18} fill={isInWishlist(product._id) ? 'currentColor' : 'none'} />
+                            <Heart size={18} fill={isInWishlist(product._id) ? "currentColor" : "none"} />
                           </button>
                           <button
                             onClick={(e) => {
                               e.preventDefault();
-                              if (!localStorage.getItem('token')) {
-                                toast.info('Please login to add products to compare');
-                                navigate('/sign-in');
+                              if (!localStorage.getItem("token")) {
+                                toast.info("Please login to add products to compare");
+                                navigate("/sign-in");
                                 return;
                               }
                               addToCompare(product);
                               toast.success(`${product.title} added to compare`);
                             }}
-                            className="p-2 bg-white/90 rounded-full shadow-md text-blue-600 hover:text-blue-800 transition-all duration-300"
+                            className="p-2 bg-white rounded-full shadow-md text-blue-900 hover:text-blue-500 transition-all duration-300"
                           >
                             <GitCompare size={18} />
                           </button>
                         </div>
-                        <div className="relative h-56 md:h-64 bg-gray-50 flex items-center justify-center">
+                        <div className="relative h-56 md:h-64 bg-gray-100 flex items-center justify-center">
                           <Image
                             src={product.images[0] || "/placeholder.jpg"}
                             alt={product.title}
-                            className="w-full h-full object-contain p-6 transition-transform duration-500 group-hover:scale-105"
+                            className="w-full h-full object-contain p-6 transition-transform duration-300 group-hover:scale-105"
                           />
-
                         </div>
                         <div className="p-6 flex flex-col">
-                          <span className="text-sm text-gray-500 capitalize mb-2">{product.category || "Electronics"}</span>
-                          <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 mb-3 group-hover:text-blue-600 transition-colors">
+                          <span className="text-sm text-gray-600 capitalize mb-2">{product.category || "Electronics"}</span>
+                          <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 mb-3 group-hover:text-blue-500 transition-colors">
                             {product.title}
                           </h3>
                           <div className="mt-auto flex justify-between items-center">
                             <div>
                               <p className="text-xl font-bold text-gray-900">Rs {product.price.toLocaleString()}</p>
                               {product.originalPrice && (
-                                <p className="text-sm text-gray-400 line-through">Rs {product.originalPrice.toLocaleString()}</p>
+                                <p className="text-sm text-gray-500 line-through">Rs {product.originalPrice.toLocaleString()}</p>
                               )}
                             </div>
-                            <button className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-md">
+                            <button className="p-2 bg-blue-900 text-white rounded-full hover:bg-blue-800 transition-all duration-300 shadow-md">
                               <ShoppingCart className="w-5 h-5" />
                             </button>
                           </div>
@@ -188,18 +187,18 @@ const Home = () => {
                   </SwiperSlide>
                 ))}
               </Swiper>
-              <button className="featured-prev hidden sm:flex absolute top-1/2 -left-6 -translate-y-1/2 bg-white p-2 rounded-full shadow-md hover:bg-gray-100 transition-all duration-300 z-10">
-                <ChevronLeft className="w-6 h-6 text-gray-600" />
+              <button className="featured-prev hidden sm:flex absolute top-1/2 -left-6 -translate-y-1/2 bg-white p-2 rounded-full shadow-md hover:bg-gray-200 transition-all duration-300 z-10">
+                <ChevronLeft className="w-6 h-6 text-gray-700" />
               </button>
-              <button className="featured-next hidden sm:flex absolute top-1/2 -right-6 -translate-y-1/2 bg-white p-2 rounded-full shadow-md hover:bg-gray-100 transition-all duration-300 z-10">
-                <ChevronRight className="w-6 h-6 text-gray-600" />
+              <button className="featured-next hidden sm:flex absolute top-1/2 -right-6 -translate-y-1/2 bg-white p-2 rounded-full shadow-md hover:bg-gray-200 transition-all duration-300 z-10">
+                <ChevronRight className="w-6 h-6 text-gray-700" />
               </button>
             </div>
           </motion.div>
         </div>
       </section>
 
-      <section className="py-16 md:py-24 bg-gray-50">
+      <section className="py-16 md:py-24 bg-gray-100">
         <div className="container mx-auto px-6">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}>
             <div className="text-center mb-12 md:mb-16">
@@ -222,7 +221,7 @@ const Home = () => {
                   <SwiperSlide key={product._id}>
                     <Link to={`/products/${product._id}`}>
                       <motion.div
-                        className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group relative"
+                        className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden group relative border border-gray-200"
                         whileHover={{ y: -8 }}
                       >
                         <div className="absolute top-4 right-4 z-10 flex space-x-2">
@@ -232,51 +231,51 @@ const Home = () => {
                               handleWishlistToggle(product._id);
                             }}
                             disabled={wishlistLoading[product._id]}
-                            className={`p-2 rounded-full backdrop-blur-md shadow-md ${
+                            className={`p-2 rounded-full shadow-md ${
                               isInWishlist(product._id)
-                                ? 'text-red-500 bg-red-50/90'
-                                : 'text-gray-500 bg-white/90 hover:text-red-500'
+                                ? "text-red-500 bg-red-50"
+                                : "text-gray-600 bg-white hover:text-red-500"
                             } transition-all duration-300`}
                           >
-                            <Heart size={18} fill={isInWishlist(product._id) ? 'currentColor' : 'none'} />
+                            <Heart size={18} fill={isInWishlist(product._id) ? "currentColor" : "none"} />
                           </button>
                           <button
                             onClick={(e) => {
                               e.preventDefault();
-                              if (!localStorage.getItem('token')) {
-                                toast.info('Please login to add products to compare');
-                                navigate('/sign-in');
+                              if (!localStorage.getItem("token")) {
+                                toast.info("Please login to add products to compare");
+                                navigate("/sign-in");
                                 return;
                               }
                               addToCompare(product);
                               toast.success(`${product.title} added to compare`);
                             }}
-                            className="p-2 bg-white/90 rounded-full shadow-md text-blue-600 hover:text-blue-800 transition-all duration-300"
+                            className="p-2 bg-white rounded-full shadow-md text-blue-900 hover:text-blue-500 transition-all duration-300"
                           >
                             <GitCompare size={18} />
                           </button>
                         </div>
-                        <div className="relative h-56 md:h-64 bg-gray-50 flex items-center justify-center">
+                        <div className="relative h-56 md:h-64 bg-gray-100 flex items-center justify-center">
                           <Image
                             src={product.images[0] || "/placeholder.jpg"}
                             alt={product.title}
-                            className="w-full h-full object-contain p-6 transition-transform duration-500 group-hover:scale-105"
+                            className="w-full h-full object-contain p-6 transition-transform duration-300 group-hover:scale-105"
                           />
-                          <span className="absolute top-4 left-4 bg-red-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">NEW</span>
+                          <span className="absolute top-4 left-4 bg-blue-900 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">NEW</span>
                         </div>
                         <div className="p-6 flex flex-col">
-                          <span className="text-sm text-gray-500 capitalize mb-2">{product.category || "Electronics"}</span>
-                          <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 mb-3 group-hover:text-blue-600 transition-colors">
+                          <span className="text-sm text-gray-600 capitalize mb-2">{product.category || "Electronics"}</span>
+                          <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 mb-3 group-hover:text-blue-500 transition-colors">
                             {product.title}
                           </h3>
                           <div className="mt-auto flex justify-between items-center">
                             <div>
                               <p className="text-xl font-bold text-gray-900">Rs {product.price.toLocaleString()}</p>
                               {product.originalPrice && (
-                                <p className="text-sm text-gray-400 line-through">Rs {product.originalPrice.toLocaleString()}</p>
+                                <p className="text-sm text-gray-500 line-through">Rs {product.originalPrice.toLocaleString()}</p>
                               )}
                             </div>
-                            <button className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-md">
+                            <button className="p-2 bg-blue-900 text-white rounded-full hover:bg-blue-800 transition-all duration-300 shadow-md">
                               <ShoppingCart className="w-5 h-5" />
                             </button>
                           </div>
@@ -286,11 +285,11 @@ const Home = () => {
                   </SwiperSlide>
                 ))}
               </Swiper>
-              <button className="new-prev hidden sm:flex absolute top-1/2 -left-6 -translate-y-1/2 bg-white p-2 rounded-full shadow-md hover:bg-gray-100 transition-all duration-300 z-10">
-                <ChevronLeft className="w-6 h-6 text-gray-600" />
+              <button className="new-prev hidden sm:flex absolute top-1/2 -left-6 -translate-y-1/2 bg-white p-2 rounded-full shadow-md hover:bg-gray-200 transition-all duration-300 z-10">
+                <ChevronLeft className="w-6 h-6 text-gray-700" />
               </button>
-              <button className="new-next hidden sm:flex absolute top-1/2 -right-6 -translate-y-1/2 bg-white p-2 rounded-full shadow-md hover:bg-gray-100 transition-all duration-300 z-10">
-                <ChevronRight className="w-6 h-6 text-gray-600" />
+              <button className="new-next hidden sm:flex absolute top-1/2 -right-6 -translate-y-1/2 bg-white p-2 rounded-full shadow-md hover:bg-gray-200 transition-all duration-300 z-10">
+                <ChevronRight className="w-6 h-6 text-gray-700" />
               </button>
             </div>
           </motion.div>
@@ -324,30 +323,30 @@ const Home = () => {
                 {brands.map((brand) => (
                   <SwiperSlide key={brand.name}>
                     <motion.div
-                      className="bg-white rounded-2xl shadow-md p-6 flex items-center justify-center h-32 border border-gray-100 hover:shadow-lg transition-all duration-300"
+                      className="bg-white rounded-xl shadow-md p-6 flex items-center justify-center h-32 border border-gray-200 hover:shadow-lg transition-all duration-300"
                       whileHover={{ scale: 1.05 }}
                     >
                       <Image
                         src={brand.logo}
                         alt={brand.name}
-                        className="max-h-14 w-auto object-contain opacity-75 hover:opacity-100 transition-opacity duration-300"
+                        className="max-h-14 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity duration-300"
                       />
                     </motion.div>
                   </SwiperSlide>
                 ))}
               </Swiper>
-              <button className="brands-prev hidden sm:flex absolute top-1/2 -left-6 -translate-y-1/2 bg-white p-2 rounded-full shadow-md hover:bg-gray-100 transition-all duration-300 z-10">
-                <ChevronLeft className="w-6 h-6 text-gray-600" />
+              <button className="brands-prev hidden sm:flex absolute top-1/2 -left-6 -translate-y-1/2 bg-white p-2 rounded-full shadow-md hover:bg-gray-200 transition-all duration-300 z-10">
+                <ChevronLeft className="w-6 h-6 text-gray-700" />
               </button>
-              <button className="brands-next hidden sm:flex absolute top-1/2 -right-6 -translate-y-1/2 bg-white p-2 rounded-full shadow-md hover:bg-gray-100 transition-all duration-300 z-10">
-                <ChevronRight className="w-6 h-6 text-gray-600" />
+              <button className="brands-next hidden sm:flex absolute top-1/2 -right-6 -translate-y-1/2 bg-white p-2 rounded-full shadow-md hover:bg-gray-200 transition-all duration-300 z-10">
+                <ChevronRight className="w-6 h-6 text-gray-700" />
               </button>
             </div>
           </motion.div>
         </div>
       </section>
 
-      <section className="bg-gradient-to-r from-blue-900 to-purple-900 py-16 md:py-24">
+      <section className="bg-blue-900 py-16 md:py-24">
         <div className="container mx-auto px-6 text-center">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight mb-6">
@@ -357,10 +356,16 @@ const Home = () => {
               Unlock exclusive deals and cutting-edge gadgets designed to enhance your life.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6">
-              <Link to="/products" className="bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold px-8 py-3 rounded-full hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl">
+              <Link
+                to="/products"
+                className="bg-blue-500 text-white font-semibold px-8 py-3 rounded-full hover:bg-blue-600 transition-all duration-300 shadow-lg hover:shadow-xl"
+              >
                 Shop Now
               </Link>
-              <Link to="/products" className="bg-transparent text-white font-semibold px-8 py-3 rounded-full border-2 border-white hover:bg-white hover:text-gray-900 transition-all duration-300 shadow-md">
+              <Link
+                to="/products"
+                className="bg-transparent text-white font-semibold px-8 py-3 rounded-full border-2 border-white hover:bg-white hover:text-blue-900 transition-all duration-300 shadow-md"
+              >
                 Explore More
               </Link>
             </div>
