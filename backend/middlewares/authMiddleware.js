@@ -1,3 +1,4 @@
+// middleware/auth.js
 const User = require("../models/userModel");
 const jwt = require("jsonwebtoken");
 const asyncHandler = require("express-async-handler");
@@ -18,6 +19,7 @@ const authMiddleware = asyncHandler(async (req, res, next) => {
       req.user = user;
       next();
     } catch (error) {
+      console.error("Token verification error:", error.message);
       return res.status(401).json({ message: "Not authorized. Invalid or expired token." });
     }
   } else {
@@ -27,7 +29,7 @@ const authMiddleware = asyncHandler(async (req, res, next) => {
 
 const isAdmin = asyncHandler(async (req, res, next) => {
   const user = req.user;
-  if (user.role !== "admin") {
+  if (!user || user.role !== "admin") {
     return res.status(403).json({ message: "Access denied. Admin privileges required." });
   }
   next();

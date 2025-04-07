@@ -5,7 +5,6 @@ const {
   getAllProducts,
   updateProduct,
   deleteProduct,
-  addToWishlist,
   rating,
 } = require("../controller/productController");
 const { isAdmin, authMiddleware } = require("../middlewares/authMiddleware");
@@ -23,6 +22,6 @@ router.get("/", getAllProducts); // Get all products (public)
 router.get("/:id", getSingleProduct); // Get single product (public)
 
 // User interaction routes (requires authentication)
-router.put("/rating", authMiddleware, rating); // Rate a product
+router.put('/rating',  rating);
 
 module.exports = router;

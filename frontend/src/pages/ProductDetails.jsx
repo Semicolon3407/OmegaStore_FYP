@@ -1,3 +1,4 @@
+// src/pages/ProductDetails.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -7,6 +8,7 @@ import { toast } from 'react-toastify';
 import { useCart } from '../Context/cartContext';
 import { useWishlist } from '../Context/wishlistContext';
 import { useCompare } from '../Context/compareContext';
+import { useReview } from '../Context/ReviewContext';
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -14,6 +16,7 @@ const ProductDetails = () => {
   const { addToCart } = useCart();
   const { wishlistItems, addToWishlist, removeFromWishlist } = useWishlist();
   const { addToCompare } = useCompare();
+  const { reviews, loading: reviewLoading, fetchReviews, addReview } = useReview();
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -22,7 +25,6 @@ const ProductDetails = () => {
   const [quantity, setQuantity] = useState(1);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [wishlistLoading, setWishlistLoading] = useState(false);
-  const [reviews, setReviews] = useState([]);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -42,7 +44,8 @@ const ProductDetails = () => {
       const productRes = await axios.get(`${API_BASE_URL}/products/${id}`);
       const productData = productRes.data.product || productRes.data;
       setProduct(productData);
-      setReviews(productData.ratings || []);
+
+      await fetchReviews(id);
 
       const params = new URLSearchParams();
       params.append('category', productData.category);
@@ -58,7 +61,7 @@ const ProductDetails = () => {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, fetchReviews]);
 
   useEffect(() => {
     fetchProductDetails();
@@ -74,8 +77,9 @@ const ProductDetails = () => {
   const isInWishlist = wishlistItems.some((item) => item._id === id);
 
   const handleWishlistToggle = async () => {
-    if (!localStorage.getItem('token')) {
-      toast.info('Please login to manage your wishlist');
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.info('Please sign in to manage your wishlist');
       navigate('/sign-in');
       return;
     }
@@ -94,26 +98,14 @@ const ProductDetails = () => {
 
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
-    if (!localStorage.getItem('token')) {
-      toast.info('Please login to submit a review');
-      navigate('/sign-in');
-      return;
-    }
-
-    try {
-      const response = await axios.post(
-        `${API_BASE_URL}/products/rating`,
-        { productId: id, star: rating, comment },
-        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
-      );
-      setReviews([...reviews, response.data.rating]);
+    const success = await addReview(id, rating, comment);
+    if (success) {
       setRating(0);
       setComment('');
       setShowReviewForm(false);
-      toast.success('Review submitted successfully!');
-      fetchProductDetails();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to submit review');
+      await fetchProductDetails(); // Refresh product details to update totalrating and reviews
+    } else if (!localStorage.getItem('token')) {
+      navigate('/sign-in');
     }
   };
 
@@ -247,16 +239,12 @@ const ProductDetails = () => {
                     }`}
                   />
                 ))}
-                <span className="ml-2 text-gray-600 text-sm">
-                  ({product.ratings?.length || 0} reviews)
-                </span>
+                <span className="ml-2 text-gray-600 text-sm">({reviews.length} reviews)</span>
               </div>
               <p className="text-gray-600 text-sm mb-4 capitalize">
                 {product.brand} • {product.category}
               </p>
-              <p className="text-2xl font-bold text-gray-900 mb-6">
-                Rs {product.price.toLocaleString()}
-              </p>
+              <p className="text-2xl font-bold text-gray-900 mb-6">Rs {product.price.toLocaleString()}</p>
 
               {product.quantity > 0 && (
                 <div className="flex items-center mb-6">
@@ -295,8 +283,9 @@ const ProductDetails = () => {
               </button>
               <button
                 onClick={() => {
-                  if (!localStorage.getItem('token')) {
-                    toast.info('Please login to add products to compare');
+                  const token = localStorage.getItem('token');
+                  if (!token) {
+                    toast.info('Please sign in to add products to compare');
                     navigate('/sign-in');
                     return;
                   }
@@ -331,7 +320,9 @@ const ProductDetails = () => {
             </FilterSection>
 
             <FilterSection title="Reviews" section="reviews">
-              {reviews.length > 0 ? (
+              {reviewLoading ? (
+                <p className="text-gray-600">Loading reviews...</p>
+              ) : reviews.length > 0 ? (
                 <div className="space-y-6">
                   {reviews.map((review, idx) => (
                     <div key={idx} className="border-b border-gray-200 pb-4">
@@ -350,7 +341,7 @@ const ProductDetails = () => {
                           {new Date(review.createdAt).toLocaleDateString()}
                         </span>
                       </div>
-                      <p className="text-gray-700">{review.comment}</p>
+                      <p className="text-gray-700">{review.comment || 'No comment provided'}</p>
                     </div>
                   ))}
                 </div>
@@ -392,10 +383,10 @@ const ProductDetails = () => {
                   </div>
                   <button
                     type="submit"
-                    disabled={rating === 0 || !comment.trim()}
+                    disabled={rating === 0 || reviewLoading}
                     className="bg-blue-900 text-white px-6 py-3 rounded-full hover:bg-blue-800 transition-all duration-300 shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed"
                   >
-                    Submit Review
+                    {reviewLoading ? 'Submitting...' : 'Submit Review'}
                   </button>
                 </form>
               )}
@@ -419,9 +410,7 @@ const ProductDetails = () => {
                         <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1 hover:text-blue-500 transition-colors">
                           {related.title}
                         </h3>
-                        <p className="text-xl font-bold text-gray-900">
-                          Rs {related.price.toLocaleString()}
-                        </p>
+                        <p className="text-xl font-bold text-gray-900">Rs {related.price.toLocaleString()}</p>
                       </Link>
                     </motion.div>
                   ))}

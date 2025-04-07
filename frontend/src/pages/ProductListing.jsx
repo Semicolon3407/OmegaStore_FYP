@@ -24,11 +24,12 @@ const ProductListing = () => {
   const queryParams = new URLSearchParams(location.search);
   const initialSearch = queryParams.get('search') || '';
   const initialCategory = queryParams.get('category') || 'All';
+  const initialBrand = queryParams.get('brand') || 'All';
 
   const [searchTerm, setSearchTerm] = useState(initialSearch);
   const [categoryFilter, setCategoryFilter] = useState(initialCategory);
   const [colorFilter, setColorFilter] = useState('All');
-  const [brandFilter, setBrandFilter] = useState('All');
+  const [brandFilter, setBrandFilter] = useState(initialBrand);
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [sortBy, setSortBy] = useState('');
@@ -89,8 +90,10 @@ const ProductListing = () => {
     const params = new URLSearchParams(location.search);
     const newSearch = params.get('search') || '';
     const newCategory = params.get('category') || 'All';
+    const newBrand = params.get('brand') || 'All';
     setSearchTerm(newSearch);
     setCategoryFilter(newCategory);
+    setBrandFilter(newBrand);
   }, [location.search]);
 
   const handleSearch = useCallback(() => {
@@ -248,7 +251,9 @@ const ProductListing = () => {
             Discover Our Products
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Find the perfect products that match your style and needs
+            {categoryFilter !== 'All' && brandFilter !== 'All'
+              ? `Showing ${brandFilter} in ${categoryFilter}`
+              : 'Find the perfect products that match your style and needs'}
           </p>
         </motion.div>
 
@@ -269,6 +274,7 @@ const ProductListing = () => {
                 const params = new URLSearchParams();
                 if (e.target.value) params.append('search', e.target.value);
                 if (categoryFilter !== 'All') params.append('category', categoryFilter);
+                if (brandFilter !== 'All') params.append('brand', brandFilter);
                 navigate(`/products?${params.toString()}`);
               }}
               className="w-full pl-12 pr-6 py-4 border-0 focus:ring-2 focus:ring-blue-500 focus:outline-none text-gray-700"
@@ -329,6 +335,7 @@ const ProductListing = () => {
                         const params = new URLSearchParams();
                         if (searchTerm) params.append('search', searchTerm);
                         if (category !== 'All') params.append('category', category);
+                        if (brandFilter !== 'All') params.append('brand', brandFilter);
                         navigate(`/products?${params.toString()}`);
                       }}
                       className="h-4 w-4 text-blue-900 border-gray-300 focus:ring-blue-500"
@@ -353,7 +360,14 @@ const ProductListing = () => {
                       id={`brand-${brand}`}
                       name="brand"
                       checked={brandFilter === brand}
-                      onChange={() => setBrandFilter(brand)}
+                      onChange={() => {
+                        setBrandFilter(brand);
+                        const params = new URLSearchParams();
+                        if (searchTerm) params.append('search', searchTerm);
+                        if (categoryFilter !== 'All') params.append('category', categoryFilter);
+                        if (brand !== 'All') params.append('brand', brand);
+                        navigate(`/products?${params.toString()}`);
+                      }}
                       className="h-4 w-4 text-blue-900 border-gray-300 focus:ring-blue-500"
                     />
                     <label

@@ -18,11 +18,11 @@ import AdminUserManagement from "./pages/admin/AdminUserManagement";
 import AdminRevenue from "./pages/admin/AdminRevenue";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminChat from "./pages/admin/AdminChat";
-import AdminSaleProducts from "./pages/admin/AdminSaleProducts"; // New import
+import AdminSaleProducts from "./pages/admin/AdminSaleProducts";
 import UserChat from "./pages/UserChat";
 import Locations from "./pages/Locations";
-import SaleProducts from "./pages/SaleProducts"; // Updated import
-import SaleProductDetails from "./pages/SaleProductDetails"; // New import
+import SaleProducts from "./pages/SaleProducts";
+import SaleProductDetails from "./pages/SaleProductDetails";
 import SignIn from "./pages/SignIn";
 import Contact from "./pages/Contact";
 import CreateAccount from "./pages/CreateAccount";
@@ -34,6 +34,7 @@ import { CartProvider } from "./Context/cartContext";
 import { WishlistProvider } from "./Context/wishlistContext";
 import { CompareProvider } from "./Context/compareContext";
 import { ChatProvider } from "./Context/chatContext";
+import { ReviewProvider } from "./Context/ReviewContext"; // Added ReviewProvider
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -199,8 +200,10 @@ function App() {
         <WishlistProvider>
           <CompareProvider>
             <ChatProvider>
-              <ToastContainer position="bottom-right" autoClose={3000} />
-              <Layout />
+              <ReviewProvider> {/* Added ReviewProvider */}
+                <ToastContainer position="bottom-right" autoClose={3000} />
+                <Layout />
+              </ReviewProvider>
             </ChatProvider>
           </CompareProvider>
         </WishlistProvider>

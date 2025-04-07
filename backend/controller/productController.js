@@ -1,3 +1,4 @@
+// controllers/productController.js
 const Product = require("../models/productModel");
 const User = require("../models/userModel");
 const asyncHandler = require("express-async-handler");
@@ -21,9 +22,9 @@ const createProduct = asyncHandler(async (req, res) => {
       product: newProduct,
     });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: error.message 
+    res.status(500).json({
+      success: false,
+      message: error.message,
     });
   }
 });
@@ -32,27 +33,27 @@ const createProduct = asyncHandler(async (req, res) => {
 const getSingleProduct = asyncHandler(async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Invalid product ID" 
+      return res.status(400).json({
+        success: false,
+        message: "Invalid product ID",
       });
     }
 
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findById(req.params.id).populate('ratings.postedby', 'name');
     if (!product) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Product not found" 
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
       });
     }
-    res.status(200).json({ 
-      success: true, 
-      product 
+    res.status(200).json({
+      success: true,
+      product,
     });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: error.message 
+    res.status(500).json({
+      success: false,
+      message: error.message,
     });
   }
 });
@@ -60,29 +61,29 @@ const getSingleProduct = asyncHandler(async (req, res) => {
 // Get all products with filtering, sorting, and pagination
 const getAllProducts = asyncHandler(async (req, res) => {
   try {
-    const { 
-      category, 
-      brand, 
-      price, 
-      color, 
-      sortBy, 
-      sortOrder, 
-      excludeFields, 
-      limit, 
+    const {
+      category,
+      brand,
+      price,
+      color,
+      sortBy,
+      sortOrder,
+      excludeFields,
+      limit,
       page,
-      search 
+      search,
     } = req.query;
-    
+
     let filter = {};
-    
+
     // Search functionality
     if (search) {
       filter.$or = [
         { title: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } }
+        { description: { $regex: search, $options: "i" } },
       ];
     }
-    
+
     if (category) filter.category = category;
     if (brand) filter.brand = brand;
     if (price) {
@@ -108,8 +109,9 @@ const getAllProducts = asyncHandler(async (req, res) => {
         .select(projection)
         .sort(sort)
         .skip(skip)
-        .limit(limitNumber),
-      Product.countDocuments(filter)
+        .limit(limitNumber)
+        .populate('ratings.postedby', 'name'),
+      Product.countDocuments(filter),
     ]);
 
     res.status(200).json({
@@ -122,13 +124,13 @@ const getAllProducts = asyncHandler(async (req, res) => {
         totalProducts,
         totalPages: Math.ceil(totalProducts / limitNumber),
         hasNextPage: pageNumber * limitNumber < totalProducts,
-        hasPreviousPage: pageNumber > 1
+        hasPreviousPage: pageNumber > 1,
       },
     });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: error.message 
+    res.status(500).json({
+      success: false,
+      message: error.message,
     });
   }
 });
@@ -137,9 +139,9 @@ const getAllProducts = asyncHandler(async (req, res) => {
 const updateProduct = asyncHandler(async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Invalid product ID" 
+      return res.status(400).json({
+        success: false,
+        message: "Invalid product ID",
       });
     }
 
@@ -148,66 +150,60 @@ const updateProduct = asyncHandler(async (req, res) => {
     }
 
     const product = await Product.findByIdAndUpdate(
-      req.params.id, 
-      req.body, 
+      req.params.id,
+      req.body,
       { new: true, runValidators: true }
-    );
+    ).populate('ratings.postedby', 'name');
 
     if (!product) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Product not found" 
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
       });
     }
 
-    res.status(200).json({ 
-      success: true, 
-      message: "Product updated successfully!", 
-      product 
+    res.status(200).json({
+      success: true,
+      message: "Product updated successfully!",
+      product,
     });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: error.message 
+    res.status(500).json({
+      success: false,
+      message: error.message,
     });
   }
 });
 
 // Delete product
-// Delete product
 const deleteProduct = asyncHandler(async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Invalid product ID" 
+      return res.status(400).json({
+        success: false,
+        message: "Invalid product ID",
       });
     }
 
     const product = await Product.findByIdAndDelete(req.params.id);
     if (!product) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Product not found" 
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
       });
     }
 
-    // Add the missing response statement
     res.status(200).json({
       success: true,
-      message: "Product deleted successfully!"
+      message: "Product deleted successfully!",
     });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: error.message 
+    res.status(500).json({
+      success: false,
+      message: error.message,
     });
   }
-}); 
-
-   
-    
-
+});
 
 // Product rating
 const rating = asyncHandler(async (req, res) => {
@@ -215,38 +211,35 @@ const rating = asyncHandler(async (req, res) => {
     const { star, comment, prodId } = req.body;
 
     if (!prodId || !mongoose.Types.ObjectId.isValid(prodId)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Invalid product ID" 
+      return res.status(400).json({
+        success: false,
+        message: "Invalid product ID",
       });
     }
 
     if (!star || star < 1 || star > 5) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Please provide a rating between 1 and 5" 
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a rating between 1 and 5",
       });
     }
 
-    const product = await Product.findById(prodId);
+    const product = await Product.findById(prodId).populate('ratings.postedby', 'name');
     if (!product) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Product not found" 
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
       });
     }
 
-    // Check if user already rated this product
     const existingRatingIndex = product.ratings.findIndex(
       (r) => r.postedby.toString() === req.user._id.toString()
     );
 
     if (existingRatingIndex >= 0) {
-      // Update existing rating
       product.ratings[existingRatingIndex].star = star;
       product.ratings[existingRatingIndex].comment = comment || "";
     } else {
-      // Add new rating
       product.ratings.push({
         star,
         comment: comment || "",
@@ -254,33 +247,33 @@ const rating = asyncHandler(async (req, res) => {
       });
     }
 
-    // Calculate average rating
     const totalRating = product.ratings.length;
     const ratingSum = product.ratings.reduce((sum, r) => sum + r.star, 0);
-    product.totalrating = Math.round((ratingSum / totalRating) * 10) / 10; // Round to 1 decimal place
+    product.totalrating = totalRating > 0 ? Math.round((ratingSum / totalRating) * 10) / 10 : 0;
 
     await product.save();
+    const updatedProduct = await Product.findById(prodId).populate('ratings.postedby', 'name');
 
     res.status(200).json({
       success: true,
-      message: existingRatingIndex >= 0 
-        ? "Rating updated successfully" 
+      message: existingRatingIndex >= 0
+        ? "Rating updated successfully"
         : "Rating added successfully",
-      product,
+      product: updatedProduct,
     });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: error.message 
+    res.status(500).json({
+      success: false,
+      message: error.message,
     });
   }
 });
 
-module.exports = { 
-  createProduct, 
-  getSingleProduct, 
-  getAllProducts, 
-  updateProduct, 
+module.exports = {
+  createProduct,
+  getSingleProduct,
+  getAllProducts,
+  updateProduct,
   deleteProduct,
-  rating 
+  rating,
 };
