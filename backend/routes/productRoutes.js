@@ -22,6 +22,6 @@ router.get("/", getAllProducts); // Get all products (public)
 router.get("/:id", getSingleProduct); // Get single product (public)
 
 // User interaction routes (requires authentication)
-router.put('/rating',  rating);
+router.put('/rating', authMiddleware, rating); // Rating requires only authentication
 
 module.exports = router;

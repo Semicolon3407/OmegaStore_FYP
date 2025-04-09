@@ -19,6 +19,7 @@ import AdminRevenue from "./pages/admin/AdminRevenue";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminChat from "./pages/admin/AdminChat";
 import AdminSaleProducts from "./pages/admin/AdminSaleProducts";
+import AdminHeroBanners from "./pages/admin/AdminHeroBanners";
 import UserChat from "./pages/UserChat";
 import Locations from "./pages/Locations";
 import SaleProducts from "./pages/SaleProducts";
@@ -34,7 +35,7 @@ import { CartProvider } from "./Context/cartContext";
 import { WishlistProvider } from "./Context/wishlistContext";
 import { CompareProvider } from "./Context/compareContext";
 import { ChatProvider } from "./Context/chatContext";
-import { ReviewProvider } from "./Context/ReviewContext"; // Added ReviewProvider
+import { ReviewProvider } from "./Context/ReviewContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -134,46 +135,20 @@ const Layout = () => {
               <Route path="/products/:id" element={<ProductDetails />} />
               <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
               <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
-              <Route
-                path="/order-confirmation"
-                element={<ProtectedRoute><OrderConfirmation /></ProtectedRoute>}
-              />
+              <Route path="/order-confirmation" element={<ProtectedRoute><OrderConfirmation /></ProtectedRoute>} />
               <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
               <Route path="/compare" element={<ProtectedRoute><Compare /></ProtectedRoute>} />
               <Route path="/chat" element={<ProtectedRoute><UserChat /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
-              <Route
-                path="/admin"
-                element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>}
-              />
-              <Route
-                path="/admin/products"
-                element={<ProtectedRoute requireAdmin><AdminProducts /></ProtectedRoute>}
-              />
-              <Route
-                path="/admin/orders"
-                element={<ProtectedRoute requireAdmin><AdminOrders /></ProtectedRoute>}
-              />
-              <Route
-                path="/admin/revenue"
-                element={<ProtectedRoute requireAdmin><AdminRevenue /></ProtectedRoute>}
-              />
-              <Route
-                path="/admin/analytics"
-                element={<ProtectedRoute requireAdmin><AdminAnalytics /></ProtectedRoute>}
-              />
-              <Route
-                path="/admin/users"
-                element={<ProtectedRoute requireAdmin><AdminUserManagement /></ProtectedRoute>}
-              />
-              <Route
-                path="/admin/chat"
-                element={<ProtectedRoute requireAdmin><AdminChat /></ProtectedRoute>}
-              />
-              <Route
-                path="/admin/sale-products"
-                element={<ProtectedRoute requireAdmin><AdminSaleProducts /></ProtectedRoute>}
-              />
+              <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
+              <Route path="/admin/products" element={<ProtectedRoute requireAdmin><AdminProducts /></ProtectedRoute>} />
+              <Route path="/admin/orders" element={<ProtectedRoute requireAdmin><AdminOrders /></ProtectedRoute>} />
+              <Route path="/admin/revenue" element={<ProtectedRoute requireAdmin><AdminRevenue /></ProtectedRoute>} />
+              <Route path="/admin/analytics" element={<ProtectedRoute requireAdmin><AdminAnalytics /></ProtectedRoute>} />
+              <Route path="/admin/users" element={<ProtectedRoute requireAdmin><AdminUserManagement /></ProtectedRoute>} />
+              <Route path="/admin/chat" element={<ProtectedRoute requireAdmin><AdminChat /></ProtectedRoute>} />
+              <Route path="/admin/sale-products" element={<ProtectedRoute requireAdmin><AdminSaleProducts /></ProtectedRoute>} />
+              <Route path="/admin/hero-banners" element={<ProtectedRoute requireAdmin><AdminHeroBanners /></ProtectedRoute>} />
               <Route path="/locations" element={<Locations />} />
               <Route path="/sale" element={<SaleProducts />} />
               <Route path="/sale-products/:id" element={<SaleProductDetails />} />
@@ -200,7 +175,7 @@ function App() {
         <WishlistProvider>
           <CompareProvider>
             <ChatProvider>
-              <ReviewProvider> {/* Added ReviewProvider */}
+              <ReviewProvider>
                 <ToastContainer position="bottom-right" autoClose={3000} />
                 <Layout />
               </ReviewProvider>

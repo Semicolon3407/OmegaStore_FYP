@@ -11,20 +11,21 @@ import {
   ChevronRight,
   MessageSquare,
   Tag,
+  Image,
 } from "lucide-react";
 import axios from "axios";
 import Navbar from "../../components/AdminNav";
 
 const AdminDashboard = () => {
   const [totalProducts, setTotalProducts] = useState(0);
-  const [totalSaleProducts, setTotalSaleProducts] = useState(0); // New state for sale products
+  const [totalSaleProducts, setTotalSaleProducts] = useState(0);
   const [totalUsers, setTotalUsers] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   const API_PRODUCTS_URL = "http://localhost:5001/api/products";
-  const API_SALE_PRODUCTS_URL = "http://localhost:5001/api/sale-products"; // New API endpoint
+  const API_SALE_PRODUCTS_URL = "http://localhost:5001/api/sale-products";
   const API_USERS_URL = "http://localhost:5001/api/user/all-users";
   const API_CHAT_URL = "http://localhost:5001/api/chat/unread-count";
 
@@ -32,15 +33,12 @@ const AdminDashboard = () => {
     try {
       setLoading(true);
 
-      // Fetch total products
       const productsResponse = await axios.get(API_PRODUCTS_URL);
       setTotalProducts(productsResponse.data.products.length);
 
-      // Fetch total sale products
       const saleProductsResponse = await axios.get(API_SALE_PRODUCTS_URL);
       setTotalSaleProducts(saleProductsResponse.data.saleProducts.length);
 
-      // Fetch total users
       const usersResponse = await axios.get(API_USERS_URL, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -48,7 +46,6 @@ const AdminDashboard = () => {
       });
       setTotalUsers(usersResponse.data.length);
 
-      // Fetch unread messages count
       const chatResponse = await axios.get(API_CHAT_URL, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -67,7 +64,7 @@ const AdminDashboard = () => {
     const role = localStorage.getItem("role");
 
     if (!token || role !== "admin") {
-      navigate("/sign-in"); // Updated to match your app's route
+      navigate("/sign-in");
     } else {
       fetchStats();
     }
@@ -75,15 +72,15 @@ const AdminDashboard = () => {
 
   const stats = [
     { title: "Total Products", value: totalProducts, icon: Package, link: "/admin/products" },
-    { title: "Total Sale Products", value: totalSaleProducts, icon: Tag, link: "/admin/sale-products" }, // New stat
-    { title: "Total Orders", value: 1250, icon: ShoppingCart, link: "/admin/orders" }, // Static for now
-    { title: "Total Revenue", value: "Rs 25,000", icon: IndianRupee, link: "/admin/revenue" }, // Static for now
+    { title: "Total Sale Products", value: totalSaleProducts, icon: Tag, link: "/admin/sale-products" },
+    { title: "Total Orders", value: 1250, icon: ShoppingCart, link: "/admin/orders" },
+    { title: "Total Revenue", value: "Rs 25,000", icon: IndianRupee, link: "/admin/revenue" },
     { title: "Total Users", value: totalUsers, icon: Users, link: "/admin/users" },
   ];
 
   const quickLinks = [
     { title: "Manage Products", icon: Package, link: "/admin/products" },
-    { title: "Manage Sale Products", icon: Tag, link: "/admin/sale-products" }, // New quick link
+    { title: "Manage Sale Products", icon: Tag, link: "/admin/sale-products" },
     { title: "Manage Orders", icon: ShoppingCart, link: "/admin/orders" },
     { title: "User Management", icon: Users, link: "/admin/users" },
     { title: "View Analytics", icon: BarChart, link: "/admin/analytics" },
@@ -94,6 +91,7 @@ const AdminDashboard = () => {
       link: "/admin/chat",
       badge: unreadMessages > 0 ? unreadMessages : null,
     },
+    { title: "Manage Hero Banners", icon: Image, link: "/admin/hero-banners" }, // New quick link
   ];
 
   return (
@@ -102,7 +100,6 @@ const AdminDashboard = () => {
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-6 text-gray-900">Admin Dashboard</h1>
 
-        {/* Stats Section */}
         {loading ? (
           <div className="text-center text-gray-500">
             <svg
@@ -141,7 +138,6 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* Quick Links Section */}
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {quickLinks.map((link, index) => (
             <Link

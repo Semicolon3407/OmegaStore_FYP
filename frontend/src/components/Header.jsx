@@ -7,7 +7,7 @@ import { useCompare } from "../Context/compareContext.jsx";
 import { useWishlist } from "../Context/wishlistContext";
 import { useChat } from "../Context/chatContext";
 import { toast } from "react-toastify";
-
+import logo from "/assets/images/logo.png";
 const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -183,10 +183,14 @@ const Header = () => {
             >
               <Menu size={24} className="text-gray-700" />
             </button>
-            <Link to="/" className="text-2xl font-bold tracking-tight">
+            {/* <Link to="/" className="text-2xl font-bold tracking-tight">
               <span className="text-gray-900">Omega</span>
               <span className="text-blue-900">Store</span>
-            </Link>
+            </Link> */}
+            <Link to="/" className="text-2xl font-bold tracking-tight">
+  <img src={logo} alt="OmegaStore Logo" className="h-20 w-auto" />
+</Link>
+
           </div>
 
           <form onSubmit={handleSearch} className="hidden lg:flex flex-1 max-w-2xl mx-8">

@@ -14,10 +14,12 @@ const enqRouter = require("./routes/enqRoutes");
 const couponRouter = require("./routes/couponRoutes");
 const uploadRouter = require("./routes/uploadRoutes");
 const chatRouter = require("./routes/chatRoutes");
-const saleProductRouter = require("./routes/saleProductRoutes"); // New import for sale products
+const saleProductRouter = require("./routes/saleProductRoutes");
+const heroBannerRouter = require("./routes/heroBannerRoutes");
 const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
 const cors = require("cors");
+const path = require("path");
 
 const app = express();
 const server = http.createServer(app);
@@ -31,21 +33,17 @@ const io = new Server(server, {
 const PORT = process.env.PORT || 5001;
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
 
-// Socket.IO connection handling
 io.on("connection", (socket) => {
   console.log("New client connected:", socket.id);
-
   socket.on("join", (userId) => {
     socket.join(userId);
     console.log(`User ${userId} joined their room`);
   });
-
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
   });
 });
 
-// Make io available to routes
 app.set("io", io);
 
 app.use(morgan("dev"));
@@ -61,7 +59,8 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Register routes
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 app.use("/api/user", authRouter);
 app.use("/api/products", productRouter);
 app.use("/api/category", categoryRouter);
@@ -71,7 +70,8 @@ app.use("/api/color", colorRouter);
 app.use("/api/enquiry", enqRouter);
 app.use("/api/upload", uploadRouter);
 app.use("/api/chat", chatRouter);
-app.use("/api/sale-products", saleProductRouter); // New route for sale products
+app.use("/api/sale-products", saleProductRouter);
+app.use("/api/hero-banners", heroBannerRouter);
 
 app.use(notFound);
 app.use(errorHandler);
@@ -84,7 +84,6 @@ const startServer = async () => {
   try {
     await dbConnect();
     console.log("Database connected successfully");
-
     server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`CORS enabled for origin: ${FRONTEND_ORIGIN}`);
