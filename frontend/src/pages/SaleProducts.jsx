@@ -1,3 +1,4 @@
+// src/pages/SaleProductListing.jsx
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Search, ShoppingCart, Filter, X, ChevronDown, ChevronUp, Heart, Star, GitCompare, Tag } from 'lucide-react';
@@ -35,6 +36,7 @@ const SaleProductListing = () => {
   const [sortOrder, setSortOrder] = useState('asc');
   const [limit] = useState(12);
   const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
@@ -61,8 +63,7 @@ const SaleProductListing = () => {
       if (categoryFilter !== 'All') params.append('category', categoryFilter);
       if (brandFilter !== 'All') params.append('brand', brandFilter);
       if (colorFilter !== 'All') params.append('color', colorFilter);
-      if (minPrice) params.append('minPrice', minPrice);
-      if (maxPrice) params.append('maxPrice', maxPrice);
+      if (minPrice && maxPrice) params.append('price', `${minPrice}-${maxPrice}`); // Updated to match backend
       if (sortBy) params.append('sortBy', sortBy);
       if (sortOrder) params.append('sortOrder', sortOrder);
       if (searchTerm) params.append('search', searchTerm);
@@ -71,6 +72,7 @@ const SaleProductListing = () => {
 
       const response = await axios.get(`http://localhost:5001/api/sale-products?${params.toString()}`);
       setProducts(response.data.saleProducts || []);
+      setTotalPages(response.data.pagination?.totalPages || 1); // Update total pages for pagination
       setError(null);
     } catch (err) {
       setError('Failed to load sale products. Please try again later.');
@@ -94,39 +96,13 @@ const SaleProductListing = () => {
   }, [location.search]);
 
   const handleSearch = useCallback(() => {
-    if (!searchTerm.trim()) {
-      fetchProducts();
-      return;
-    }
-
-    const searchTermLower = searchTerm.toLowerCase();
-    const filtered = allProducts.filter(
-      (product) =>
-        product.title.toLowerCase().includes(searchTermLower) &&
-        (categoryFilter === 'All' || product.category === categoryFilter) &&
-        (brandFilter === 'All' || product.brand === brandFilter) &&
-        (colorFilter === 'All' || product.color === colorFilter) &&
-        (!minPrice || product.salePrice >= parseFloat(minPrice)) &&
-        (!maxPrice || product.salePrice <= parseFloat(maxPrice))
-    );
-
-    const sorted = [...filtered].sort((a, b) => {
-      if (sortBy === 'salePrice') {
-        return sortOrder === 'asc' ? a.salePrice - b.salePrice : b.salePrice - a.salePrice;
-      } else if (sortBy === 'title') {
-        return sortOrder === 'asc'
-          ? a.title.localeCompare(b.title)
-          : b.title.localeCompare(a.title);
-      }
-      return 0;
-    });
-
-    setProducts(sorted);
-  }, [searchTerm, allProducts, categoryFilter, brandFilter, colorFilter, minPrice, maxPrice, sortBy, sortOrder, fetchProducts]);
+    setPage(1); // Reset to page 1 on new search
+    fetchProducts();
+  }, [fetchProducts]);
 
   useEffect(() => {
     handleSearch();
-  }, [handleSearch]);
+  }, [handleSearch, categoryFilter, brandFilter, colorFilter, minPrice, maxPrice, sortBy, sortOrder, searchTerm]);
 
   const isInWishlist = (productId) => wishlistItems.some((item) => item._id === productId);
 
@@ -429,6 +405,7 @@ const SaleProductListing = () => {
                   <option value="">Default</option>
                   <option value="salePrice">Price</option>
                   <option value="title">Name</option>
+                  <option value="totalrating">Rating</option> {/* Added sorting by rating */}
                 </select>
                 {sortBy && (
                   <select
@@ -537,12 +514,15 @@ const SaleProductListing = () => {
                                 key={i}
                                 size={16}
                                 className={`${
-                                  i < (product.totalrating || 0)
+                                  i < Math.round(product.totalrating || 0)
                                     ? 'text-yellow-400 fill-yellow-400'
                                     : 'text-gray-300'
                                 }`}
                               />
                             ))}
+                            <span className="ml-2 text-sm text-gray-600">
+                              ({product.ratings?.length || 0} reviews)
+                            </span>
                           </div>
                           <h3 className="font-semibold text-lg text-gray-900 mb-2 line-clamp-1 group-hover:text-blue-500 transition-colors">
                             {product.title}
@@ -610,11 +590,11 @@ const SaleProductListing = () => {
                         Previous
                       </button>
                       <span className="px-4 py-2 text-gray-900 font-medium bg-gray-100 rounded-full">
-                        Page {page}
+                        Page {page} of {totalPages}
                       </span>
                       <button
                         onClick={() => setPage((p) => p + 1)}
-                        disabled={products.length < limit}
+                        disabled={page === totalPages}
                         className="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-full transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Next

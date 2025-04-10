@@ -1,4 +1,3 @@
-// models/productModel.js
 const mongoose = require('mongoose');
 
 const productSchema = new mongoose.Schema(
@@ -64,7 +63,7 @@ const productSchema = new mongoose.Schema(
         },
         comment: {
           type: String,
-          default: '', // Allow empty comments but include the field
+          default: '',
         },
         postedby: {
           type: mongoose.Schema.Types.ObjectId,
@@ -73,19 +72,19 @@ const productSchema = new mongoose.Schema(
         },
         createdAt: {
           type: Date,
-          default: Date.now, // Explicitly add timestamp for each rating
+          default: Date.now,
         },
       },
     ],
     totalrating: {
       type: Number,
-      default: 0, // Store the average rating
+      default: 0,
       min: [0, 'Total rating cannot be negative'],
       max: [5, 'Total rating cannot exceed 5'],
     },
   },
   {
-    timestamps: true, // Adds createdAt and updatedAt to the product document
+    timestamps: true,
   }
 );
 

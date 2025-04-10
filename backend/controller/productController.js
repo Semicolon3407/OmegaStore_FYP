@@ -39,7 +39,7 @@ const getSingleProduct = asyncHandler(async (req, res) => {
       });
     }
 
-    const product = await Product.findById(req.params.id).populate('ratings.postedby', 'name');
+    const product = await Product.findById(req.params.id).populate('ratings.postedby', 'firstname lastname'); // Updated to fetch firstname and lastname
     if (!product) {
       return res.status(404).json({
         success: false,
@@ -110,7 +110,7 @@ const getAllProducts = asyncHandler(async (req, res) => {
         .sort(sort)
         .skip(skip)
         .limit(limitNumber)
-        .populate('ratings.postedby', 'name'),
+        .populate('ratings.postedby', 'firstname lastname'), // Updated to fetch firstname and lastname
       Product.countDocuments(filter),
     ]);
 
@@ -153,7 +153,7 @@ const updateProduct = asyncHandler(async (req, res) => {
       req.params.id,
       req.body,
       { new: true, runValidators: true }
-    ).populate('ratings.postedby', 'name');
+    ).populate('ratings.postedby', 'firstname lastname'); // Updated to fetch firstname and lastname
 
     if (!product) {
       return res.status(404).json({
@@ -207,66 +207,40 @@ const deleteProduct = asyncHandler(async (req, res) => {
 
 // Product rating
 const rating = asyncHandler(async (req, res) => {
-  try {
-    const { star, comment, prodId } = req.body;
+  const { star, comment, prodId } = req.body;
+  const userId = req.user._id;
 
-    if (!prodId || !mongoose.Types.ObjectId.isValid(prodId)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid product ID",
-      });
-    }
-
-    if (!star || star < 1 || star > 5) {
-      return res.status(400).json({
-        success: false,
-        message: "Please provide a rating between 1 and 5",
-      });
-    }
-
-    const product = await Product.findById(prodId).populate('ratings.postedby', 'name');
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: "Product not found",
-      });
-    }
-
-    const existingRatingIndex = product.ratings.findIndex(
-      (r) => r.postedby.toString() === req.user._id.toString()
-    );
-
-    if (existingRatingIndex >= 0) {
-      product.ratings[existingRatingIndex].star = star;
-      product.ratings[existingRatingIndex].comment = comment || "";
-    } else {
-      product.ratings.push({
-        star,
-        comment: comment || "",
-        postedby: req.user._id,
-      });
-    }
-
-    const totalRating = product.ratings.length;
-    const ratingSum = product.ratings.reduce((sum, r) => sum + r.star, 0);
-    product.totalrating = totalRating > 0 ? Math.round((ratingSum / totalRating) * 10) / 10 : 0;
-
-    await product.save();
-    const updatedProduct = await Product.findById(prodId).populate('ratings.postedby', 'name');
-
-    res.status(200).json({
-      success: true,
-      message: existingRatingIndex >= 0
-        ? "Rating updated successfully"
-        : "Rating added successfully",
-      product: updatedProduct,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+  // Input validation
+  if (!prodId || !mongoose.Types.ObjectId.isValid(prodId)) {
+    return res.status(400).json({ success: false, message: "Invalid product ID" });
   }
+  if (!star || star < 1 || star > 5) {
+    return res.status(400).json({ success: false, message: "Rating must be between 1 and 5" });
+  }
+
+  // Find the product
+  const product = await Product.findById(prodId);
+  if (!product) {
+    return res.status(404).json({ success: false, message: "Product not found" });
+  }
+
+  // Add new rating (no check for existing rating to allow multiple reviews)
+  product.ratings.push({ star, comment: comment || "", postedby: userId });
+
+  // Calculate average rating
+  const totalRatings = product.ratings.length;
+  const ratingSum = product.ratings.reduce((sum, r) => sum + r.star, 0);
+  product.totalrating = totalRatings > 0 ? Number((ratingSum / totalRatings).toFixed(1)) : 0;
+
+  // Save and populate
+  await product.save();
+  const updatedProduct = await Product.findById(prodId).populate('ratings.postedby', 'firstname lastname'); // Updated to fetch firstname and lastname
+
+  res.status(200).json({
+    success: true,
+    message: "Rating added successfully",
+    product: updatedProduct,
+  });
 });
 
 module.exports = {

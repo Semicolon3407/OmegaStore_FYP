@@ -1,3 +1,4 @@
+// controllers/saleProductController.js
 const SaleProduct = require("../models/saleProductModel");
 const User = require("../models/userModel");
 const asyncHandler = require("express-async-handler");
@@ -38,7 +39,7 @@ const getSingleSaleProduct = asyncHandler(async (req, res) => {
       });
     }
 
-    const saleProduct = await SaleProduct.findById(req.params.id);
+    const saleProduct = await SaleProduct.findById(req.params.id).populate('ratings.postedby', 'firstname lastname'); // Populate firstname and lastname
     if (!saleProduct) {
       return res.status(404).json({ 
         success: false, 
@@ -108,7 +109,8 @@ const getAllSaleProducts = asyncHandler(async (req, res) => {
         .select(projection)
         .sort(sort)
         .skip(skip)
-        .limit(limitNumber),
+        .limit(limitNumber)
+        .populate('ratings.postedby', 'firstname lastname'), // Populate firstname and lastname
       SaleProduct.countDocuments(filter)
     ]);
 
@@ -151,7 +153,7 @@ const updateSaleProduct = asyncHandler(async (req, res) => {
       req.params.id, 
       req.body, 
       { new: true, runValidators: true }
-    );
+    ).populate('ratings.postedby', 'firstname lastname'); // Populate firstname and lastname
 
     if (!saleProduct) {
       return res.status(404).json({ 
@@ -205,69 +207,40 @@ const deleteSaleProduct = asyncHandler(async (req, res) => {
 
 // Sale product rating
 const rating = asyncHandler(async (req, res) => {
-  try {
-    const { star, comment, prodId } = req.body;
+  const { star, comment, prodId } = req.body;
+  const userId = req.user._id;
 
-    if (!prodId || !mongoose.Types.ObjectId.isValid(prodId)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Invalid sale product ID" 
-      });
-    }
-
-    if (!star || star < 1 || star > 5) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Please provide a rating between 1 and 5" 
-      });
-    }
-
-    const saleProduct = await SaleProduct.findById(prodId);
-    if (!saleProduct) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Sale product not found" 
-      });
-    }
-
-    // Check if user already rated this sale product
-    const existingRatingIndex = saleProduct.ratings.findIndex(
-      (r) => r.postedby.toString() === req.user._id.toString()
-    );
-
-    if (existingRatingIndex >= 0) {
-      // Update existing rating
-      saleProduct.ratings[existingRatingIndex].star = star;
-      saleProduct.ratings[existingRatingIndex].comment = comment || "";
-    } else {
-      // Add new rating
-      saleProduct.ratings.push({
-        star,
-        comment: comment || "",
-        postedby: req.user._id,
-      });
-    }
-
-    // Calculate average rating
-    const totalRating = saleProduct.ratings.length;
-    const ratingSum = saleProduct.ratings.reduce((sum, r) => sum + r.star, 0);
-    saleProduct.totalrating = Math.round((ratingSum / totalRating) * 10) / 10; // Round to 1 decimal place
-
-    await saleProduct.save();
-
-    res.status(200).json({
-      success: true,
-      message: existingRatingIndex >= 0 
-        ? "Rating updated successfully" 
-        : "Rating added successfully",
-      saleProduct,
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: error.message 
-    });
+  // Input validation
+  if (!prodId || !mongoose.Types.ObjectId.isValid(prodId)) {
+    return res.status(400).json({ success: false, message: "Invalid sale product ID" });
   }
+  if (!star || star < 1 || star > 5) {
+    return res.status(400).json({ success: false, message: "Rating must be between 1 and 5" });
+  }
+
+  // Find the sale product
+  const saleProduct = await SaleProduct.findById(prodId);
+  if (!saleProduct) {
+    return res.status(404).json({ success: false, message: "Sale product not found" });
+  }
+
+  // Add new rating (no check for existing rating to allow multiple reviews)
+  saleProduct.ratings.push({ star, comment: comment || "", postedby: userId });
+
+  // Calculate average rating
+  const totalRatings = saleProduct.ratings.length;
+  const ratingSum = saleProduct.ratings.reduce((sum, r) => sum + r.star, 0);
+  saleProduct.totalrating = totalRatings > 0 ? Number((ratingSum / totalRatings).toFixed(1)) : 0;
+
+  // Save and populate
+  await saleProduct.save();
+  const updatedSaleProduct = await SaleProduct.findById(prodId).populate('ratings.postedby', 'firstname lastname'); // Populate firstname and lastname
+
+  res.status(200).json({
+    success: true,
+    message: "Rating added successfully",
+    saleProduct: updatedSaleProduct,
+  });
 });
 
 module.exports = { 

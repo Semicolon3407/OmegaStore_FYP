@@ -22,6 +22,6 @@ router.get("/", getAllSaleProducts);
 router.get("/:id", getSingleSaleProduct);
 
 // User interaction routes (requires authentication)
-router.put("/rating", authMiddleware, rating); // Rate a sale product
+router.put("/slaeitem/rating", authMiddleware, rating); // Rate a sale product
 
 module.exports = router;

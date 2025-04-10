@@ -36,6 +36,7 @@ import { WishlistProvider } from "./Context/wishlistContext";
 import { CompareProvider } from "./Context/compareContext";
 import { ChatProvider } from "./Context/chatContext";
 import { ReviewProvider } from "./Context/ReviewContext";
+import { SaleReviewProvider } from "./Context/SaleReviewContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -176,8 +177,10 @@ function App() {
           <CompareProvider>
             <ChatProvider>
               <ReviewProvider>
-                <ToastContainer position="bottom-right" autoClose={3000} />
-                <Layout />
+                <SaleReviewProvider>
+                  <ToastContainer position="bottom-right" autoClose={3000} />
+                  <Layout />
+                </SaleReviewProvider>
               </ReviewProvider>
             </ChatProvider>
           </CompareProvider>

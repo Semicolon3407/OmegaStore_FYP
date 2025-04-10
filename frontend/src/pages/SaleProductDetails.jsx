@@ -1,3 +1,4 @@
+// src/pages/SaleProductDetails.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -7,6 +8,7 @@ import { toast } from 'react-toastify';
 import { useCart } from '../Context/cartContext';
 import { useWishlist } from '../Context/wishlistContext';
 import { useCompare } from '../Context/compareContext';
+import { useSaleReview } from '../Context/SaleReviewContext';
 
 const SaleProductDetails = () => {
   const { id } = useParams();
@@ -14,6 +16,7 @@ const SaleProductDetails = () => {
   const { addToCart } = useCart();
   const { wishlistItems, addToWishlist, removeFromWishlist } = useWishlist();
   const { addToCompare } = useCompare();
+  const { reviews, loading: reviewLoading, fetchReviews, addReview } = useSaleReview();
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -22,7 +25,6 @@ const SaleProductDetails = () => {
   const [quantity, setQuantity] = useState(1);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [wishlistLoading, setWishlistLoading] = useState(false);
-  const [reviews, setReviews] = useState([]);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -31,6 +33,9 @@ const SaleProductDetails = () => {
     reviews: true,
     related: true,
   });
+  const [reviewSortOrder, setReviewSortOrder] = useState('desc'); // Newest first by default
+  const [reviewPage, setReviewPage] = useState(1); // For pagination
+  const reviewsPerPage = 5; // Number of reviews per page
 
   const API_BASE_URL = 'http://localhost:5001/api';
 
@@ -42,15 +47,16 @@ const SaleProductDetails = () => {
       const productRes = await axios.get(`${API_BASE_URL}/sale-products/${id}`);
       const productData = productRes.data.saleProduct || productRes.data;
       setProduct(productData);
-      setReviews(productData.ratings || []);
+
+      await fetchReviews(id);
 
       const params = new URLSearchParams();
       params.append('category', productData.category);
-      params.append('limit', 4);
-      params.append('excludeId', id);
+      params.append('limit', 5); // Fetch 5 related products
 
       const relatedRes = await axios.get(`${API_BASE_URL}/sale-products?${params.toString()}`);
-      setRelatedProducts(relatedRes.data.saleProducts || []);
+      const related = (relatedRes.data.saleProducts || []).filter((p) => p._id !== id); // Filter out current product
+      setRelatedProducts(related.slice(0, 4)); // Limit to 4 related products
     } catch (err) {
       console.error('Error fetching sale product details:', err);
       setError(err.response?.data?.message || 'Failed to load sale product details. Please try again.');
@@ -58,7 +64,7 @@ const SaleProductDetails = () => {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, fetchReviews]);
 
   useEffect(() => {
     fetchProductDetails();
@@ -84,9 +90,13 @@ const SaleProductDetails = () => {
     try {
       if (isInWishlist) {
         await removeFromWishlist(product._id);
+        toast.success('Removed from wishlist');
       } else {
         await addToWishlist(product._id);
+        toast.success('Added to wishlist');
       }
+    } catch (err) {
+      toast.error('Failed to update wishlist');
     } finally {
       setWishlistLoading(false);
     }
@@ -94,26 +104,15 @@ const SaleProductDetails = () => {
 
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
-    if (!localStorage.getItem('token')) {
-      toast.info('Please login to submit a review');
-      navigate('/sign-in');
-      return;
-    }
-
-    try {
-      const response = await axios.post(
-        `${API_BASE_URL}/sale-products/rating`,
-        { productId: id, star: rating, comment },
-        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
-      );
-      setReviews([...reviews, response.data.rating]);
+    const success = await addReview(id, rating, comment);
+    if (success) {
       setRating(0);
       setComment('');
       setShowReviewForm(false);
-      toast.success('Review submitted successfully!');
-      fetchProductDetails();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to submit review');
+      setReviewPage(1); // Reset to first page to show the new review
+      await fetchProductDetails();
+    } else if (!localStorage.getItem('token')) {
+      navigate('/sign-in');
     }
   };
 
@@ -136,6 +135,20 @@ const SaleProductDetails = () => {
       {expandedSections[section] && children}
     </div>
   );
+
+  // Sort and paginate reviews
+  const sortedReviews = [...reviews].sort((a, b) => {
+    const dateA = new Date(a.createdAt);
+    const dateB = new Date(b.createdAt);
+    return reviewSortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+  });
+
+  const paginatedReviews = sortedReviews.slice(
+    (reviewPage - 1) * reviewsPerPage,
+    reviewPage * reviewsPerPage
+  );
+
+  const totalReviewPages = Math.ceil(reviews.length / reviewsPerPage);
 
   if (loading) {
     return (
@@ -254,13 +267,13 @@ const SaleProductDetails = () => {
                   />
                 ))}
                 <span className="ml-2 text-gray-600 text-sm">
-                  ({product.ratings?.length || 0} reviews)
+                  ({reviews.length} reviews)
                 </span>
               </div>
               <p className="text-gray-600 text-sm mb-4 capitalize">
                 {product.brand} • {product.category}
               </p>
-              
+
               <div className="flex items-center mb-6">
                 <span className="text-gray-500 line-through mr-3 text-lg">
                   Rs {product.price.toLocaleString()}
@@ -345,29 +358,70 @@ const SaleProductDetails = () => {
             </FilterSection>
 
             <FilterSection title="Reviews" section="reviews">
-              {reviews.length > 0 ? (
-                <div className="space-y-6">
-                  {reviews.map((review, idx) => (
-                    <div key={idx} className="border-b border-gray-200 pb-4">
-                      <div className="flex items-center mb-2">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            size={16}
-                            className={`${
-                              i < review.star ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
-                            }`}
-                          />
-                        ))}
-                        <span className="ml-2 text-sm text-gray-600">
-                          by {review.postedby?.name || 'Anonymous'} •{' '}
-                          {new Date(review.createdAt).toLocaleDateString()}
-                        </span>
+              {reviewLoading ? (
+                <p className="text-gray-600">Loading reviews...</p>
+              ) : reviews.length > 0 ? (
+                <>
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-gray-600">{reviews.length} reviews</span>
+                    <select
+                      value={reviewSortOrder}
+                      onChange={(e) => {
+                        setReviewSortOrder(e.target.value);
+                        setReviewPage(1); // Reset to first page when sorting changes
+                      }}
+                      className="p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100"
+                    >
+                      <option value="desc">Newest First</option>
+                      <option value="asc">Oldest First</option>
+                    </select>
+                  </div>
+                  <div className="space-y-6">
+                    {paginatedReviews.map((review, idx) => (
+                      <div key={idx} className="border-b border-gray-200 pb-4">
+                        <div className="flex items-center mb-2">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              size={16}
+                              className={`${
+                                i < review.star ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
+                              }`}
+                            />
+                          ))}
+                          <span className="ml-2 text-sm text-gray-600">
+                            by {review.postedby ? `${review.postedby.firstname} ${review.postedby.lastname}` : 'Anonymous'} •{' '}
+                            {new Date(review.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <p className="text-gray-700">{review.comment || 'No comment provided'}</p>
                       </div>
-                      <p className="text-gray-700">{review.comment}</p>
+                    ))}
+                  </div>
+                  {totalReviewPages > 1 && (
+                    <div className="flex justify-center mt-6">
+                      <nav className="flex items-center space-x-4 bg-white p-4 rounded-full shadow-md">
+                        <button
+                          onClick={() => setReviewPage((p) => Math.max(1, p - 1))}
+                          disabled={reviewPage === 1}
+                          className="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-full transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Previous
+                        </button>
+                        <span className="px-4 py-2 text-gray-900 font-medium bg-gray-100 rounded-full">
+                          Page {reviewPage} of {totalReviewPages}
+                        </span>
+                        <button
+                          onClick={() => setReviewPage((p) => Math.min(totalReviewPages, p + 1))}
+                          disabled={reviewPage === totalReviewPages}
+                          className="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-full transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Next
+                        </button>
+                      </nav>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               ) : (
                 <p className="text-gray-600">No reviews yet. Be the first to review this product!</p>
               )}
@@ -406,10 +460,10 @@ const SaleProductDetails = () => {
                   </div>
                   <button
                     type="submit"
-                    disabled={rating === 0 || !comment.trim()}
+                    disabled={rating === 0 || reviewLoading}
                     className="bg-blue-900 text-white px-6 py-3 rounded-full hover:bg-blue-800 transition-all duration-300 shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed"
                   >
-                    Submit Review
+                    {reviewLoading ? 'Submitting...' : 'Submit Review'}
                   </button>
                 </form>
               )}

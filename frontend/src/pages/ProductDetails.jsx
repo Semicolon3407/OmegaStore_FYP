@@ -337,7 +337,7 @@ const ProductDetails = () => {
                           />
                         ))}
                         <span className="ml-2 text-sm text-gray-600">
-                          by {review.postedby?.name || 'Anonymous'} •{' '}
+                          by {review.postedby ? `${review.postedby.firstname} ${review.postedby.lastname}` : 'Anonymous'} •{' '}
                           {new Date(review.createdAt).toLocaleDateString()}
                         </span>
                       </div>
