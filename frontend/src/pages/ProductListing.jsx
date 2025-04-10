@@ -536,6 +536,11 @@ const ProductListing = () => {
                               Sold Out
                             </div>
                           )}
+                          {product.isOnSale && (
+                            <div className="absolute top-4 left-4 bg-green-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
+                              Sale - {product.discountPercentage}%
+                            </div>
+                          )}
                         </div>
 
                         <div className="p-6">
@@ -558,9 +563,22 @@ const ProductListing = () => {
                           <p className="text-gray-600 text-sm mb-3 capitalize">
                             {product.brand} • {product.category}
                           </p>
-                          <p className="text-xl font-bold text-gray-900">
-                            Rs {product.price.toLocaleString()}
-                          </p>
+                          <div className="flex items-center">
+                            {product.isOnSale && product.discountedPrice !== null ? (
+                              <>
+                                <p className="text-xl font-bold text-gray-900">
+                                  Rs {product.discountedPrice.toLocaleString()}
+                                </p>
+                                <p className="text-sm text-gray-500 line-through ml-2">
+                                  Rs {product.price.toLocaleString()}
+                                </p>
+                              </>
+                            ) : (
+                              <p className="text-xl font-bold text-gray-900">
+                                Rs {product.price.toLocaleString()}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </Link>
 

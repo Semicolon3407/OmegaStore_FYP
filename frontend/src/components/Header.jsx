@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { ShoppingCart, Heart, Phone, Search, ChevronDown, Menu, User, LogOut, GitCompare, MessageSquare } from "lucide-react";
@@ -8,18 +8,20 @@ import { useWishlist } from "../Context/wishlistContext";
 import { useChat } from "../Context/chatContext";
 import { toast } from "react-toastify";
 import logo from "/assets/images/logo.png";
+
 const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
   const initialCategory = queryParams.get("category") || "All Categories";
-  const initialBrand = queryParams.get("brand") || "";
 
   const [searchCategory, setSearchCategory] = useState(initialCategory);
   const [searchQuery, setSearchQuery] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userRole, setUserRole] = useState("");
+  const [auth, setAuth] = useState(() => ({
+    isLoggedIn: !!localStorage.getItem("token"),
+    userRole: localStorage.getItem("role") || ""
+  }));
   const [isScrolled, setIsScrolled] = useState(false);
   const [categories, setCategories] = useState([]);
   const [brandsByCategory, setBrandsByCategory] = useState({});
@@ -32,11 +34,13 @@ const Header = () => {
   const timeoutRef = useRef(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const role = localStorage.getItem("role");
-    setIsLoggedIn(!!token);
-    setUserRole(role || "");
-
+    const handleStorageChange = () => {
+      setAuth({
+        isLoggedIn: !!localStorage.getItem("token"),
+        userRole: localStorage.getItem("role") || ""
+      });
+    };
+    
     const fetchCategoriesAndBrands = async () => {
       try {
         const response = await axios.get("http://localhost:5001/api/products");
@@ -46,17 +50,22 @@ const Header = () => {
 
         const brandsMap = {};
         uniqueCategories.forEach((cat) => {
-          const brands = [...new Set(products.filter((p) => p.category === cat).map((p) => p.brand))];
-          brandsMap[cat] = brands;
+          brandsMap[cat] = [...new Set(products.filter((p) => p.category === cat).map((p) => p.brand))];
         });
         setBrandsByCategory(brandsMap);
       } catch (error) {
         console.error("Failed to fetch categories and brands:", error);
+        toast.error("Failed to load categories");
       }
     };
-    fetchCategoriesAndBrands();
 
-    // Update searchCategory based on URL params
+    handleStorageChange();
+    fetchCategoriesAndBrands();
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  useEffect(() => {
     setSearchCategory(queryParams.get("category") || "All Categories");
   }, [location.search]);
 
@@ -72,11 +81,9 @@ const Header = () => {
         setIsDropdownOpen(false);
       }
     };
-    if (isDropdownOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
+    document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isDropdownOpen]);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -85,15 +92,13 @@ const Header = () => {
         withCredentials: true,
       });
       localStorage.clear();
-      setIsLoggedIn(false);
-      setUserRole("");
+      setAuth({ isLoggedIn: false, userRole: "" });
       toast.success("Logged out successfully");
       navigate("/");
     } catch (error) {
       console.error("Logout failed:", error);
       localStorage.clear();
-      setIsLoggedIn(false);
-      setUserRole("");
+      setAuth({ isLoggedIn: false, userRole: "" });
       toast.info("Session cleared");
       navigate("/");
     }
@@ -101,24 +106,24 @@ const Header = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      const searchParams = new URLSearchParams();
-      searchParams.append("search", searchQuery.trim());
-      if (searchCategory !== "All Categories") {
-        searchParams.append("category", searchCategory);
-      }
-      navigate(`/products?${searchParams.toString()}`);
-      setSearchQuery("");
-      setIsMenuOpen(false);
+    if (!searchQuery.trim()) return;
+    
+    const searchParams = new URLSearchParams();
+    searchParams.append("search", searchQuery.trim());
+    if (searchCategory !== "All Categories") {
+      searchParams.append("category", searchCategory);
     }
+    navigate(`/products?${searchParams.toString()}`);
+    setSearchQuery("");
+    setIsMenuOpen(false);
   };
 
   const handleBrandClick = (brand, category) => {
     const searchParams = new URLSearchParams();
     searchParams.append("brand", brand);
-    searchParams.append("category", category); // Include category in URL
+    searchParams.append("category", category);
     navigate(`/products?${searchParams.toString()}`);
-    setSearchCategory(category); // Update the search category in the header
+    setSearchCategory(category);
     setIsDropdownOpen(false);
     setIsMenuOpen(false);
   };
@@ -134,9 +139,7 @@ const Header = () => {
   };
 
   const handleMouseLeave = () => {
-    timeoutRef.current = setTimeout(() => {
-      setIsDropdownOpen(false);
-    }, 200);
+    timeoutRef.current = setTimeout(() => setIsDropdownOpen(false), 200);
   };
 
   const isActive = (path) => location.pathname === path;
@@ -148,9 +151,9 @@ const Header = () => {
         isScrolled ? "bg-gray-100 shadow-md" : "bg-gray-100 shadow-sm"
       }`}
     >
-      {!isLoggedIn && (
+      {!auth.isLoggedIn && (
         <div className="hidden lg:block bg-blue-900 text-white py-2 text-sm">
-          <div className="container mx-auto px-6 flex justify(condition)between items-center">
+          <div className="container mx-auto px-6 flex justify-between items-center">
             <div className="flex items-center space-x-6">
               <Link to="/sign-in" className="flex items-center space-x-2 hover:text-blue-300 transition-colors">
                 <User size={16} />
@@ -183,14 +186,9 @@ const Header = () => {
             >
               <Menu size={24} className="text-gray-700" />
             </button>
-            {/* <Link to="/" className="text-2xl font-bold tracking-tight">
-              <span className="text-gray-900">Omega</span>
-              <span className="text-blue-900">Store</span>
-            </Link> */}
             <Link to="/" className="text-2xl font-bold tracking-tight">
-  <img src={logo} alt="OmegaStore Logo" className="h-20 w-auto" />
-</Link>
-
+              <img src={logo} alt="OmegaStore Logo" className="h-20 w-auto" />
+            </Link>
           </div>
 
           <form onSubmit={handleSearch} className="hidden lg:flex flex-1 max-w-2xl mx-8">
@@ -219,7 +217,7 @@ const Header = () => {
           </form>
 
           <div className="flex items-center space-x-6">
-            {isLoggedIn ? (
+            {auth.isLoggedIn ? (
               <>
                 <IconLink to="/wishlist" count={wishlistItems.length} icon={<Heart size={24} />}>
                   Wishlist
@@ -244,7 +242,7 @@ const Header = () => {
                     <div className="p-4 space-y-2">
                       <MenuItem to="/profile">My Profile</MenuItem>
                       <MenuItem to="/order-history">Order History</MenuItem>
-                      {userRole === "admin" && <MenuItem to="/admin">Admin Panel</MenuItem>}
+                      {auth.userRole === "admin" && <MenuItem to="/admin">Admin Panel</MenuItem>}
                       <button
                         onClick={handleLogout}
                         className="w-full flex items-center px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -268,76 +266,78 @@ const Header = () => {
 
       <nav className={`bg-gray-100 border-t border-gray-200 ${isMenuOpen ? "block" : "hidden lg:block"}`}>
         <div className="container mx-auto px-6 py-2">
-          <ul className="flex flex-col lg:flex-row lg:items-center lg:space-x-8">
-            <NavItem to="/" isActive={isActive} onClick={closeMenu}>
-              Home
-            </NavItem>
-            <li
-              className="w-full lg:w-auto relative group"
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-            >
-              <Link
-                to="/products"
-                onClick={(e) => {
-                  if (window.innerWidth < 1024) {
-                    e.preventDefault();
-                    toggleDropdown(e);
-                  } else {
-                    closeMenu();
-                  }
-                }}
-                className={`block px-4 py-3 lg:py-2 text-base font-medium rounded-lg transition-all ${
-                  isActive("/products")
-                    ? "text-blue-900 bg-blue-50 lg:bg-transparent lg:border-b-2 lg:border-blue-900"
-                    : "text-gray-700 hover:text-blue-500 hover:bg-gray-200 lg:hover:bg-transparent"
-                }`}
+          <Suspense fallback={<div>Loading navigation...</div>}>
+            <ul className="flex flex-col lg:flex-row lg:items-center lg:space-x-8">
+              <NavItem to="/" isActive={isActive} onClick={closeMenu}>
+                Home
+              </NavItem>
+              <li
+                className="w-full lg:w-auto relative group"
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
               >
-                All Products
-                <ChevronDown size={16} className="inline ml-1" />
-              </Link>
-              {isDropdownOpen && (
-                <div
-                  ref={dropdownRef}
-                  className="lg:absolute left-0 top-full w-full lg:w-[48rem] bg-white rounded-xl shadow-xl border border-gray-200 z-50 p-4 max-h-96 overflow-y-auto"
-                  onMouseEnter={handleMouseEnter}
-                  onMouseLeave={handleMouseLeave}
+                <Link
+                  to="/products"
+                  onClick={(e) => {
+                    if (window.innerWidth < 1024) {
+                      e.preventDefault();
+                      toggleDropdown(e);
+                    } else {
+                      closeMenu();
+                    }
+                  }}
+                  className={`block px-4 py-3 lg:py-2 text-base font-medium rounded-lg transition-all ${
+                    isActive("/products")
+                      ? "text-blue-900 bg-blue-50 lg:bg-transparent lg:border-b-2 lg:border-blue-900"
+                      : "text-gray-700 hover:text-blue-500 hover:bg-gray-200 lg:hover:bg-transparent"
+                  }`}
                 >
-                  <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-                    {categories.map((category) => (
-                      <div key={category} className="flex flex-col">
-                        <h3 className="font-semibold text-gray-900 px-2 py-1 capitalize">{category}</h3>
-                        <ul className="pl-2 space-y-1">
-                          {brandsByCategory[category]?.map((brand) => (
-                            <li key={brand}>
-                              <button
-                                onClick={() => handleBrandClick(brand, category)}
-                                className="block w-full text-left px-2 py-1 text-sm text-gray-700 hover:text-blue-500 hover:bg-gray-100 rounded-lg transition-colors capitalize"
-                              >
-                                {brand}
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
+                  All Products
+                  <ChevronDown size={16} className="inline ml-1" />
+                </Link>
+                {isDropdownOpen && (
+                  <div
+                    ref={dropdownRef}
+                    className="lg:absolute left-0 top-full w-full lg:w-[48rem] bg-white rounded-xl shadow-xl border border-gray-200 z-50 p-4 max-h-96 overflow-y-auto"
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
+                  >
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                      {categories.map((category) => (
+                        <div key={category} className="flex flex-col">
+                          <h3 className="font-semibold text-gray-900 px-2 py-1 capitalize">{category}</h3>
+                          <ul className="pl-2 space-y-1">
+                            {brandsByCategory[category]?.map((brand) => (
+                              <li key={brand}>
+                                <button
+                                  onClick={() => handleBrandClick(brand, category)}
+                                  className="block w-full text-left px-2 py-1 text-sm text-gray-700 hover:text-blue-500 hover:bg-gray-100 rounded-lg transition-colors capitalize"
+                                >
+                                  {brand}
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </li>
-            <NavItem to="/sale" isActive={isActive} onClick={closeMenu}>
-              Sale
-              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                HOT
-              </span>
-            </NavItem>
-            <NavItem to="/locations" isActive={isActive} onClick={closeMenu}>
-              Stores
-            </NavItem>
-            <NavItem to="/warranty" isActive={isActive} onClick={closeMenu}>
-              Warranty
-            </NavItem>
-          </ul>
+                )}
+              </li>
+              <NavItem to="/sale" isActive={isActive} onClick={closeMenu}>
+                Sale
+                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                  HOT
+                </span>
+              </NavItem>
+              <NavItem to="/locations" isActive={isActive} onClick={closeMenu}>
+                Stores
+              </NavItem>
+              <NavItem to="/warranty" isActive={isActive} onClick={closeMenu}>
+                Warranty
+              </NavItem>
+            </ul>
+          </Suspense>
         </div>
       </nav>
 
@@ -366,7 +366,7 @@ const Header = () => {
               ))}
             </select>
           </form>
-          {!isLoggedIn && (
+          {!auth.isLoggedIn && (
             <div className="space-y-2">
               <Link to="/sign-in" className="block py-2 px-4 text-gray-700 hover:bg-gray-300 rounded-lg" onClick={closeMenu}>
                 Sign In
@@ -382,7 +382,7 @@ const Header = () => {
   );
 };
 
-const NavItem = ({ to, isActive, children, onClick }) => (
+const NavItem = React.memo(({ to, isActive, children, onClick }) => (
   <li className="w-full lg:w-auto">
     <Link
       to={to}
@@ -396,9 +396,9 @@ const NavItem = ({ to, isActive, children, onClick }) => (
       {children}
     </Link>
   </li>
-);
+));
 
-const IconLink = ({ to, count, icon, children }) => (
+const IconLink = React.memo(({ to, count, icon, children }) => (
   <Link to={to} className="relative p-2 group">
     <span className="text-gray-700 hover:text-blue-500 transition-colors">{icon}</span>
     {count > 0 && (
@@ -408,12 +408,12 @@ const IconLink = ({ to, count, icon, children }) => (
     )}
     <span className="sr-only">{children}</span>
   </Link>
-);
+));
 
-const MenuItem = ({ to, children }) => (
+const MenuItem = React.memo(({ to, children }) => (
   <Link to={to} className="block px-4 py-2 text-base text-gray-700 hover:bg-gray-100 hover:text-blue-500 rounded-lg transition-colors">
     {children}
   </Link>
-);
+));
 
 export default Header;

@@ -1,4 +1,3 @@
-// src/pages/ProductDetails.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -207,6 +206,11 @@ const ProductDetails = () => {
                     Sold Out
                   </div>
                 )}
+                {product.isOnSale && (
+                  <div className="absolute top-4 left-4 bg-green-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
+                    Sale - {product.discountPercentage}%
+                  </div>
+                )}
               </div>
               <div className="flex gap-4 mt-6 overflow-x-auto pb-2">
                 {product.images?.slice(0, 3).map((img, idx) => (
@@ -244,7 +248,22 @@ const ProductDetails = () => {
               <p className="text-gray-600 text-sm mb-4 capitalize">
                 {product.brand} • {product.category}
               </p>
-              <p className="text-2xl font-bold text-gray-900 mb-6">Rs {product.price.toLocaleString()}</p>
+              <div className="flex items-center mb-6">
+                {product.isOnSale && product.discountedPrice !== null ? (
+                  <>
+                    <p className="text-2xl font-bold text-gray-900">
+                      Rs {product.discountedPrice.toLocaleString()}
+                    </p>
+                    <p className="text-lg text-gray-500 line-through ml-4">
+                      Rs {product.price.toLocaleString()}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-2xl font-bold text-gray-900">
+                    Rs {product.price.toLocaleString()}
+                  </p>
+                )}
+              </div>
 
               {product.quantity > 0 && (
                 <div className="flex items-center mb-6">
@@ -316,6 +335,10 @@ const ProductDetails = () => {
                 <li><strong>Brand:</strong> {product.brand || 'N/A'}</li>
                 <li><strong>Category:</strong> {product.category || 'N/A'}</li>
                 <li><strong>Color:</strong> {product.color || 'N/A'}</li>
+                <li><strong>On Sale:</strong> {product.isOnSale ? 'Yes' : 'No'}</li>
+                {product.isOnSale && (
+                  <li><strong>Discount:</strong> {product.discountPercentage}%</li>
+                )}
               </ul>
             </FilterSection>
 
@@ -410,7 +433,20 @@ const ProductDetails = () => {
                         <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1 hover:text-blue-500 transition-colors">
                           {related.title}
                         </h3>
-                        <p className="text-xl font-bold text-gray-900">Rs {related.price.toLocaleString()}</p>
+                        {related.isOnSale && related.discountedPrice !== null ? (
+                          <div className="flex items-center">
+                            <p className="text-xl font-bold text-gray-900">
+                              Rs {related.discountedPrice.toLocaleString()}
+                            </p>
+                            <p className="text-sm text-gray-500 line-through ml-2">
+                              Rs {related.price.toLocaleString()}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-xl font-bold text-gray-900">
+                            Rs {related.price.toLocaleString()}
+                          </p>
+                        )}
                       </Link>
                     </motion.div>
                   ))}

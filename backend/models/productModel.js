@@ -82,6 +82,16 @@ const productSchema = new mongoose.Schema(
       min: [0, 'Total rating cannot be negative'],
       max: [5, 'Total rating cannot exceed 5'],
     },
+    isOnSale: {
+      type: Boolean,
+      default: false,
+    },
+    discountPercentage: {
+      type: Number,
+      default: 0,
+      min: [0, 'Discount percentage cannot be negative'],
+      max: [100, 'Discount percentage cannot exceed 100'],
+    },
   },
   {
     timestamps: true,

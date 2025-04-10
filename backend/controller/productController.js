@@ -1,4 +1,3 @@
-// controllers/productController.js
 const Product = require("../models/productModel");
 const User = require("../models/userModel");
 const asyncHandler = require("express-async-handler");
@@ -39,16 +38,23 @@ const getSingleProduct = asyncHandler(async (req, res) => {
       });
     }
 
-    const product = await Product.findById(req.params.id).populate('ratings.postedby', 'firstname lastname'); // Updated to fetch firstname and lastname
+    const product = await Product.findById(req.params.id).populate('ratings.postedby', 'firstname lastname');
     if (!product) {
       return res.status(404).json({
         success: false,
         message: "Product not found",
       });
     }
+    // Calculate discounted price if on sale
+    const discountedPrice = product.isOnSale
+      ? product.price * (1 - product.discountPercentage / 100)
+      : null;
     res.status(200).json({
       success: true,
-      product,
+      product: {
+        ...product.toObject(),
+        discountedPrice,
+      },
     });
   } catch (error) {
     res.status(500).json({
@@ -110,14 +116,25 @@ const getAllProducts = asyncHandler(async (req, res) => {
         .sort(sort)
         .skip(skip)
         .limit(limitNumber)
-        .populate('ratings.postedby', 'firstname lastname'), // Updated to fetch firstname and lastname
+        .populate('ratings.postedby', 'firstname lastname'),
       Product.countDocuments(filter),
     ]);
+
+    // Add discounted price to each product
+    const productsWithDiscount = products.map(product => {
+      const discountedPrice = product.isOnSale
+        ? product.price * (1 - product.discountPercentage / 100)
+        : null;
+      return {
+        ...product.toObject(),
+        discountedPrice,
+      };
+    });
 
     res.status(200).json({
       success: true,
       count: products.length,
-      products,
+      products: productsWithDiscount,
       pagination: {
         currentPage: pageNumber,
         limit: limitNumber,
@@ -153,7 +170,7 @@ const updateProduct = asyncHandler(async (req, res) => {
       req.params.id,
       req.body,
       { new: true, runValidators: true }
-    ).populate('ratings.postedby', 'firstname lastname'); // Updated to fetch firstname and lastname
+    ).populate('ratings.postedby', 'firstname lastname');
 
     if (!product) {
       return res.status(404).json({
@@ -162,10 +179,17 @@ const updateProduct = asyncHandler(async (req, res) => {
       });
     }
 
+    const discountedPrice = product.isOnSale
+      ? product.price * (1 - product.discountPercentage / 100)
+      : null;
+
     res.status(200).json({
       success: true,
       message: "Product updated successfully!",
-      product,
+      product: {
+        ...product.toObject(),
+        discountedPrice,
+      },
     });
   } catch (error) {
     res.status(500).json({
@@ -224,7 +248,7 @@ const rating = asyncHandler(async (req, res) => {
     return res.status(404).json({ success: false, message: "Product not found" });
   }
 
-  // Add new rating (no check for existing rating to allow multiple reviews)
+  // Add new rating
   product.ratings.push({ star, comment: comment || "", postedby: userId });
 
   // Calculate average rating
@@ -234,12 +258,19 @@ const rating = asyncHandler(async (req, res) => {
 
   // Save and populate
   await product.save();
-  const updatedProduct = await Product.findById(prodId).populate('ratings.postedby', 'firstname lastname'); // Updated to fetch firstname and lastname
+  const updatedProduct = await Product.findById(prodId).populate('ratings.postedby', 'firstname lastname');
+
+  const discountedPrice = updatedProduct.isOnSale
+    ? updatedProduct.price * (1 - updatedProduct.discountPercentage / 100)
+    : null;
 
   res.status(200).json({
     success: true,
     message: "Rating added successfully",
-    product: updatedProduct,
+    product: {
+      ...updatedProduct.toObject(),
+      discountedPrice,
+    },
   });
 });
 
