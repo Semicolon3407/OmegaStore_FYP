@@ -1,10 +1,13 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { CheckCircle, Package } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import CheckoutProgress from "../components/CheckoutProgress";
 
 const OrderConfirmation = () => {
+  const location = useLocation();
+  const orderId = location.state?.orderId || "N/A";
+
   return (
     <div className="container mx-auto px-4 py-8">
       <CheckoutProgress currentStep={3} />
@@ -35,8 +38,7 @@ const OrderConfirmation = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 0.5 }}
         >
-          Thank you for your purchase. Your order has been received and is being
-          processed.
+          Thank you for your purchase. Your order has been received and is being processed.
         </motion.p>
         <motion.div
           className="bg-gray-100 p-4 rounded-md mb-8 inline-block"
@@ -45,7 +47,7 @@ const OrderConfirmation = () => {
           transition={{ delay: 0.5, duration: 0.5 }}
         >
           <h2 className="text-lg font-semibold mb-2">Order Number</h2>
-          <p className="text-2xl font-bold text-primary-600">#12345</p>
+          <p className="text-2xl font-bold text-primary-600">{orderId}</p>
         </motion.div>
         <motion.div
           className="flex justify-center items-center mb-8"

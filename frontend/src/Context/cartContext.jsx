@@ -9,6 +9,7 @@ export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
   const [cartLoading, setCartLoading] = useState(false);
   const [cartError, setCartError] = useState(null);
+  const [totalAfterDiscount, setTotalAfterDiscount] = useState(null);
   const navigate = useNavigate();
 
   const fetchCart = useCallback(async () => {
@@ -19,6 +20,7 @@ export const CartProvider = ({ children }) => {
 
       if (!token) {
         setCartItems([]);
+        setTotalAfterDiscount(null);
         return;
       }
 
@@ -30,8 +32,10 @@ export const CartProvider = ({ children }) => {
 
       if (data && data.products) {
         setCartItems(data.products);
+        setTotalAfterDiscount(data.totalAfterDiscount || null);
       } else {
         setCartItems([]);
+        setTotalAfterDiscount(null);
       }
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Failed to fetch cart';
@@ -60,8 +64,8 @@ export const CartProvider = ({ children }) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // Update cart items with the latest data from the server
       setCartItems(data.products || []);
+      setTotalAfterDiscount(data.totalAfterDiscount || null);
       return true;
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to add item to cart');
@@ -84,6 +88,7 @@ export const CartProvider = ({ children }) => {
       });
 
       setCartItems(data.products || []);
+      setTotalAfterDiscount(data.totalAfterDiscount || null);
       return true;
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to remove item');
@@ -108,6 +113,7 @@ export const CartProvider = ({ children }) => {
       );
 
       setCartItems(data.products || []);
+      setTotalAfterDiscount(data.totalAfterDiscount || null);
       return true;
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update quantity');
@@ -130,9 +136,34 @@ export const CartProvider = ({ children }) => {
       });
 
       setCartItems([]);
+      setTotalAfterDiscount(null);
       return true;
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to empty cart');
+      if (error.response?.status === 401) navigate('/sign-in');
+      return false;
+    }
+  };
+
+  const applyCoupon = async (coupon) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.info('Please login to apply coupon');
+        navigate('/sign-in');
+        return false;
+      }
+
+      const { data } = await axios.post(
+        'http://localhost:5001/api/user/cart/applycoupon',
+        { coupon },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setTotalAfterDiscount(data);
+      return true;
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to apply coupon');
       if (error.response?.status === 401) navigate('/sign-in');
       return false;
     }
@@ -151,6 +182,7 @@ export const CartProvider = ({ children }) => {
     const handleAuthChange = () => {
       if (!localStorage.getItem('token')) {
         setCartItems([]);
+        setTotalAfterDiscount(null);
       } else {
         fetchCart();
       }
@@ -166,11 +198,13 @@ export const CartProvider = ({ children }) => {
     itemCount,
     cartLoading,
     cartError,
+    totalAfterDiscount,
     fetchCart,
     addToCart,
     removeFromCart,
     updateCartItem,
     emptyCart,
+    applyCoupon,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

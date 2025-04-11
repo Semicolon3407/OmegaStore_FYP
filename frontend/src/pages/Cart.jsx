@@ -4,11 +4,26 @@ import { Trash2, ShoppingBag, Plus, Minus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useCart } from '../Context/cartContext';
+import { useCoupon } from '../Context/couponContext';
+import axios from 'axios';
 
 const Cart = () => {
-  const { cartItems, fetchCart, updateCartItem, removeFromCart, emptyCart, cartLoading, cartError } = useCart();
+  const {
+    cartItems,
+    fetchCart,
+    updateCartItem,
+    removeFromCart,
+    emptyCart,
+    cartLoading,
+    cartError,
+    cartTotal,
+    totalAfterDiscount,
+  } = useCart();
+  const { coupons, couponLoading } = useCoupon();
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -48,6 +63,8 @@ const Cart = () => {
       const success = await updateCartItem(productId, newCount);
       if (!success) {
         toast.error('Failed to update quantity');
+      } else {
+        setAppliedCoupon(null); // Reset coupon on cart change
       }
     } catch (error) {
       console.error('Error updating quantity:', error);
@@ -71,6 +88,7 @@ const Cart = () => {
       const success = await removeFromCart(productId);
       if (success) {
         toast.success('Item removed from cart');
+        setAppliedCoupon(null); // Reset coupon on cart change
       }
     } catch (error) {
       console.error('Error removing item:', error);
@@ -80,9 +98,38 @@ const Cart = () => {
     }
   };
 
-  const total = cartItems.reduce((sum, item) => sum + (item.price || 0) * (item.count || 0), 0);
+  const handleApplyCoupon = async () => {
+    if (!couponCode) {
+      toast.error('Please enter a coupon code');
+      return;
+    }
 
-  if (loading || cartLoading) {
+    try {
+      setIsUpdating(true);
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        'http://localhost:5001/api/user/cart/applycoupon',
+        { coupon: couponCode },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setAppliedCoupon({
+        code: couponCode,
+        discount: response.data.discountApplied,
+      });
+      toast.success(`Coupon "${couponCode}" applied successfully!`);
+      setCouponCode('');
+    } catch (error) {
+      console.error('Error applying coupon:', error);
+      toast.error(error.response?.data?.message || 'Failed to apply coupon');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const total = totalAfterDiscount || cartTotal;
+
+  if (loading || cartLoading || couponLoading) {
     return (
       <div className="bg-gray-100 min-h-screen pt-40 lg:pt-32 flex items-center justify-center">
         <div className="text-center">
@@ -236,19 +283,59 @@ const Cart = () => {
               </motion.div>
             ))}
 
-            <div className="mt-8 flex justify-between items-center">
-              <p className="text-2xl font-bold text-gray-900 tracking-tight">
-                Total: Rs {total.toLocaleString()}
-              </p>
-              <Link
-                to="/checkout"
-                className={`bg-blue-900 text-white px-6 py-3 rounded-full flex items-center hover:bg-blue-800 transition-all duration-300 shadow-md ${
-                  isUpdating ? 'opacity-50 pointer-events-none' : ''
-                }`}
-              >
-                <ShoppingBag size={20} className="mr-2" />
-                Proceed to Checkout
-              </Link>
+            <div className="mt-8">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Apply Coupon</h3>
+                <Link to="/coupons" className="text-blue-500 hover:underline">
+                  View Available Coupons
+                </Link>
+              </div>
+              <div className="flex space-x-2 mb-4">
+                <input
+                  type="text"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                  placeholder="Enter coupon code"
+                  className="w-full p-2 border rounded-md"
+                  disabled={isUpdating}
+                />
+                <button
+                  onClick={handleApplyCoupon}
+                  className={`bg-blue-900 text-white px-4 py-2 rounded-md hover:bg-blue-800 transition-colors ${
+                    isUpdating ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                  disabled={isUpdating}
+                >
+                  Apply
+                </button>
+              </div>
+              {appliedCoupon && (
+                <p className="text-green-600 mb-4">
+                  Coupon "{appliedCoupon.code}" applied! {appliedCoupon.discount}% off
+                </p>
+              )}
+              <div className="flex justify-between items-center mb-4">
+                <p className="text-lg font-semibold text-gray-900">Subtotal:</p>
+                <p className="text-lg font-semibold text-gray-900">Rs {cartTotal.toLocaleString()}</p>
+              </div>
+              {totalAfterDiscount && totalAfterDiscount != cartTotal && (
+                <div className="flex justify-between items-center mb-4">
+                  <p className="text-lg font-semibold text-gray-900">Total After Discount:</p>
+                  <p className="text-lg font-semibold text-green-600">Rs {totalAfterDiscount.toLocaleString()}</p>
+                </div>
+              )}
+              <div className="flex justify-end">
+                <Link
+                  to="/checkout"
+                  state={{ couponCode: appliedCoupon?.code }}
+                  className={`bg-blue-900 text-white px-6 py-3 rounded-full flex items-center hover:bg-blue-800 transition-all duration-300 shadow-md ${
+                    isUpdating ? 'opacity-50 pointer-events-none' : ''
+                  }`}
+                >
+                  <ShoppingBag size={20} className="mr-2" />
+                  Proceed to Checkout
+                </Link>
+              </div>
             </div>
           </motion.div>
         )}

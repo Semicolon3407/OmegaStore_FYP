@@ -21,8 +21,8 @@ const {
   emptyCart,
   applyCoupon,
   createOrder,
-  getOrders,
-  updateOrderStatus,
+  updateOrder,
+  deleteOrder,
   getAllOrders,
   removeFromCart,
   addToWishlist,
@@ -31,6 +31,7 @@ const {
   addToCompare,
   removeFromCompare,
   clearCompare,
+  getUserOrders,
 } = require("../controller/userController");
 const { authMiddleware, isAdmin } = require("../middlewares/authMiddleware");
 const router = express.Router();
@@ -65,9 +66,11 @@ router.post("/cart/cash-order", authMiddleware, createOrder);
 router.delete("/cart/:productId", authMiddleware, removeFromCart);
 
 // Order Routes
-router.get("/get-orders", authMiddleware, getOrders);
-router.get("/getallorders", authMiddleware, isAdmin, getAllOrders);
-router.put("/order/update-order/:id", authMiddleware, isAdmin, updateOrderStatus);
+router.get("/orders", authMiddleware, isAdmin, getAllOrders); // Fetch all orders
+router.get("/get-orders", authMiddleware, getUserOrders);
+router.post("/cart/cash-order", authMiddleware, createOrder); // Create order (adjust for admin use if needed)
+router.put("/order/:id", authMiddleware, isAdmin, updateOrder); // Update order
+router.delete("/order/:id", authMiddleware, isAdmin, deleteOrder); // Delete order
 
 // Wishlist Routes
 router.get("/wishlist", authMiddleware, getWishlist);

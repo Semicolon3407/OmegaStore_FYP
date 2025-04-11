@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, Suspense } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { ShoppingCart, Heart, Phone, Search, ChevronDown, Menu, User, LogOut, GitCompare, MessageSquare } from "lucide-react";
+import { ShoppingCart, Heart, Phone, Search, ChevronDown, Menu, User, LogOut, GitCompare, MessageSquare, Tag } from "lucide-react";
 import { useCart } from "../Context/cartContext";
 import { useCompare } from "../Context/compareContext.jsx";
 import { useWishlist } from "../Context/wishlistContext";
@@ -242,6 +242,7 @@ const Header = () => {
                     <div className="p-4 space-y-2">
                       <MenuItem to="/profile">My Profile</MenuItem>
                       <MenuItem to="/order-history">Order History</MenuItem>
+                      <MenuItem to="/coupons">Coupons</MenuItem> {/* Added Coupons link */}
                       {auth.userRole === "admin" && <MenuItem to="/admin">Admin Panel</MenuItem>}
                       <button
                         onClick={handleLogout}
@@ -366,16 +367,41 @@ const Header = () => {
               ))}
             </select>
           </form>
-          {!auth.isLoggedIn && (
-            <div className="space-y-2">
-              <Link to="/sign-in" className="block py-2 px-4 text-gray-700 hover:bg-gray-300 rounded-lg" onClick={closeMenu}>
-                Sign In
-              </Link>
-              <Link to="/account/create" className="block py-2 px-4 text-gray-700 hover:bg-gray-300 rounded-lg" onClick={closeMenu}>
-                Create Account
-              </Link>
-            </div>
-          )}
+          <div className="space-y-2">
+            {!auth.isLoggedIn ? (
+              <>
+                <Link to="/sign-in" className="block py-2 px-4 text-gray-700 hover:bg-gray-300 rounded-lg" onClick={closeMenu}>
+                  Sign In
+                </Link>
+                <Link to="/account/create" className="block py-2 px-4 text-gray-700 hover:bg-gray-300 rounded-lg" onClick={closeMenu}>
+                  Create Account
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link to="/profile" className="block py-2 px-4 text-gray-700 hover:bg-gray-300 rounded-lg" onClick={closeMenu}>
+                  My Profile
+                </Link>
+                <Link to="/order-history" className="block py-2 px-4 text-gray-700 hover:bg-gray-300 rounded-lg" onClick={closeMenu}>
+                  Order History
+                </Link>
+                <Link to="/coupons" className="block py-2 px-4 text-gray-700 hover:bg-gray-300 rounded-lg" onClick={closeMenu}>
+                  Coupons
+                </Link> {/* Added Coupons link */}
+                {auth.userRole === "admin" && (
+                  <Link to="/admin" className="block py-2 px-4 text-gray-700 hover:bg-gray-300 rounded-lg" onClick={closeMenu}>
+                    Admin Panel
+                  </Link>
+                )}
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left py-2 px-4 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  Sign Out
+                </button>
+              </>
+            )}
+          </div>
         </div>
       )}
     </header>

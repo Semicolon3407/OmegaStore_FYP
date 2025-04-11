@@ -1,11 +1,16 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CreditCard, Lock } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import CheckoutProgress from "../components/CheckoutProgress";
+import { useCart } from "../Context/cartContext";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 const Checkout = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { cartItems, cartTotal, totalAfterDiscount, emptyCart } = useCart();
   const [step, setStep] = useState(0);
   const [formData, setFormData] = useState({
     name: "",
@@ -14,24 +19,41 @@ const Checkout = () => {
     city: "",
     country: "",
     zipCode: "",
-    EsewaID: "",
+    cardNumber: "",
     expiryDate: "",
     cvv: "",
   });
+
+  const couponCode = location.state?.couponCode || null;
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (step < 2) {
       setStep(step + 1);
     } else {
-      // Here we would typically process the payment and create an order
-      console.log("Order submitted:", formData);
-      // Navigate to order confirmation page
-      navigate("/order-confirmation");
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.post(
+          "http://localhost:5001/api/user/cart/cash-order",
+          {
+            COD: true,
+            couponApplied: !!couponCode,
+            couponCode,
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        await emptyCart();
+        toast.success("Order placed successfully!");
+        navigate("/order-confirmation", { state: { orderId: response.data.orderId } });
+      } catch (error) {
+        console.error("Error creating order:", error);
+        toast.error(error.response?.data?.message || "Failed to place order");
+      }
     }
   };
 
@@ -159,63 +181,7 @@ const Checkout = () => {
             transition={pageTransition}
           >
             <h2 className="text-xl font-semibold mb-4">Payment Information</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <label
-                  htmlFor="cardNumber"
-                  className="block text-gray-700 mb-2"
-                >
-                  Card Number
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    id="cardNumber"
-                    name="cardNumber"
-                    value={formData.cardNumber}
-                    onChange={handleChange}
-                    required
-                    className="w-full p-2 pl-10 border rounded-md"
-                  />
-                  <CreditCard
-                    className="absolute left-3 top-2.5 text-gray-400"
-                    size={20}
-                  />
-                </div>
-              </div>
-              <div>
-                <label
-                  htmlFor="expiryDate"
-                  className="block text-gray-700 mb-2"
-                >
-                  Expiry Date
-                </label>
-                <input
-                  type="text"
-                  id="expiryDate"
-                  name="expiryDate"
-                  value={formData.expiryDate}
-                  onChange={handleChange}
-                  required
-                  placeholder="MM/YY"
-                  className="w-full p-2 border rounded-md"
-                />
-              </div>
-              <div>
-                <label htmlFor="cvv" className="block text-gray-700 mb-2">
-                  CVV
-                </label>
-                <input
-                  type="text"
-                  id="cvv"
-                  name="cvv"
-                  value={formData.cvv}
-                  onChange={handleChange}
-                  required
-                  className="w-full p-2 border rounded-md"
-                />
-              </div>
-            </div>
+            <p className="text-gray-600 mb-4">Note: Only Cash on Delivery is supported.</p>
           </motion.div>
         );
       case 2:
@@ -240,13 +206,34 @@ const Checkout = () => {
             </div>
             <div className="bg-gray-100 p-4 rounded-md mb-4">
               <h3 className="font-semibold mb-2">Payment Information</h3>
-              <p>Card ending in {formData.cardNumber.slice(-4)}</p>
-              <p>Expires {formData.expiryDate}</p>
+              <p>Payment Method: Cash on Delivery</p>
             </div>
             <div className="bg-gray-100 p-4 rounded-md mb-4">
               <h3 className="font-semibold mb-2">Order Summary</h3>
-              {/* Add order summary details here */}
-              <p>Total: $XXX.XX</p>
+              {cartItems.map((item) => (
+                <div key={item._id} className="flex justify-between mb-2">
+                  <span>
+                    {item.product?.title} (x{item.count})
+                  </span>
+                  <span>Rs {(item.price * item.count).toLocaleString()}</span>
+                </div>
+              ))}
+              <div className="flex justify-between mb-2">
+                <span>Subtotal:</span>
+                <span>Rs {cartTotal.toLocaleString()}</span>
+              </div>
+              {couponCode && totalAfterDiscount && (
+                <div className="flex justify-between mb-2">
+                  <span>Coupon ({couponCode}):</span>
+                  <span className="text-green-600">
+                    -Rs {(cartTotal - totalAfterDiscount).toLocaleString()}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between font-semibold mt-2">
+                <span>Total:</span>
+                <span>Rs {(totalAfterDiscount || cartTotal).toLocaleString()}</span>
+              </div>
             </div>
           </motion.div>
         );
@@ -279,7 +266,7 @@ const Checkout = () => {
           )}
           <motion.button
             type="submit"
-            className="bg-primary-600 text-white px-6 py-3 rounded-md flex items-center hover:bg-primary-700 transition-colors ml-auto"
+            className="bg-blue-900 text-white px-6 py-3 rounded-md flex items-center hover:bg-blue-800 transition-colors ml-auto"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >

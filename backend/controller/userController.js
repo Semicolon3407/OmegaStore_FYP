@@ -423,29 +423,102 @@ const emptyCart = asyncHandler(async (req, res) => {
   res.json(cart || { message: "Cart emptied" });
 });
 
-// Apply Coupon
+
+/// Apply Coupon
 const applyCoupon = asyncHandler(async (req, res) => {
   const { coupon } = req.body;
   const { _id } = req.user;
   validateMongoDbId(_id);
-  const validCoupon = await Coupon.findOne({ name: coupon });
-  if (!validCoupon) throw new Error("Invalid Coupon");
-  const user = await User.findOne({ _id });
-  let { cartTotal } = await Cart.findOne({ orderby: user._id }).populate("products.product");
-  let totalAfterDiscount = (cartTotal - (cartTotal * validCoupon.discount) / 100).toFixed(2);
-  await Cart.findOneAndUpdate({ orderby: user._id }, { totalAfterDiscount }, { new: true });
-  res.json(totalAfterDiscount);
+
+  // Find the coupon and check if it's valid
+  const validCoupon = await Coupon.findOne({
+    name: coupon.toUpperCase(),
+    expiry: { $gte: new Date() },
+    $or: [{ user: _id }, { user: null }], // Coupon is either user-specific or general
+  });
+
+  if (!validCoupon) {
+    return res.status(400).json({ message: "Invalid or expired coupon" });
+  }
+
+  const user = await User.findById(_id);
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  let cart = await Cart.findOne({ orderby: user._id }).populate("products.product");
+  if (!cart) {
+    return res.status(400).json({ message: "Cart not found" });
+  }
+
+  const totalAfterDiscount = (
+    cart.cartTotal - (cart.cartTotal * validCoupon.discount) / 100
+  ).toFixed(2);
+
+  cart.totalAfterDiscount = totalAfterDiscount;
+  await cart.save();
+
+  res.json({
+    totalAfterDiscount,
+    discountApplied: validCoupon.discount,
+    message: "Coupon applied successfully",
+  });
+});
+
+// Get User Orders
+const getUserOrders = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  validateMongoDbId(_id);
+
+  try {
+    const orders = await Order.find({ orderby: _id })
+      .populate("products.product")
+      .populate("coupon", "name discount")
+      .sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch orders", error: error.message });
+  }
 });
 
 // Create Order
 const createOrder = asyncHandler(async (req, res) => {
-  const { COD, couponApplied } = req.body;
+  const { COD, couponApplied, couponCode } = req.body;
   const { _id } = req.user;
   validateMongoDbId(_id);
-  if (!COD) throw new Error("Create cash order failed");
+
+  if (!COD) {
+    return res.status(400).json({ message: "Only Cash on Delivery is supported" });
+  }
+
   const user = await User.findById(_id);
-  let userCart = await Cart.findOne({ orderby: user._id });
-  let finalAmount = couponApplied && userCart.totalAfterDiscount ? userCart.totalAfterDiscount : userCart.cartTotal;
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  let userCart = await Cart.findOne({ orderby: user._id }).populate("products.product");
+  if (!userCart) {
+    return res.status(400).json({ message: "Cart is empty" });
+  }
+
+  // Verify coupon if applied
+  let finalAmount = userCart.cartTotal;
+  let appliedCoupon = null;
+
+  if (couponApplied && couponCode) {
+    const validCoupon = await Coupon.findOne({
+      name: couponCode.toUpperCase(),
+      expiry: { $gte: new Date() },
+    });
+    if (validCoupon) {
+      finalAmount = userCart.totalAfterDiscount || (
+        userCart.cartTotal - (userCart.cartTotal * validCoupon.discount) / 100
+      ).toFixed(2);
+      appliedCoupon = validCoupon._id;
+    } else {
+      return res.status(400).json({ message: "Invalid or expired coupon" });
+    }
+  }
 
   let newOrder = await new Order({
     products: userCart.products,
@@ -459,40 +532,57 @@ const createOrder = asyncHandler(async (req, res) => {
     },
     orderby: user._id,
     orderStatus: "Cash on Delivery",
+    coupon: appliedCoupon, // Store coupon reference if applied
   }).save();
 
+  // Update product quantities
   let update = userCart.products.map((item) => ({
-    updateOne: { filter: { _id: item.product._id }, update: { $inc: { quantity: -item.count, sold: +item.count } } },
+    updateOne: {
+      filter: { _id: item.product._id },
+      update: { $inc: { quantity: -item.count, sold: +item.count } },
+    },
   }));
   await Product.bulkWrite(update, {});
-  res.json({ message: "success" });
+
+  // Clear the cart after order creation
+  await Cart.findOneAndDelete({ orderby: user._id });
+
+  res.json({ message: "Order created successfully", orderId: newOrder._id });
 });
 
-// Get Orders
-const getOrders = asyncHandler(async (req, res) => {
-  const { _id } = req.user;
-  validateMongoDbId(_id);
-  const userOrders = await Order.find({ orderby: _id }).populate("products.product").populate("orderby").exec();
-  res.json(userOrders);
-});
-
-// Get All Orders
+// Get all orders
 const getAllOrders = asyncHandler(async (req, res) => {
-  const allUserOrders = await Order.find().populate("products.product").populate("orderby").exec();
-  res.json(allUserOrders);
+  const orders = await Order.find()
+    .populate("orderby", "name email")
+    .populate("coupon", "name discount");
+  res.json(orders);
 });
 
-// Update Order Status
-const updateOrderStatus = asyncHandler(async (req, res) => {
-  const { status } = req.body;
+// Update order
+const updateOrder = asyncHandler(async (req, res) => {
   const { id } = req.params;
   validateMongoDbId(id);
-  const updateOrderStatus = await Order.findByIdAndUpdate(
+  const { orderStatus } = req.body;
+  const order = await Order.findByIdAndUpdate(
     id,
-    { orderStatus: status, "paymentIntent.status": status },
-    { new: true }
+    { orderStatus },
+    { new: true, runValidators: true }
   );
-  res.json(updateOrderStatus);
+  if (!order) {
+    return res.status(404).json({ message: "Order not found" });
+  }
+  res.json(order);
+});
+
+// Delete order
+const deleteOrder = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  validateMongoDbId(id);
+  const order = await Order.findByIdAndDelete(id);
+  if (!order) {
+    return res.status(404).json({ message: "Order not found" });
+  }
+  res.json({ message: "Order deleted successfully" });
 });
 
 // Get Wishlist
@@ -678,8 +768,10 @@ module.exports = {
   removeFromCart,
   applyCoupon,
   createOrder,
-  getOrders,
-  updateOrderStatus,
+  getAllOrders,
+  createOrder,
+  updateOrder,
+  deleteOrder,
   getAllOrders,
   addToWishlist,
   removeFromWishlist,
@@ -687,4 +779,5 @@ module.exports = {
   addToCompare,
   removeFromCompare,
   clearCompare,
+  getUserOrders,
 };

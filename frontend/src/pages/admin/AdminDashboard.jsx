@@ -12,6 +12,7 @@ import {
   MessageSquare,
   Tag,
   Image,
+  Percent,
 } from "lucide-react";
 import axios from "axios";
 import Navbar from "../../components/AdminNav";
@@ -82,6 +83,7 @@ const AdminDashboard = () => {
     { title: "Manage Products", icon: Package, link: "/admin/products" },
     { title: "Manage Sale Products", icon: Tag, link: "/admin/sale-products" },
     { title: "Manage Orders", icon: ShoppingCart, link: "/admin/orders" },
+    { title: "Manage Coupons", icon: Percent, link: "/admin/coupons" }, // New link
     { title: "User Management", icon: Users, link: "/admin/users" },
     { title: "View Analytics", icon: BarChart, link: "/admin/analytics" },
     { title: "View Revenue", icon: IndianRupee, link: "/admin/revenue" },
@@ -91,7 +93,7 @@ const AdminDashboard = () => {
       link: "/admin/chat",
       badge: unreadMessages > 0 ? unreadMessages : null,
     },
-    { title: "Manage Hero Banners", icon: Image, link: "/admin/hero-banners" }, // New quick link
+    { title: "Manage Hero Banners", icon: Image, link: "/admin/hero-banners" },
   ];
 
   return (

@@ -20,6 +20,7 @@ import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminChat from "./pages/admin/AdminChat";
 import AdminSaleProducts from "./pages/admin/AdminSaleProducts";
 import AdminHeroBanners from "./pages/admin/AdminHeroBanners";
+import AdminCoupons from "./pages/admin/AdminCoupon";
 import UserChat from "./pages/UserChat";
 import Locations from "./pages/Locations";
 import SaleProducts from "./pages/SaleProducts";
@@ -31,7 +32,10 @@ import Warranty from "./pages/Warranty";
 import UserProfile from "./pages/UserProfile";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import OrderHistory from "./pages/OrderHistory";
+import Coupons from "./pages/UserCoupon";
 import { CartProvider } from "./Context/cartContext";
+import { CouponProvider } from './Context/couponContext';
 import { WishlistProvider } from "./Context/wishlistContext";
 import { CompareProvider } from "./Context/compareContext";
 import { ChatProvider } from "./Context/chatContext";
@@ -139,8 +143,12 @@ const Layout = () => {
               <Route path="/order-confirmation" element={<ProtectedRoute><OrderConfirmation /></ProtectedRoute>} />
               <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
               <Route path="/compare" element={<ProtectedRoute><Compare /></ProtectedRoute>} />
+              <Route path="/coupons" element={<Coupons />} />
               <Route path="/chat" element={<ProtectedRoute><UserChat /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+              <Route path="/order-history" element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
+              
+              {/* Admin Routes */}
               <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
               <Route path="/admin/products" element={<ProtectedRoute requireAdmin><AdminProducts /></ProtectedRoute>} />
               <Route path="/admin/orders" element={<ProtectedRoute requireAdmin><AdminOrders /></ProtectedRoute>} />
@@ -150,6 +158,9 @@ const Layout = () => {
               <Route path="/admin/chat" element={<ProtectedRoute requireAdmin><AdminChat /></ProtectedRoute>} />
               <Route path="/admin/sale-products" element={<ProtectedRoute requireAdmin><AdminSaleProducts /></ProtectedRoute>} />
               <Route path="/admin/hero-banners" element={<ProtectedRoute requireAdmin><AdminHeroBanners /></ProtectedRoute>} />
+              <Route path="/admin/coupons" element={<ProtectedRoute requireAdmin><AdminCoupons /></ProtectedRoute>} />
+              
+              {/* Public Routes */}
               <Route path="/locations" element={<Locations />} />
               <Route path="/sale" element={<SaleProducts />} />
               <Route path="/sale-products/:id" element={<SaleProductDetails />} />
@@ -172,20 +183,22 @@ const Layout = () => {
 function App() {
   return (
     <Router>
-      <CartProvider>
-        <WishlistProvider>
-          <CompareProvider>
-            <ChatProvider>
-              <ReviewProvider>
-                <SaleReviewProvider>
-                  <ToastContainer position="bottom-right" autoClose={3000} />
-                  <Layout />
-                </SaleReviewProvider>
-              </ReviewProvider>
-            </ChatProvider>
-          </CompareProvider>
-        </WishlistProvider>
-      </CartProvider>
+      <CouponProvider>
+        <CartProvider>
+          <WishlistProvider>
+            <CompareProvider>
+              <ChatProvider>
+                <ReviewProvider>
+                  <SaleReviewProvider>
+                    <ToastContainer position="bottom-right" autoClose={3000} />
+                    <Layout />
+                  </SaleReviewProvider>
+                </ReviewProvider>
+              </ChatProvider>
+            </CompareProvider>
+          </WishlistProvider>
+        </CartProvider>
+      </CouponProvider>
     </Router>
   );
 }
