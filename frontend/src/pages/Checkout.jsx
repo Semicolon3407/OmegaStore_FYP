@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CreditCard, Lock } from "lucide-react";
+import { CreditCard, Lock, Wallet } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import CheckoutProgress from "../components/CheckoutProgress";
 import { useCart } from "../Context/cartContext";
@@ -12,6 +12,7 @@ const Checkout = () => {
   const location = useLocation();
   const { cartItems, cartTotal, totalAfterDiscount, emptyCart } = useCart();
   const [step, setStep] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState("COD"); // Default to COD
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -19,9 +20,6 @@ const Checkout = () => {
     city: "",
     country: "",
     zipCode: "",
-    cardNumber: "",
-    expiryDate: "",
-    cvv: "",
   });
 
   const couponCode = location.state?.couponCode || null;
@@ -30,29 +28,68 @@ const Checkout = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handlePaymentMethodChange = (method) => {
+    setPaymentMethod(method);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (step < 2) {
       setStep(step + 1);
     } else {
-      try {
-        const token = localStorage.getItem("token");
-        const response = await axios.post(
-          "http://localhost:5001/api/user/cart/cash-order",
-          {
-            COD: true,
-            couponApplied: !!couponCode,
-            couponCode,
-          },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+      if (paymentMethod === "COD") {
+        try {
+          const token = localStorage.getItem("token");
+          const response = await axios.post(
+            "http://localhost:5001/api/user/cart/cash-order",
+            {
+              COD: true,
+              couponApplied: !!couponCode,
+              couponCode,
+            },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
 
-        await emptyCart();
-        toast.success("Order placed successfully!");
-        navigate("/order-confirmation", { state: { orderId: response.data.orderId } });
-      } catch (error) {
-        console.error("Error creating order:", error);
-        toast.error(error.response?.data?.message || "Failed to place order");
+          await emptyCart();
+          toast.success("Order placed successfully!");
+          navigate("/order-confirmation", { state: { orderId: response.data.orderId } });
+        } catch (error) {
+          console.error("Error creating order:", error);
+          toast.error(error.response?.data?.message || "Failed to place order");
+        }
+      } else if (paymentMethod === "eSewa") {
+        try {
+          const token = localStorage.getItem("token");
+          const response = await axios.post(
+            "http://localhost:5001/api/esewa/initiate-payment",
+            {
+              couponApplied: !!couponCode,
+              couponCode,
+            },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+
+          const { formData: paymentFormData, paymentUrl } = response.data;
+
+          // Create a form and submit it to redirect to eSewa
+          const form = document.createElement("form");
+          form.method = "POST";
+          form.action = paymentUrl;
+
+          Object.keys(paymentFormData).forEach((key) => {
+            const input = document.createElement("input");
+            input.type = "hidden";
+            input.name = key;
+            input.value = paymentFormData[key];
+            form.appendChild(input);
+          });
+
+          document.body.appendChild(form);
+          form.submit();
+        } catch (error) {
+          console.error("Error initiating eSewa payment:", error);
+          toast.error(error.response?.data?.message || "Failed to initiate eSewa payment");
+        }
       }
     }
   };
@@ -180,8 +217,39 @@ const Checkout = () => {
             variants={pageVariants}
             transition={pageTransition}
           >
-            <h2 className="text-xl font-semibold mb-4">Payment Information</h2>
-            <p className="text-gray-600 mb-4">Note: Only Cash on Delivery is supported.</p>
+            <h2 className="text-xl font-semibold mb-4">Payment Method</h2>
+            <div className="space-y-4">
+              <div className="flex items-center p-4 border rounded-md cursor-pointer hover:bg-gray-100">
+                <input
+                  type="radio"
+                  id="cod"
+                  name="paymentMethod"
+                  value="COD"
+                  checked={paymentMethod === "COD"}
+                  onChange={() => handlePaymentMethodChange("COD")}
+                  className="mr-3"
+                />
+                <label htmlFor="cod" className="flex items-center cursor-pointer">
+                  <CreditCard className="mr-2" size={20} />
+                  Cash on Delivery
+                </label>
+              </div>
+              <div className="flex items-center p-4 border rounded-md cursor-pointer hover:bg-gray-100">
+                <input
+                  type="radio"
+                  id="esewa"
+                  name="paymentMethod"
+                  value="eSewa"
+                  checked={paymentMethod === "eSewa"}
+                  onChange={() => handlePaymentMethodChange("eSewa")}
+                  className="mr-3"
+                />
+                <label htmlFor="esewa" className="flex items-center cursor-pointer">
+                  <Wallet className="mr-2" size={20} />
+                  Pay with eSewa
+                </label>
+              </div>
+            </div>
           </motion.div>
         );
       case 2:
@@ -205,8 +273,8 @@ const Checkout = () => {
               </p>
             </div>
             <div className="bg-gray-100 p-4 rounded-md mb-4">
-              <h3 className="font-semibold mb-2">Payment Information</h3>
-              <p>Payment Method: Cash on Delivery</p>
+              <h3 className="font-semibold mb-2">Payment Method</h3>
+              <p>{paymentMethod === "COD" ? "Cash on Delivery" : "Pay with eSewa"}</p>
             </div>
             <div className="bg-gray-100 p-4 rounded-md mb-4">
               <h3 className="font-semibold mb-2">Order Summary</h3>
@@ -270,7 +338,7 @@ const Checkout = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            {step < 2 ? "Continue" : "Place Order"}
+            {step < 2 ? "Continue" : paymentMethod === "COD" ? "Place Order" : "Proceed to eSewa"}
             <Lock className="ml-2" size={20} />
           </motion.button>
         </div>

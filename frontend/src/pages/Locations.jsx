@@ -30,37 +30,49 @@ const locations = [
 
 const Locations = () => {
   return (
-    <div className="bg-gray-100 min-h-screen pt-40 lg:pt-32">
-      <div className="container mx-auto px-6 py-16">
-        <motion.h1
-          className="text-3xl md:text-4xl font-bold mb-12 text-center text-gray-900 tracking-tight"
+    <div className="bg-gray-100 min-h-screen pt-24 sm:pt-28 md:pt-32 lg:pt-36">
+      <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-8 sm:py-12 md:py-16">
+        {/* Header Section */}
+        <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.6 }}
+          className="mb-8 sm:mb-12 text-center border-b border-gray-200 pb-4"
         >
-          Our Locations
-        </motion.h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-blue-900 mb-2 sm:mb-3 tracking-tight">
+            Our Locations
+          </h1>
+          <p className="text-sm sm:text-base text-gray-600 max-w-xl sm:max-w-2xl mx-auto leading-relaxed">
+            Visit one of our stores in Kathmandu to explore our wide range of tech products.
+          </p>
+        </motion.div>
+
+        {/* Locations Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {locations.map((location, index) => (
             <motion.div
               key={location.id}
-              className="bg-white rounded-xl shadow-lg p-6 border border-gray-200"
-              initial={{ opacity: 0, scale: 0.9 }}
+              className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6"
+              initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
             >
-              <h2 className="text-xl font-semibold mb-4 text-gray-900">{location.name}</h2>
-              <div className="flex items-start mb-3">
-                <MapPin className="w-5 h-5 text-blue-900 mr-2 mt-1" />
-                <p className="text-gray-600">{location.address}</p>
-              </div>
-              <div className="flex items-center mb-3">
-                <Phone className="w-5 h-5 text-blue-900 mr-2" />
-                <p className="text-gray-600">{location.phone}</p>
-              </div>
-              <div className="flex items-start">
-                <Clock className="w-5 h-5 text-blue-900 mr-2 mt-1" />
-                <p className="text-gray-600">{location.hours}</p>
+              <h2 className="text-lg sm:text-xl font-semibold text-blue-900 mb-4 sm:mb-6 tracking-tight">
+                {location.name}
+              </h2>
+              <div className="space-y-3 sm:space-y-4">
+                <div className="flex items-start">
+                  <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-blue-900 mr-2 sm:mr-3 mt-1" />
+                  <p className="text-gray-600 text-sm sm:text-base">{location.address}</p>
+                </div>
+                <div className="flex items-center">
+                  <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-blue-900 mr-2 sm:mr-3" />
+                  <p className="text-gray-600 text-sm sm:text-base">{location.phone}</p>
+                </div>
+                <div className="flex items-start">
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-blue-900 mr-2 sm:mr-3 mt-1" />
+                  <p className="text-gray-600 text-sm sm:text-base">{location.hours}</p>
+                </div>
               </div>
             </motion.div>
           ))}

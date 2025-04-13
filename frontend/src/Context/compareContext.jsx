@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const CompareContext = createContext();
 
@@ -10,6 +10,10 @@ export const CompareProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // List of unauthenticated routes where logging should be suppressed
+  const unauthenticatedRoutes = ["/sign-in", "/forgot-password", "/account/create", "/reset-password"];
 
   const fetchCompare = useCallback(async () => {
     try {
@@ -18,8 +22,11 @@ export const CompareProvider = ({ children }) => {
       const token = localStorage.getItem('token');
 
       if (!token) {
-        console.log("No token found, setting empty compare list");
         setCompareItems([]);
+        // Suppress logging on unauthenticated routes
+        if (!unauthenticatedRoutes.includes(location.pathname)) {
+          console.log("No token found, setting empty compare list");
+        }
         return;
       }
 
@@ -44,7 +51,7 @@ export const CompareProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [navigate]);
+  }, [navigate, location.pathname]); // Add location.pathname as a dependency
 
   const addToCompare = async (productId) => {
     try {

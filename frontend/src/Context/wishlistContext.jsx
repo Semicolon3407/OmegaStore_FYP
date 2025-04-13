@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const WishlistContext = createContext();
 
@@ -10,6 +10,10 @@ export const WishlistProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // List of unauthenticated routes where logging should be suppressed
+  const unauthenticatedRoutes = ["/sign-in", "/forgot-password", "/account/create", "/reset-password"];
 
   const fetchWishlist = useCallback(async () => {
     try {
@@ -18,8 +22,11 @@ export const WishlistProvider = ({ children }) => {
       const token = localStorage.getItem('token');
 
       if (!token) {
-        console.log("No token found, setting empty wishlist");
         setWishlistItems([]);
+        // Suppress logging on unauthenticated routes
+        if (!unauthenticatedRoutes.includes(location.pathname)) {
+          console.log("No token found, setting empty wishlist");
+        }
         return;
       }
 
@@ -44,7 +51,7 @@ export const WishlistProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [navigate]);
+  }, [navigate, location.pathname]); // Add location.pathname as a dependency
 
   const addToWishlist = async (productId) => {
     try {
@@ -57,16 +64,16 @@ export const WishlistProvider = ({ children }) => {
 
       const { data } = await axios.put(
         'http://localhost:5001/api/user/wishlist',
-        { productId }, // Changed from prodId to productId
+        { productId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      console.log("Add to wishlist response:", data); // Debug log
+      console.log("Add to wishlist response:", data);
       setWishlistItems(data.wishlist || []);
       toast.success('Added to wishlist!');
       return true;
     } catch (error) {
-      console.error("Add to wishlist error:", error.response || error); // Debug log
+      console.error("Add to wishlist error:", error.response || error);
       toast.error(error.response?.data?.message || 'Failed to add to wishlist');
       if (error.response?.status === 401) navigate('/sign-in');
       return false;
@@ -98,7 +105,7 @@ export const WishlistProvider = ({ children }) => {
 
   useEffect(() => {
     fetchWishlist();
-    
+
     const handleAuthChange = () => {
       if (!localStorage.getItem('token')) {
         setWishlistItems([]);
@@ -106,7 +113,7 @@ export const WishlistProvider = ({ children }) => {
         fetchWishlist();
       }
     };
-    
+
     window.addEventListener('storage', handleAuthChange);
     return () => window.removeEventListener('storage', handleAuthChange);
   }, [fetchWishlist]);

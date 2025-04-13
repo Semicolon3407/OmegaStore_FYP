@@ -112,16 +112,16 @@ const ProductDetails = () => {
     setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
 
   const FilterSection = ({ title, section, children }) => (
-    <div className="mb-8 border-b border-gray-200 pb-6">
+    <div className="mb-6 sm:mb-8 border-b border-gray-200 pb-4 sm:pb-6">
       <div
-        className="flex justify-between items-center mb-4 cursor-pointer"
+        className="flex justify-between items-center mb-3 sm:mb-4 cursor-pointer"
         onClick={() => toggleSection(section)}
       >
-        <h3 className="font-semibold text-gray-900 text-xl">{title}</h3>
+        <h3 className="font-semibold text-blue-900 text-lg sm:text-xl">{title}</h3>
         {expandedSections[section] ? (
-          <ChevronUp size={20} className="text-gray-600" />
+          <ChevronUp size={18} className="text-blue-900" />
         ) : (
-          <ChevronDown size={20} className="text-gray-600" />
+          <ChevronDown size={18} className="text-blue-900" />
         )}
       </div>
       {expandedSections[section] && children}
@@ -130,13 +130,13 @@ const ProductDetails = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100 pt-40">
-        <div className="grid grid-cols-1 gap-8">
-          <div className="bg-white rounded-xl shadow-md p-6 h-96 animate-pulse">
-            <div className="bg-gray-200 h-56 rounded-lg mb-4"></div>
-            <div className="bg-gray-200 h-4 rounded w-3/4 mb-2"></div>
-            <div className="bg-gray-200 h-4 rounded w-1/2 mb-3"></div>
-            <div className="bg-gray-200 h-10 rounded-full"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 pt-24 sm:pt-32 lg:pt-40">
+        <div className="grid grid-cols-1 gap-6 sm:gap-8">
+          <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 h-80 sm:h-96 animate-pulse">
+            <div className="bg-gray-200 h-48 sm:h-56 rounded-lg mb-3 sm:mb-4"></div>
+            <div className="bg-gray-200 h-3 sm:h-4 rounded w-3/4 mb-1 sm:mb-2"></div>
+            <div className="bg-gray-200 h-3 sm:h-4 rounded w-1/2 mb-2 sm:mb-3"></div>
+            <div className="bg-gray-200 h-8 sm:h-10 rounded-full"></div>
           </div>
         </div>
       </div>
@@ -145,12 +145,12 @@ const ProductDetails = () => {
 
   if (error || !product) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100 pt-40">
-        <div className="text-center max-w-md p-8 bg-white rounded-xl shadow-lg">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">{error || 'Product not found'}</h2>
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 pt-24 sm:pt-32 lg:pt-40">
+        <div className="text-center max-w-md p-6 sm:p-8 bg-white rounded-xl shadow-lg">
+          <h2 className="text-xl sm:text-2xl font-bold text-blue-900 mb-3 sm:mb-4">{error || 'Product not found'}</h2>
           <Link
             to="/products"
-            className="bg-blue-900 text-white px-6 py-3 rounded-full hover:bg-blue-800 transition-all duration-300 shadow-md inline-block"
+            className="bg-blue-900 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full hover:bg-blue-800 transition-all duration-300 shadow-md inline-block text-sm sm:text-base"
           >
             Back to Products
           </Link>
@@ -160,19 +160,19 @@ const ProductDetails = () => {
   }
 
   return (
-    <div className="bg-gray-100 min-h-screen pt-40 lg:pt-32">
-      <div className="container mx-auto px-6 py-16">
+    <div className="bg-gray-100 min-h-screen pt-24 sm:pt-32 lg:pt-40">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-6 py-10 sm:py-12 lg:py-16">
         <motion.div
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="mb-12"
+          className="mb-8 sm:mb-10 lg:mb-12"
         >
           <Link
             to="/products"
-            className="flex items-center text-blue-900 hover:text-blue-500 font-medium transition-colors duration-300"
+            className="flex items-center text-blue-900 hover:text-blue-500 font-medium transition-colors duration-300 text-sm sm:text-base"
           >
-            <ChevronLeft size={20} className="mr-2" />
+            <ChevronLeft size={18} className="mr-1 sm:mr-2" />
             Back to Products
           </Link>
         </motion.div>
@@ -184,41 +184,41 @@ const ProductDetails = () => {
           className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200"
         >
           <div className="lg:flex">
-            <div className="lg:w-1/2 p-8 relative">
+            <div className="lg:w-1/2 p-4 sm:p-6 lg:p-8 relative">
               <button
                 onClick={handleWishlistToggle}
                 disabled={wishlistLoading}
-                className={`absolute top-10 right-10 z-10 p-2 rounded-full shadow-md ${
-                  isInWishlist ? 'text-red-500 bg-red-50' : 'text-gray-600 bg-white hover:text-red-500'
+                className={`absolute top-6 sm:top-8 right-6 sm:right-8 z-10 p-1 sm:p-2 rounded-full shadow-md ${
+                  isInWishlist ? 'text-red-500 bg-red-50' : 'text-blue-900 bg-white hover:text-red-500'
                 } transition-all duration-300`}
               >
-                <Heart size={20} fill={isInWishlist ? 'currentColor' : 'none'} />
+                <Heart size={16} fill={isInWishlist ? 'currentColor' : 'none'} />
               </button>
 
-              <div className="relative h-80 lg:h-[28rem] bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center shadow-inner">
+              <div className="relative h-64 sm:h-80 lg:h-[28rem] bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center shadow-inner">
                 <img
                   src={product.images?.[currentImageIndex] || '/placeholder.jpg'}
                   alt={product.title}
-                  className="w-full h-full object-contain p-8 transition-transform duration-300 hover:scale-105"
+                  className="w-full h-full object-contain p-6 sm:p-8 transition-transform duration-300 hover:scale-105"
                 />
                 {product.quantity <= 0 && (
-                  <div className="absolute top-4 left-4 bg-red-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
+                  <div className="absolute top-3 sm:top-4 left-3 sm:left-4 bg-red-500 text-white text-xs font-semibold px-2 sm:px-3 py-1 rounded-full shadow">
                     Sold Out
                   </div>
                 )}
                 {product.isOnSale && (
-                  <div className="absolute top-4 left-4 bg-green-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
+                  <div className="absolute top-3 sm:top-4 left-3 sm:left-4 bg-orange-500 text-white text-xs font-semibold px-2 sm:px-3 py-1 rounded-full shadow">
                     Sale - {product.discountPercentage}%
                   </div>
                 )}
               </div>
-              <div className="flex gap-4 mt-6 overflow-x-auto pb-2">
+              <div className="flex gap-3 sm:gap-4 mt-4 sm:mt-6 overflow-x-auto pb-2">
                 {product.images?.slice(0, 3).map((img, idx) => (
                   <motion.img
                     key={idx}
                     src={img}
                     alt={`${product.title} thumbnail ${idx}`}
-                    className={`w-20 h-20 object-cover rounded-lg cursor-pointer border-2 ${
+                    className={`w-16 sm:w-20 h-16 sm:h-20 object-cover rounded-lg cursor-pointer border-2 ${
                       currentImageIndex === idx ? 'border-blue-900' : 'border-gray-200'
                     }`}
                     onClick={() => setCurrentImageIndex(idx)}
@@ -229,13 +229,13 @@ const ProductDetails = () => {
               </div>
             </div>
 
-            <div className="lg:w-1/2 p-8">
-              <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-3 tracking-tight">{product.title}</h1>
-              <div className="flex items-center mb-2">
+            <div className="lg:w-1/2 p-4 sm:p-6 lg:p-8">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-blue-900 mb-2 sm:mb-3 tracking-tight">{product.title}</h1>
+              <div className="flex items-center mb-1 sm:mb-2">
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
-                    size={16}
+                    size={14}
                     className={`${
                       i < Math.round(product.totalrating || 0)
                         ? 'text-yellow-400 fill-yellow-400'
@@ -243,44 +243,44 @@ const ProductDetails = () => {
                     }`}
                   />
                 ))}
-                <span className="ml-2 text-gray-600 text-sm">({reviews.length} reviews)</span>
+                <span className="ml-2 text-blue-900/80 text-xs sm:text-sm">({reviews.length} reviews)</span>
               </div>
-              <p className="text-gray-600 text-sm mb-4 capitalize">
+              <p className="text-blue-900/80 text-xs sm:text-sm mb-3 sm:mb-4 capitalize">
                 {product.brand} • {product.category}
               </p>
-              <div className="flex items-center mb-6">
+              <div className="flex items-center mb-4 sm:mb-6">
                 {product.isOnSale && product.discountedPrice !== null ? (
                   <>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-blue-900">
                       Rs {product.discountedPrice.toLocaleString()}
                     </p>
-                    <p className="text-lg text-gray-500 line-through ml-4">
+                    <p className="text-sm sm:text-lg text-blue-900/60 line-through ml-2 sm:ml-4">
                       Rs {product.price.toLocaleString()}
                     </p>
                   </>
                 ) : (
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-lg sm:text-xl lg:text-2xl font-bold text-blue-900">
                     Rs {product.price.toLocaleString()}
                   </p>
                 )}
               </div>
 
               {product.quantity > 0 && (
-                <div className="flex items-center mb-6">
-                  <span className="mr-4 font-medium text-gray-700">Quantity:</span>
+                <div className="flex items-center mb-4 sm:mb-6">
+                  <span className="mr-3 sm:mr-4 font-medium text-blue-900 text-sm sm:text-base">Quantity:</span>
                   <div className="flex border border-gray-200 rounded-full overflow-hidden bg-gray-100">
                     <button
                       onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                      className="w-12 h-12 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors duration-300"
+                      className="w-10 sm:w-12 h-10 sm:h-12 flex items-center justify-center text-blue-900 hover:bg-gray-200 transition-colors duration-300"
                     >
                       -
                     </button>
-                    <span className="w-12 h-12 flex items-center justify-center text-gray-900 font-medium">
+                    <span className="w-10 sm:w-12 h-10 sm:h-12 flex items-center justify-center text-blue-900 font-medium text-sm sm:text-base">
                       {quantity}
                     </span>
                     <button
                       onClick={() => setQuantity((q) => Math.min(product.quantity, q + 1))}
-                      className="w-12 h-12 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors duration-300"
+                      className="w-10 sm:w-12 h-10 sm:h-12 flex items-center justify-center text-blue-900 hover:bg-gray-200 transition-colors duration-300"
                     >
                       +
                     </button>
@@ -291,13 +291,13 @@ const ProductDetails = () => {
               <button
                 onClick={handleAddToCart}
                 disabled={product.quantity <= 0}
-                className={`w-full py-3 rounded-full flex items-center justify-center transition-all duration-300 shadow-md ${
+                className={`w-full py-2 sm:py-3 rounded-full flex items-center justify-center transition-all duration-300 shadow-md text-sm sm:text-base ${
                   product.quantity <= 0
-                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                    ? 'bg-gray-200 text-blue-900/50 cursor-not-allowed'
                     : 'bg-blue-900 text-white hover:bg-blue-800'
                 }`}
               >
-                <ShoppingCart size={18} className="mr-2" />
+                <ShoppingCart size={16} className="mr-1 sm:mr-2" />
                 {product.quantity <= 0 ? 'Out of Stock' : 'Add to Cart'}
               </button>
               <button
@@ -311,13 +311,13 @@ const ProductDetails = () => {
                   addToCompare(product);
                   toast.success(`${product.title} added to compare`);
                 }}
-                className="w-full mt-4 py-3 rounded-full flex items-center justify-center text-blue-900 border border-blue-900 hover:bg-blue-50 transition-all duration-300 shadow-md"
+                className="w-full mt-3 sm:mt-4 py-2 sm:py-3 rounded-full flex items-center justify-center text-blue-900 border border-blue-900 hover:bg-blue-50 transition-all duration-300 shadow-md text-sm sm:text-base"
               >
-                <GitCompare size={18} className="mr-2" />
+                <GitCompare size={16} className="mr-1 sm:mr-2" />
                 Add to Compare
               </button>
 
-              <p className="text-sm text-gray-600 mt-6">
+              <p className="text-xs sm:text-sm text-blue-900/80 mt-4 sm:mt-6">
                 <span className="font-medium">Availability:</span>{' '}
                 {product.quantity > 0 ? (
                   <span className="text-green-600">{product.quantity} in stock</span>
@@ -328,10 +328,10 @@ const ProductDetails = () => {
             </div>
           </div>
 
-          <div className="p-8">
+          <div className="p-4 sm:p-6 lg:p-8">
             <FilterSection title="Product Details" section="details">
-              <p className="text-gray-700 leading-relaxed">{product.description || 'No description available.'}</p>
-              <ul className="mt-4 space-y-2 text-gray-700">
+              <p className="text-blue-900/80 leading-relaxed text-sm sm:text-base">{product.description || 'No description available.'}</p>
+              <ul className="mt-3 sm:mt-4 space-y-2 text-blue-900/80 text-sm sm:text-base">
                 <li><strong>Brand:</strong> {product.brand || 'N/A'}</li>
                 <li><strong>Category:</strong> {product.category || 'N/A'}</li>
                 <li><strong>Color:</strong> {product.color || 'N/A'}</li>
@@ -344,48 +344,48 @@ const ProductDetails = () => {
 
             <FilterSection title="Reviews" section="reviews">
               {reviewLoading ? (
-                <p className="text-gray-600">Loading reviews...</p>
+                <p className="text-blue-900/80 text-sm sm:text-base">Loading reviews...</p>
               ) : reviews.length > 0 ? (
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                   {reviews.map((review, idx) => (
-                    <div key={idx} className="border-b border-gray-200 pb-4">
-                      <div className="flex items-center mb-2">
+                    <div key={idx} className="border-b border-gray-200 pb-3 sm:pb-4">
+                      <div className="flex items-center mb-1 sm:mb-2">
                         {[...Array(5)].map((_, i) => (
                           <Star
                             key={i}
-                            size={16}
+                            size={14}
                             className={`${
                               i < review.star ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
                             }`}
                           />
                         ))}
-                        <span className="ml-2 text-sm text-gray-600">
+                        <span className="ml-2 text-xs sm:text-sm text-blue-900/80">
                           by {review.postedby ? `${review.postedby.firstname} ${review.postedby.lastname}` : 'Anonymous'} •{' '}
                           {new Date(review.createdAt).toLocaleDateString()}
                         </span>
                       </div>
-                      <p className="text-gray-700">{review.comment || 'No comment provided'}</p>
+                      <p className="text-blue-900/80 text-sm sm:text-base">{review.comment || 'No comment provided'}</p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-600">No reviews yet. Be the first to review this product!</p>
+                <p className="text-blue-900/80 text-sm sm:text-base">No reviews yet. Be the first to review this product!</p>
               )}
               <button
                 onClick={() => setShowReviewForm(!showReviewForm)}
-                className="mt-6 text-blue-900 hover:text-blue-500 font-medium transition-colors duration-300"
+                className="mt-4 sm:mt-6 text-blue-900 hover:text-blue-500 font-medium transition-colors duration-300 text-sm sm:text-base"
               >
                 {showReviewForm ? 'Cancel' : 'Write a Review'}
               </button>
               {showReviewForm && (
-                <form onSubmit={handleReviewSubmit} className="mt-6 space-y-4">
+                <form onSubmit={handleReviewSubmit} className="mt-4 sm:mt-6 space-y-3 sm:space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                    <label className="block text-sm font-medium text-blue-900 mb-1 sm:mb-2">Rating</label>
                     <div className="flex space-x-1">
                       {[...Array(5)].map((_, i) => (
                         <Star
                           key={i}
-                          size={24}
+                          size={20}
                           className={`cursor-pointer ${
                             i < rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
                           }`}
@@ -395,11 +395,11 @@ const ProductDetails = () => {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Comment</label>
+                    <label className="block text-sm font-medium text-blue-900 mb-1 sm:mb-2">Comment</label>
                     <textarea
                       value={comment}
                       onChange={(e) => setComment(e.target.value)}
-                      className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100"
+                      className="w-full p-2 sm:p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100 text-blue-900 text-sm"
                       rows="4"
                       placeholder="Share your thoughts..."
                     />
@@ -407,7 +407,7 @@ const ProductDetails = () => {
                   <button
                     type="submit"
                     disabled={rating === 0 || reviewLoading}
-                    className="bg-blue-900 text-white px-6 py-3 rounded-full hover:bg-blue-800 transition-all duration-300 shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    className="bg-blue-900 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full hover:bg-blue-800 transition-all duration-300 shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed text-sm sm:text-base"
                   >
                     {reviewLoading ? 'Submitting...' : 'Submit Review'}
                   </button>
@@ -417,33 +417,33 @@ const ProductDetails = () => {
 
             <FilterSection title="Related Products" section="related">
               {relatedProducts.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                   {relatedProducts.map((related) => (
                     <motion.div
                       key={related._id}
-                      className="bg-white rounded-xl shadow-md p-4 hover:shadow-lg transition-all duration-300 border border-gray-200"
+                      className="bg-white rounded-xl shadow-md p-3 sm:p-4 hover:shadow-lg transition-all duration-300 border border-gray-200"
                       whileHover={{ y: -5 }}
                     >
                       <Link to={`/products/${related._id}`}>
                         <img
                           src={related.images?.[0] || '/placeholder.jpg'}
                           alt={related.title}
-                          className="w-full h-40 object-contain rounded-lg mb-4"
+                          className="w-full h-32 sm:h-40 object-contain rounded-lg mb-2 sm:mb-4"
                         />
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1 hover:text-blue-500 transition-colors">
+                        <h3 className="text-base sm:text-lg font-semibold text-blue-900 mb-1 sm:mb-2 line-clamp-1 hover:text-blue-500 transition-colors">
                           {related.title}
                         </h3>
                         {related.isOnSale && related.discountedPrice !== null ? (
                           <div className="flex items-center">
-                            <p className="text-xl font-bold text-gray-900">
+                            <p className="text-base sm:text-xl font-bold text-blue-900">
                               Rs {related.discountedPrice.toLocaleString()}
                             </p>
-                            <p className="text-sm text-gray-500 line-through ml-2">
+                            <p className="text-xs sm:text-sm text-blue-900/60 line-through ml-1 sm:ml-2">
                               Rs {related.price.toLocaleString()}
                             </p>
                           </div>
                         ) : (
-                          <p className="text-xl font-bold text-gray-900">
+                          <p className="text-base sm:text-xl font-bold text-blue-900">
                             Rs {related.price.toLocaleString()}
                           </p>
                         )}
@@ -452,7 +452,7 @@ const ProductDetails = () => {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-600">No related products found.</p>
+                <p className="text-blue-900/80 text-sm sm:text-base">No related products found.</p>
               )}
             </FilterSection>
           </div>

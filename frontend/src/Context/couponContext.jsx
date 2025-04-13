@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const CouponContext = createContext();
 
@@ -10,6 +10,10 @@ export const CouponProvider = ({ children }) => {
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponError, setCouponError] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // List of unauthenticated routes where toast and navigation should be suppressed
+  const unauthenticatedRoutes = ["/sign-in", "/forgot-password", "/account/create", "/reset-password"];
 
   const fetchCoupons = useCallback(async () => {
     try {
@@ -20,8 +24,11 @@ export const CouponProvider = ({ children }) => {
 
       if (!token || !userId) {
         setCoupons([]);
-        toast.info('Please login to view your coupons');
-        navigate('/sign-in');
+        // Suppress toast and navigation on unauthenticated routes
+        if (!unauthenticatedRoutes.includes(location.pathname)) {
+          toast.info('Please login to view your coupons');
+          navigate('/sign-in');
+        }
         return;
       }
 
@@ -40,16 +47,30 @@ export const CouponProvider = ({ children }) => {
       const errorMsg = error.response?.data?.message || 'Failed to fetch coupons';
       setCouponError(errorMsg);
       if (error.response?.status === 401) {
-        toast.info('Session expired, please login');
-        navigate('/sign-in');
+        // Suppress toast and navigation on unauthenticated routes for 401 errors
+        if (!unauthenticatedRoutes.includes(location.pathname)) {
+          toast.info('Session expired, please login');
+          navigate('/sign-in');
+        }
       }
     } finally {
       setCouponLoading(false);
     }
-  }, [navigate]);
+  }, [navigate, location.pathname]); // Add location.pathname as a dependency
 
   useEffect(() => {
     fetchCoupons();
+
+    const handleAuthChange = () => {
+      if (!localStorage.getItem('token') || !localStorage.getItem('userId')) {
+        setCoupons([]);
+      } else {
+        fetchCoupons();
+      }
+    };
+
+    window.addEventListener('storage', handleAuthChange);
+    return () => window.removeEventListener('storage', handleAuthChange);
   }, [fetchCoupons]);
 
   const value = {

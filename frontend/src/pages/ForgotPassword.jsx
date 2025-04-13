@@ -17,6 +17,7 @@ const ForgotPassword = () => {
     try {
       await axios.post("http://localhost:5001/api/user/forgot-password-token", { email });
       toast.success("OTP sent to your email!");
+      console.log("Navigating to Reset Password"); 
       navigate("/reset-password");
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to send OTP. Please try again.");
@@ -26,26 +27,28 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen pt-40 lg:pt-32 flex items-center justify-center px-6">
+    <div className="bg-gray-100 min-h-screen pt-24 sm:pt-28 md:pt-32 lg:pt-36 flex items-center justify-center px-4 sm:px-6 md:px-8 lg:px-12">
       <motion.div
-        className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md border border-gray-200"
+        className="bg-white rounded-lg shadow-md hover:shadow-xl p-6 sm:p-8 w-full max-w-md sm:max-w-lg border border-gray-200"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <div className="text-center mb-8">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">Forgot Password</h2>
-          <p className="text-gray-600 mt-2">Enter your email to receive a one-time password (OTP).</p>
+        <div className="text-center mb-6 sm:mb-8">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-blue-900 tracking-tight">Forgot Password</h2>
+          <p className="text-sm sm:text-base text-gray-600 mt-2 sm:mt-3">
+            Enter your email to receive a one-time password (OTP).
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Email Address</label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 w-5 h-5" />
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 w-4 h-4 sm:w-5 sm:h-5" />
               <input
                 type="email"
-                className="w-full pl-10 pr-3 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100 transition-all duration-300"
+                className="w-full pl-10 pr-3 py-2 sm:py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 transition-all duration-300 text-sm sm:text-base"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -56,10 +59,10 @@ const ForgotPassword = () => {
 
           <button
             type="submit"
-            className="w-full flex items-center justify-center bg-blue-900 text-white py-3 rounded-full hover:bg-blue-800 transition-all duration-300 shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center bg-blue-900 text-white py-2 sm:py-3 rounded-full hover:bg-blue-500 transition-all duration-300 shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
             disabled={loading}
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
+            {loading ? <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin mr-1 sm:mr-2" /> : null}
             {loading ? "Sending OTP..." : "Send OTP"}
           </button>
         </form>

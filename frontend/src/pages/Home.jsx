@@ -58,11 +58,18 @@ const Home = () => {
   }, [products]);
 
   const swiperBreakpoints = {
-    320: { slidesPerView: 1, spaceBetween: 16 },
-    640: { slidesPerView: 2, spaceBetween: 20 },
-    768: { slidesPerView: 3, spaceBetween: 24 },
-    1024: { slidesPerView: 4, spaceBetween: 28 },
-    1280: { slidesPerView: 5, spaceBetween: 32 },
+    320: { slidesPerView: 1, spaceBetween: 12 },
+    640: { slidesPerView: 2, spaceBetween: 16 },
+    768: { slidesPerView: 3, spaceBetween: 20 },
+    1024: { slidesPerView: 4, spaceBetween: 24 },
+    1280: { slidesPerView: 5, spaceBetween: 28 },
+  };
+
+  const brandBreakpoints = {
+    320: { slidesPerView: 2, spaceBetween: 12 },
+    640: { slidesPerView: 3, spaceBetween: 16 },
+    768: { slidesPerView: 4, spaceBetween: 20 },
+    1024: { slidesPerView: 5, spaceBetween: 24 },
   };
 
   const isInWishlist = (productId) => wishlistItems.some((item) => item._id === productId);
@@ -88,25 +95,26 @@ const Home = () => {
 
   if (loading) {
     return (
-      <div className="bg-gray-100 min-h-screen pt-40 lg:pt-32 flex items-center justify-center">
+      <div className="bg-gray-100 min-h-screen pt-24 sm:pt-28 md:pt-32 lg:pt-36 flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-900"></div>
-          <p className="mt-4 text-gray-600 text-lg">Loading...</p>
+          <div className="inline-block animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-900"></div>
+          <p className="mt-3 sm:mt-4 text-gray-600 text-base sm:text-lg">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-100 min-h-screen pt-40 lg:pt-32">
+    <div className="bg-gray-100 min-h-screen pt-24 sm:pt-28 md:pt-32 lg:pt-36">
       <Hero />
 
-      <section className="py-16 md:py-24 bg-white">
-        <div className="container mx-auto px-6">
+      {/* Featured Products Section */}
+      <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-white">
+        <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <div className="text-center mb-12 md:mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight">Featured Products</h2>
-              <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+            <div className="text-center mb-8 sm:mb-10 md:mb-12 lg:mb-16">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-blue-900 tracking-tight">Featured Products</h2>
+              <p className="mt-3 sm:mt-4 text-base sm:text-lg text-gray-600 max-w-xl sm:max-w-2xl mx-auto leading-relaxed">
                 Explore our handpicked selection of top-tier technology.
               </p>
             </div>
@@ -124,23 +132,23 @@ const Home = () => {
                   <SwiperSlide key={product._id}>
                     <Link to={`/products/${product._id}`}>
                       <motion.div
-                        className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden group relative border border-gray-200"
-                        whileHover={{ y: -8 }}
+                        className="bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group relative border border-gray-200"
+                        whileHover={{ y: -6 }}
                       >
-                        <div className="absolute top-4 right-4 z-10 flex space-x-2">
+                        <div className="absolute top-3 right-3 z-10 flex space-x-1 sm:space-x-2">
                           <button
                             onClick={(e) => {
                               e.preventDefault();
                               handleWishlistToggle(product._id);
                             }}
                             disabled={wishlistLoading[product._id]}
-                            className={`p-2 rounded-full shadow-md ${
+                            className={`p-1 sm:p-2 rounded-full shadow-md ${
                               isInWishlist(product._id)
                                 ? "text-red-500 bg-red-50"
                                 : "text-gray-600 bg-white hover:text-red-500"
                             } transition-all duration-300`}
                           >
-                            <Heart size={18} fill={isInWishlist(product._id) ? "currentColor" : "none"} />
+                            <Heart size={16} sm:size={18} fill={isInWishlist(product._id) ? "currentColor" : "none"} />
                           </button>
                           <button
                             onClick={(e) => {
@@ -153,32 +161,49 @@ const Home = () => {
                               addToCompare(product);
                               toast.success(`${product.title} added to compare`);
                             }}
-                            className="p-2 bg-white rounded-full shadow-md text-blue-900 hover:text-blue-500 transition-all duration-300"
+                            className="p-1 sm:p-2 bg-white rounded-full shadow-md text-blue-900 hover:text-blue-500 transition-all duration-300"
                           >
-                            <GitCompare size={18} />
+                            <GitCompare size={16} sm:size={18} />
                           </button>
                         </div>
-                        <div className="relative h-56 md:h-64 bg-gray-100 flex items-center justify-center">
+                        <div className="relative h-48 sm:h-56 md:h-64 bg-gray-100 flex items-center justify-center">
                           <Image
                             src={product.images[0] || "/placeholder.jpg"}
                             alt={product.title}
-                            className="w-full h-full object-contain p-6 transition-transform duration-300 group-hover:scale-105"
+                            className="w-full h-full object-contain p-4 sm:p-6 transition-transform duration-300 group-hover:scale-105"
                           />
                         </div>
-                        <div className="p-6 flex flex-col">
-                          <span className="text-sm text-gray-600 capitalize mb-2">{product.category || "Electronics"}</span>
-                          <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 mb-3 group-hover:text-blue-500 transition-colors">
+                        <div className="p-4 sm:p-6 flex flex-col">
+                          <span className="text-xs sm:text-sm text-gray-600 capitalize mb-1 sm:mb-2">{product.category || "Electronics"}</span>
+                          <h3 className="text-base sm:text-lg font-semibold text-blue-900 line-clamp-2 mb-2 sm:mb-3 group-hover:text-orange-500 transition-colors">
                             {product.title}
                           </h3>
+                          {/* Rating Display */}
+                          <div className="flex items-center mb-2 sm:mb-3">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                size={14}
+                                className={`w-3 h-3 sm:w-4 sm:h-4 ${
+                                  i < Math.round(product.totalrating || 0)
+                                    ? 'text-yellow-400 fill-yellow-400'
+                                    : 'text-gray-300'
+                                }`}
+                              />
+                            ))}
+                            <span className="ml-1 sm:ml-2 text-gray-600 text-xs sm:text-sm">
+                              ({product.ratings?.length || 0})
+                            </span>
+                          </div>
                           <div className="mt-auto flex justify-between items-center">
                             <div>
-                              <p className="text-xl font-bold text-gray-900">Rs {product.price.toLocaleString()}</p>
+                              <p className="text-lg sm:text-xl font-bold text-blue-900">Rs {product.price.toLocaleString()}</p>
                               {product.originalPrice && (
-                                <p className="text-sm text-gray-500 line-through">Rs {product.originalPrice.toLocaleString()}</p>
+                                <p className="text-xs sm:text-sm text-gray-500 line-through">Rs {product.originalPrice.toLocaleString()}</p>
                               )}
                             </div>
-                            <button className="p-2 bg-blue-900 text-white rounded-full hover:bg-blue-800 transition-all duration-300 shadow-md">
-                              <ShoppingCart className="w-5 h-5" />
+                            <button className="p-1 sm:p-2 bg-blue-900 text-white rounded-full hover:bg-blue-500 transition-all duration-300 shadow-md">
+                              <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
                             </button>
                           </div>
                         </div>
@@ -187,23 +212,24 @@ const Home = () => {
                   </SwiperSlide>
                 ))}
               </Swiper>
-              <button className="featured-prev hidden sm:flex absolute top-1/2 -left-6 -translate-y-1/2 bg-white p-2 rounded-full shadow-md hover:bg-gray-200 transition-all duration-300 z-10">
-                <ChevronLeft className="w-6 h-6 text-gray-700" />
+              <button className="featured-prev hidden sm:flex absolute top-1/2 -left-4 sm:-left-6 -translate-y-1/2 bg-white p-1 sm:p-2 rounded-full shadow-md hover:bg-gray-200 transition-all duration-300 z-10">
+                <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
               </button>
-              <button className="featured-next hidden sm:flex absolute top-1/2 -right-6 -translate-y-1/2 bg-white p-2 rounded-full shadow-md hover:bg-gray-200 transition-all duration-300 z-10">
-                <ChevronRight className="w-6 h-6 text-gray-700" />
+              <button className="featured-next hidden sm:flex absolute top-1/2 -right-4 sm:-right-6 -translate-y-1/2 bg-white p-1 sm:p-2 rounded-full shadow-md hover:bg-gray-200 transition-all duration-300 z-10">
+                <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
               </button>
             </div>
           </motion.div>
         </div>
       </section>
 
-      <section className="py-16 md:py-24 bg-gray-100">
-        <div className="container mx-auto px-6">
+      {/* New Arrivals Section */}
+      <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-gray-100">
+        <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}>
-            <div className="text-center mb-12 md:mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight">New Arrivals</h2>
-              <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+            <div className="text-center mb-8 sm:mb-10 md:mb-12 lg:mb-16">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-blue-900 tracking-tight">New Arrivals</h2>
+              <p className="mt-3 sm:mt-4 text-base sm:text-lg text-gray-600 max-w-xl sm:max-w-2xl mx-auto leading-relaxed">
                 Check out the latest additions to our collection.
               </p>
             </div>
@@ -221,23 +247,23 @@ const Home = () => {
                   <SwiperSlide key={product._id}>
                     <Link to={`/products/${product._id}`}>
                       <motion.div
-                        className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden group relative border border-gray-200"
-                        whileHover={{ y: -8 }}
+                        className="bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group relative border border-gray-200"
+                        whileHover={{ y: -6 }}
                       >
-                        <div className="absolute top-4 right-4 z-10 flex space-x-2">
+                        <div className="absolute top-3 right-3 z-10 flex space-x-1 sm:space-x-2">
                           <button
                             onClick={(e) => {
                               e.preventDefault();
                               handleWishlistToggle(product._id);
                             }}
                             disabled={wishlistLoading[product._id]}
-                            className={`p-2 rounded-full shadow-md ${
+                            className={`p-1 sm:p-2 rounded-full shadow-md ${
                               isInWishlist(product._id)
                                 ? "text-red-500 bg-red-50"
                                 : "text-gray-600 bg-white hover:text-red-500"
                             } transition-all duration-300`}
                           >
-                            <Heart size={18} fill={isInWishlist(product._id) ? "currentColor" : "none"} />
+                            <Heart size={16} sm:size={18} fill={isInWishlist(product._id) ? "currentColor" : "none"} />
                           </button>
                           <button
                             onClick={(e) => {
@@ -250,33 +276,50 @@ const Home = () => {
                               addToCompare(product);
                               toast.success(`${product.title} added to compare`);
                             }}
-                            className="p-2 bg-white rounded-full shadow-md text-blue-900 hover:text-blue-500 transition-all duration-300"
+                            className="p-1 sm:p-2 bg-white rounded-full shadow-md text-blue-900 hover:text-blue-500 transition-all duration-300"
                           >
-                            <GitCompare size={18} />
+                            <GitCompare size={16} sm:size={18} />
                           </button>
                         </div>
-                        <div className="relative h-56 md:h-64 bg-gray-100 flex items-center justify-center">
+                        <div className="relative h-48 sm:h-56 md:h-64 bg-gray-100 flex items-center justify-center">
                           <Image
                             src={product.images[0] || "/placeholder.jpg"}
                             alt={product.title}
-                            className="w-full h-full object-contain p-6 transition-transform duration-300 group-hover:scale-105"
+                            className="w-full h-full object-contain p-4 sm:p-6 transition-transform duration-300 group-hover:scale-105"
                           />
-                          <span className="absolute top-4 left-4 bg-blue-900 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">NEW</span>
+                          <span className="absolute top-3 left-3 bg-blue-900 text-white text-xs font-semibold px-2 sm:px-3 py-1 rounded-full shadow">NEW</span>
                         </div>
-                        <div className="p-6 flex flex-col">
-                          <span className="text-sm text-gray-600 capitalize mb-2">{product.category || "Electronics"}</span>
-                          <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 mb-3 group-hover:text-blue-500 transition-colors">
+                        <div className="p-4 sm:p-6 flex flex-col">
+                          <span className="text-xs sm:text-sm text-gray-600 capitalize mb-1 sm:mb-2">{product.category || "Electronics"}</span>
+                          <h3 className="text-base sm:text-lg font-semibold text-blue-900 line-clamp-2 mb-2 sm:mb-3 group-hover:text-orange-500 transition-colors">
                             {product.title}
                           </h3>
+                          {/* Rating Display */}
+                          <div className="flex items-center mb-2 sm:mb-3">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                size={14}
+                                className={`w-3 h-3 sm:w-4 sm:h-4 ${
+                                  i < Math.round(product.totalrating || 0)
+                                    ? 'text-yellow-400 fill-yellow-400'
+                                    : 'text-gray-300'
+                                }`}
+                              />
+                            ))}
+                            <span className="ml-1 sm:ml-2 text-gray-600 text-xs sm:text-sm">
+                              ({product.ratings?.length || 0})
+                            </span>
+                          </div>
                           <div className="mt-auto flex justify-between items-center">
                             <div>
-                              <p className="text-xl font-bold text-gray-900">Rs {product.price.toLocaleString()}</p>
+                              <p className="text-lg sm:text-xl font-bold text-blue-900">Rs {product.price.toLocaleString()}</p>
                               {product.originalPrice && (
-                                <p className="text-sm text-gray-500 line-through">Rs {product.originalPrice.toLocaleString()}</p>
+                                <p className="text-xs sm:text-sm text-gray-500 line-through">Rs {product.originalPrice.toLocaleString()}</p>
                               )}
                             </div>
-                            <button className="p-2 bg-blue-900 text-white rounded-full hover:bg-blue-800 transition-all duration-300 shadow-md">
-                              <ShoppingCart className="w-5 h-5" />
+                            <button className="p-1 sm:p-2 bg-blue-900 text-white rounded-full hover:bg-blue-500 transition-all duration-300 shadow-md">
+                              <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
                             </button>
                           </div>
                         </div>
@@ -285,86 +328,83 @@ const Home = () => {
                   </SwiperSlide>
                 ))}
               </Swiper>
-              <button className="new-prev hidden sm:flex absolute top-1/2 -left-6 -translate-y-1/2 bg-white p-2 rounded-full shadow-md hover:bg-gray-200 transition-all duration-300 z-10">
-                <ChevronLeft className="w-6 h-6 text-gray-700" />
+              <button className="new-prev hidden sm:flex absolute top-1/2 -left-4 sm:-left-6 -translate-y-1/2 bg-white p-1 sm:p-2 rounded-full shadow-md hover:bg-gray-200 transition-all duration-300 z-10">
+                <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
               </button>
-              <button className="new-next hidden sm:flex absolute top-1/2 -right-6 -translate-y-1/2 bg-white p-2 rounded-full shadow-md hover:bg-gray-200 transition-all duration-300 z-10">
-                <ChevronRight className="w-6 h-6 text-gray-700" />
+              <button className="new-next hidden sm:flex absolute top-1/2 -right-4 sm:-right-6 -translate-y-1/2 bg-white p-1 sm:p-2 rounded-full shadow-md hover:bg-gray-200 transition-all duration-300 z-10">
+                <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
               </button>
             </div>
           </motion.div>
         </div>
       </section>
 
-      <section className="py-16 md:py-24 bg-white">
-        <div className="container mx-auto px-6">
+      {/* Trusted Brands Section */}
+      <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-white">
+        <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 }}>
-            <div className="text-center mb-12 md:mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight">Our Trusted Brands</h2>
-              <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-                Premium quality from industry-leading partners
+            <div className="text-center mb-8 sm:mb-10 md:mb-12 lg:mb-16">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-blue-900 tracking-tight">Our Trusted Brands</h2>
+              <p className="mt-3 sm:mt-4 text-base sm:text-lg text-gray-600 max-w-xl sm:max-w-2xl mx-auto leading-relaxed">
+                Premium quality from industry-leading partners.
               </p>
             </div>
 
             <div className="relative">
               <Swiper
                 modules={[Navigation, Autoplay]}
-                spaceBetween={32}
+                spaceBetween={24}
                 loop={true}
                 autoplay={{ delay: 3000, disableOnInteraction: false }}
                 navigation={{ prevEl: ".brands-prev", nextEl: ".brands-next" }}
-                breakpoints={{
-                  320: { slidesPerView: 2, spaceBetween: 16 },
-                  640: { slidesPerView: 3, spaceBetween: 20 },
-                  768: { slidesPerView: 4, spaceBetween: 24 },
-                  1024: { slidesPerView: 5, spaceBetween: 32 },
-                }}
+                breakpoints={brandBreakpoints}
               >
                 {brands.map((brand) => (
                   <SwiperSlide key={brand.name}>
                     <motion.div
-                      className="bg-white rounded-xl shadow-md p-6 flex items-center justify-center h-32 border border-gray-200 hover:shadow-lg transition-all duration-300"
+                      className="bg-white rounded-lg shadow-md p-4 sm:p-6 flex items-center justify-center h-24 sm:h-28 md:h-32 border border-gray-200 hover:shadow-xl transition-all duration-300"
                       whileHover={{ scale: 1.05 }}
                     >
                       <Image
                         src={brand.logo}
                         alt={brand.name}
-                        className="max-h-14 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity duration-300"
+                        className="max-h-10 sm:max-h-12 md:max-h-14 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity duration-300"
                       />
                     </motion.div>
                   </SwiperSlide>
                 ))}
               </Swiper>
-              <button className="brands-prev hidden sm:flex absolute top-1/2 -left-6 -translate-y-1/2 bg-white p-2 rounded-full shadow-md hover:bg-gray-200 transition-all duration-300 z-10">
-                <ChevronLeft className="w-6 h-6 text-gray-700" />
+              <button className="brands-prev hidden sm:flex absolute top-1/2 -left-4 sm:-left-6 -translate-y-1/2 bg-white p-1 sm:p-2 rounded-full shadow-md hover:bg-gray-200 transition-all duration-300 z-10">
+                <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
               </button>
-              <button className="brands-next hidden sm:flex absolute top-1/2 -right-6 -translate-y-1/2 bg-white p-2 rounded-full shadow-md hover:bg-gray-200 transition-all duration-300 z-10">
-                <ChevronRight className="w-6 h-6 text-gray-700" />
+              <button className="brands-next hidden sm:flex absolute top-1/2 -right-4 sm:-right-6 -translate-y-1/2 bg-white p-1 sm:p-2 rounded-full shadow-md hover:bg-gray-200 transition-all duration-300 z-10">
+                <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
               </button>
             </div>
           </motion.div>
         </div>
       </section>
 
-      <section className="bg-blue-900 py-16 md:py-24">
-        <div className="container mx-auto px-6 text-center">
+      {/* Call to Action Section */}
+      <section className="bg-blue-900 py-12 sm:py-16 md:py-20 lg:py-24">
+        <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 text-center">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight mb-6">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight mb-4 sm:mb-6">
               Elevate Your Tech Experience
             </h2>
-            <p className="text-lg md:text-xl text-gray-200 mb-8 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-gray-200 mb-6 sm:mb-8 max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-3xl mx-auto leading-relaxed">
               Unlock exclusive deals and cutting-edge gadgets designed to enhance your life.
             </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6">
+            <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 md:gap-6">
               <Link
                 to="/products"
-                className="bg-blue-500 text-white font-semibold px-8 py-3 rounded-full hover:bg-blue-600 transition-all duration-300 shadow-lg hover:shadow-xl"
+                className="bg-blue-500 text-white font-semibold px-6 sm:px-8 py-2 sm:py-3 rounded-full hover:bg-blue-600 transition-all duration-300 shadow-lg hover:shadow-xl"
               >
                 Shop Now
               </Link>
               <Link
                 to="/products"
-                className="bg-transparent text-white font-semibold px-8 py-3 rounded-full border-2 border-white hover:bg-white hover:text-blue-900 transition-all duration-300 shadow-md"
+                className="bg-transparent text-white font-semibold px-6 sm:px-8 py-2 sm:py-3 rounded-full border-2 border-white hover:bg-white hover:text-blue-900 transition-all duration-300 shadow-md"
               >
                 Explore More
               </Link>

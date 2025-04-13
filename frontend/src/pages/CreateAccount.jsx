@@ -45,7 +45,7 @@ const CreateAccount = () => {
     try {
       setLoading(true);
       await axios.post("http://localhost:5001/api/user/register", formData);
-      toast.success("Account created successfully! Please log in.");
+      toast.success("Account created successfully! Please sign in.");
       navigate("/sign-in");
     } catch (error) {
       toast.error(error.response?.data?.message || "Registration failed. Please try again.");
@@ -55,27 +55,30 @@ const CreateAccount = () => {
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen pt-40 lg:pt-32 flex items-center justify-center px-6">
+    <div className="bg-gray-100 min-h-screen pt-24 sm:pt-28 md:pt-32 lg:pt-36 flex items-center justify-center px-4 sm:px-6 md:px-8 lg:px-12">
       <motion.div
-        className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md border border-gray-200"
+        className="bg-white rounded-lg shadow-md hover:shadow-xl p-6 sm:p-8 w-full max-w-md sm:max-w-lg border border-gray-200"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <div className="text-center mb-8">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">Create Account</h2>
+        <div className="text-center mb-6 sm:mb-8">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-blue-900 tracking-tight">Create Account</h2>
+          <p className="text-sm sm:text-base text-gray-600 mt-2 sm:mt-3">
+            Join us today! Fill in the details to create your account.
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           {formFields.map(({ id, label, type, placeholder, icon: Icon, required }) => (
             <div key={id}>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">{label}</label>
               <div className="relative">
-                <Icon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 w-5 h-5" />
+                <Icon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 w-4 h-4 sm:w-5 sm:h-5" />
                 <input
                   type={type}
                   id={id}
-                  className="w-full pl-10 pr-3 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100 transition-all duration-300"
+                  className="w-full pl-10 pr-3 py-2 sm:py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 transition-all duration-300 text-sm sm:text-base"
                   placeholder={placeholder}
                   value={formData[id]}
                   onChange={handleChange}
@@ -87,13 +90,13 @@ const CreateAccount = () => {
 
           {/* Password Field */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Password</label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 w-5 h-5" />
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 w-4 h-4 sm:w-5 sm:h-5" />
               <input
                 type={showPassword ? "text" : "password"}
                 id="password"
-                className="w-full pl-10 pr-10 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100 transition-all duration-300"
+                className="w-full pl-10 pr-10 py-2 sm:py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 transition-all duration-300 text-sm sm:text-base"
                 placeholder="Enter your password"
                 value={formData.password}
                 onChange={handleChange}
@@ -104,20 +107,20 @@ const CreateAccount = () => {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600 hover:text-gray-900 transition-colors duration-300"
               >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                {showPassword ? <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
               </button>
             </div>
           </div>
 
           {/* Confirm Password Field */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 w-5 h-5" />
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 w-4 h-4 sm:w-5 sm:h-5" />
               <input
                 type={showConfirmPassword ? "text" : "password"}
                 id="confirmPassword"
-                className="w-full pl-10 pr-10 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100 transition-all duration-300"
+                className="w-full pl-10 pr-10 py-2 sm:py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 transition-all duration-300 text-sm sm:text-base"
                 placeholder="Confirm your password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
@@ -128,7 +131,7 @@ const CreateAccount = () => {
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600 hover:text-gray-900 transition-colors duration-300"
               >
-                {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                {showConfirmPassword ? <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
               </button>
             </div>
           </div>
@@ -136,18 +139,18 @@ const CreateAccount = () => {
           <motion.button
             type="submit"
             whileTap={{ scale: 0.97 }}
-            className="w-full flex items-center justify-center bg-blue-900 text-white py-3 rounded-full hover:bg-blue-800 transition-all duration-300 shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center bg-blue-900 text-white py-2 sm:py-3 rounded-full hover:bg-blue-500 transition-all duration-300 shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
             disabled={loading}
           >
             {loading ? "Creating Account..." : "Create Account"}
           </motion.button>
         </form>
 
-        <p className="text-center text-gray-600 mt-6">
+        <p className="text-center text-gray-600 mt-4 sm:mt-6 text-sm sm:text-base">
           Already have an account?{" "}
           <Link
             to="/sign-in"
-            className="text-blue-900 hover:text-blue-500 font-medium transition-colors duration-300"
+            className="text-blue-900 hover:text-orange-500 font-medium transition-colors duration-300"
           >
             Sign In
           </Link>

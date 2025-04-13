@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const CartContext = createContext();
 
@@ -11,6 +11,10 @@ export const CartProvider = ({ children }) => {
   const [cartError, setCartError] = useState(null);
   const [totalAfterDiscount, setTotalAfterDiscount] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // List of unauthenticated routes where logging should be suppressed
+  const unauthenticatedRoutes = ["/sign-in", "/forgot-password", "/account/create", "/reset-password"];
 
   const fetchCart = useCallback(async () => {
     try {
@@ -21,6 +25,10 @@ export const CartProvider = ({ children }) => {
       if (!token) {
         setCartItems([]);
         setTotalAfterDiscount(null);
+        // Suppress logging on unauthenticated routes
+        if (!unauthenticatedRoutes.includes(location.pathname)) {
+          console.log("No token found, setting empty cart");
+        }
         return;
       }
 
@@ -47,7 +55,7 @@ export const CartProvider = ({ children }) => {
     } finally {
       setCartLoading(false);
     }
-  }, [navigate]);
+  }, [navigate, location.pathname]); // Add location.pathname as a dependency
 
   const addToCart = async (productId, quantity = 1, color = '') => {
     try {

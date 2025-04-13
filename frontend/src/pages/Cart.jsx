@@ -131,10 +131,10 @@ const Cart = () => {
 
   if (loading || cartLoading || couponLoading) {
     return (
-      <div className="bg-gray-100 min-h-screen pt-40 lg:pt-32 flex items-center justify-center">
+      <div className="bg-gray-100 min-h-screen pt-24 sm:pt-28 md:pt-32 lg:pt-36 flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-900"></div>
-          <p className="mt-4 text-gray-600 text-lg">Loading your cart...</p>
+          <div className="inline-block animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-900"></div>
+          <p className="mt-3 sm:mt-4 text-gray-600 text-base sm:text-lg">Loading your cart...</p>
         </div>
       </div>
     );
@@ -142,13 +142,13 @@ const Cart = () => {
 
   if (cartError) {
     return (
-      <div className="bg-gray-100 min-h-screen pt-40 lg:pt-32 flex items-center justify-center">
-        <div className="text-center max-w-md p-8 bg-white rounded-xl shadow-lg border border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4 tracking-tight">Cart Error</h2>
-          <p className="text-red-600 mb-6">{cartError}</p>
+      <div className="bg-gray-100 min-h-screen pt-24 sm:pt-28 md:pt-32 lg:pt-36 flex items-center justify-center">
+        <div className="text-center max-w-md p-6 sm:p-8 bg-white rounded-xl shadow-lg border border-gray-200">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-900 mb-3 sm:mb-4 tracking-tight">Cart Error</h2>
+          <p className="text-red-600 mb-4 sm:mb-6 text-sm sm:text-base">{cartError}</p>
           <Link
             to="/products"
-            className="bg-blue-900 text-white px-6 py-3 rounded-full hover:bg-blue-800 transition-all duration-300 shadow-md inline-block"
+            className="bg-blue-900 text-white px-5 sm:px-6 py-2 sm:py-3 rounded-full hover:bg-blue-500 transition-all duration-300 shadow-md inline-block text-sm sm:text-base"
           >
             Continue Shopping
           </Link>
@@ -158,20 +158,27 @@ const Cart = () => {
   }
 
   return (
-    <div className="bg-gray-100 min-h-screen pt-40 lg:pt-32">
-      <div className="container mx-auto px-6 py-16">
+    <div className="bg-gray-100 min-h-screen pt-24 sm:pt-28 md:pt-32 lg:pt-36">
+      <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-8 sm:py-12 md:py-16">
+        {/* Header Section */}
         <motion.div
-          initial={{ opacity: 0, y: -30 }}
+          initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="mb-12 text-center"
+          className="mb-6 sm:mb-8 flex justify-between items-center border-b border-gray-200 pb-4"
         >
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-blue-900 tracking-tight">
             Your Cart
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Review your selected items before checkout
-          </p>
+          {cartItems.length > 0 && (
+            <button
+              onClick={emptyCart}
+              className="text-red-500 hover:text-red-700 font-medium transition-colors duration-300 px-4 sm:px-6 py-2 sm:py-3 rounded-full border border-red-500 hover:bg-red-50 text-sm sm:text-base"
+              disabled={isUpdating}
+            >
+              Empty Cart
+            </button>
+          )}
         </motion.div>
 
         {cartItems.length === 0 ? (
@@ -179,165 +186,170 @@ const Cart = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-center py-16 bg-white rounded-xl shadow-lg border border-gray-200"
+            className="text-center py-12 sm:py-16 bg-white rounded-xl shadow-lg border border-gray-200 max-w-md sm:max-w-lg mx-auto"
           >
-            <ShoppingBag size={80} className="mx-auto mb-6 text-gray-300" />
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4 tracking-tight">
-              Your Cart is Empty
-            </h2>
-            <p className="text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
+            <ShoppingBag size={60} className="mx-auto mb-4 sm:mb-6 text-gray-300" />
+            <h2 className="text-xl sm:text-2xl font-semibold text-blue-900 mb-3 sm:mb-4 tracking-tight">Your Cart is Empty</h2>
+            <p className="text-gray-600 mb-6 sm:mb-8 text-sm sm:text-base max-w-sm sm:max-w-md mx-auto leading-relaxed">
               Add some products to your cart to get started!
             </p>
             <Link
               to="/products"
-              className="bg-blue-900 text-white px-6 py-3 rounded-full hover:bg-blue-800 transition-all duration-300 shadow-md inline-block"
+              className="bg-blue-900 text-white px-5 sm:px-6 py-2 sm:py-3 rounded-full hover:bg-blue-500 transition-all duration-300 shadow-md inline-block text-sm sm:text-base"
             >
               Continue Shopping
             </Link>
           </motion.div>
         ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="bg-white rounded-xl shadow-lg p-8 border border-gray-200"
-          >
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 tracking-tight">
-                {cartItems.length} {cartItems.length === 1 ? 'Item' : 'Items'} in Cart
-              </h2>
-              <button
-                onClick={emptyCart}
-                className="text-red-500 hover:text-red-700 flex items-center transition-colors duration-300"
-                disabled={isUpdating}
-              >
-                <Trash2 size={20} className="mr-2" />
-                Empty Cart
-              </button>
-            </div>
-
-            {cartItems.map((item) => (
-              <motion.div
-                key={getProductId(item)}
-                className="flex items-center justify-between border-b border-gray-200 py-6 last:border-b-0"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div className="flex items-center">
-                  <Link to={`/products/${getProductId(item)}`}>
-                    <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center mr-6">
-                      <img
-                        src={item.product?.images?.[0] || '/placeholder.jpg'}
-                        alt={item.product?.title || 'Product'}
-                        className="w-full h-full object-contain p-2"
-                      />
-                    </div>
-                  </Link>
-                  <div>
-                    <Link to={`/products/${getProductId(item)}`}>
-                      <h2 className="text-lg font-semibold text-gray-900 hover:text-blue-500 transition-colors duration-300">
-                        {item.product?.title || 'Unknown Product'}
-                      </h2>
-                    </Link>
-                    <p className="text-blue-900 text-sm font-bold">
-                      Rs {(item.price || 0).toLocaleString()}
-                    </p>
-                    <p className="text-gray-600 text-sm">Color: {item.color || 'N/A'}</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <div className="flex border border-gray-200 rounded-full bg-gray-100">
-                    <button
-                      onClick={() => handleUpdateQuantity(item, -1)}
-                      className={`w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors duration-300 ${
-                        item.count <= 1 || isUpdating ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
-                      disabled={item.count <= 1 || isUpdating}
-                    >
-                      <Minus size={18} />
-                    </button>
-                    <span className="w-10 h-10 flex items-center justify-center text-gray-900 font-medium">
-                      {item.count || 0}
-                    </span>
-                    <button
-                      onClick={() => handleUpdateQuantity(item, 1)}
-                      className={`w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors duration-300 ${
-                        isUpdating ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
-                      disabled={isUpdating}
-                    >
-                      <Plus size={18} />
-                    </button>
-                  </div>
-                  <button
-                    onClick={() => handleRemoveFromCart(item)}
-                    className={`text-red-500 hover:text-red-700 p-2 transition-colors duration-300 ${
-                      isUpdating ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                    disabled={isUpdating}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+            {/* Cart Items Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="lg:col-span-2"
+            >
+              <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6">
+                <h2 className="text-lg sm:text-xl font-semibold text-blue-900 mb-4 sm:mb-6 tracking-tight">
+                  {cartItems.length} {cartItems.length === 1 ? 'Item' : 'Items'} in Cart
+                </h2>
+                {cartItems.map((item) => (
+                  <motion.div
+                    key={getProductId(item)}
+                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between border border-gray-200 rounded-lg p-4 sm:p-6 mb-4 last:mb-0"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
                   >
-                    <Trash2 size={20} />
-                  </button>
-                </div>
-              </motion.div>
-            ))}
+                    <div className="flex items-center w-full sm:w-auto">
+                      <Link to={`/products/${getProductId(item)}`}>
+                        <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center mr-4 sm:mr-6">
+                          <img
+                            src={item.product?.images?.[0] || '/placeholder.jpg'}
+                            alt={item.product?.title || 'Product'}
+                            className="w-full h-full object-contain p-2"
+                          />
+                        </div>
+                      </Link>
+                      <div className="flex-1">
+                        <Link to={`/products/${getProductId(item)}`}>
+                          <h3 className="text-sm sm:text-lg font-semibold text-blue-900 hover:text-orange-500 transition-colors duration-300">
+                            {item.product?.title || 'Unknown Product'}
+                          </h3>
+                        </Link>
+                        <p className="text-blue-900 text-sm sm:text-base font-bold mt-1">
+                          Rs {(item.price || 0).toLocaleString()}
+                        </p>
+                        <p className="text-gray-600 text-xs sm:text-sm mt-1">Color: {item.color || 'N/A'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2 sm:space-x-4 mt-4 sm:mt-0 w-full sm:w-auto justify-between sm:justify-start">
+                      <div className="flex border border-gray-200 rounded-full bg-gray-100">
+                        <button
+                          onClick={() => handleUpdateQuantity(item, -1)}
+                          className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors duration-300 ${
+                            item.count <= 1 || isUpdating ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                          disabled={item.count <= 1 || isUpdating}
+                        >
+                          <Minus size={16} className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </button>
+                        <span className="w-10 h-8 sm:w-12 sm:h-10 flex items-center justify-center text-gray-900 font-medium text-sm sm:text-base">
+                          {item.count || 0}
+                        </span>
+                        <button
+                          onClick={() => handleUpdateQuantity(item, 1)}
+                          className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors duration-300 ${
+                            isUpdating ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                          disabled={isUpdating}
+                        >
+                          <Plus size={16} className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => handleRemoveFromCart(item)}
+                        className={`text-red-500 hover:text-red-700 p-2 transition-colors duration-300 ${
+                          isUpdating ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                        disabled={isUpdating}
+                      >
+                        <Trash2 size={20} className="w-5 h-5 sm:w-6 sm:h-6" />
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
 
-            <div className="mt-8">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Apply Coupon</h3>
-                <Link to="/coupons" className="text-blue-500 hover:underline">
-                  View Available Coupons
-                </Link>
-              </div>
-              <div className="flex space-x-2 mb-4">
-                <input
-                  type="text"
-                  value={couponCode}
-                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                  placeholder="Enter coupon code"
-                  className="w-full p-2 border rounded-md"
-                  disabled={isUpdating}
-                />
-                <button
-                  onClick={handleApplyCoupon}
-                  className={`bg-blue-900 text-white px-4 py-2 rounded-md hover:bg-blue-800 transition-colors ${
-                    isUpdating ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                  disabled={isUpdating}
-                >
-                  Apply
-                </button>
-              </div>
-              {appliedCoupon && (
-                <p className="text-green-600 mb-4">
-                  Coupon "{appliedCoupon.code}" applied! {appliedCoupon.discount}% off
-                </p>
-              )}
-              <div className="flex justify-between items-center mb-4">
-                <p className="text-lg font-semibold text-gray-900">Subtotal:</p>
-                <p className="text-lg font-semibold text-gray-900">Rs {cartTotal.toLocaleString()}</p>
-              </div>
-              {totalAfterDiscount && totalAfterDiscount != cartTotal && (
-                <div className="flex justify-between items-center mb-4">
-                  <p className="text-lg font-semibold text-gray-900">Total After Discount:</p>
-                  <p className="text-lg font-semibold text-green-600">Rs {totalAfterDiscount.toLocaleString()}</p>
+            {/* Order Summary Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="lg:col-span-1"
+            >
+              <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6 sticky top-24">
+                <h2 className="text-lg sm:text-xl font-semibold text-blue-900 mb-4 sm:mb-6 tracking-tight">
+                  Order Summary
+                </h2>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <p className="text-sm sm:text-base font-semibold text-gray-900">Subtotal:</p>
+                    <p className="text-sm sm:text-base font-semibold text-gray-900">Rs {cartTotal.toLocaleString()}</p>
+                  </div>
+                  {totalAfterDiscount && totalAfterDiscount !== cartTotal && (
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm sm:text-base font-semibold text-gray-900">Total After Discount:</p>
+                      <p className="text-sm sm:text-base font-semibold text-green-600">Rs {totalAfterDiscount.toLocaleString()}</p>
+                    </div>
+                  )}
+                  <div className="border-t border-gray-200 pt-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="text-sm sm:text-base font-semibold text-gray-900">Apply Coupon</h3>
+                      <Link to="/coupons" className="text-blue-900 hover:text-orange-500 text-xs sm:text-sm transition-colors duration-300">
+                        View Available Coupons
+                      </Link>
+                    </div>
+                    <div className="flex space-x-2">
+                      <input
+                        type="text"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                        placeholder="Enter coupon code"
+                        className="w-full p-2 border border-gray-200 rounded-md text-sm"
+                        disabled={isUpdating}
+                      />
+                      <button
+                        onClick={handleApplyCoupon}
+                        className={`bg-blue-900 text-white px-3 sm:px-4 py-2 rounded-md hover:bg-blue-500 transition-colors duration-300 text-sm ${
+                          isUpdating ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                        disabled={isUpdating}
+                      >
+                        Apply
+                      </button>
+                    </div>
+                    {appliedCoupon && (
+                      <p className="text-green-600 text-xs sm:text-sm mt-2">
+                        Coupon "{appliedCoupon.code}" applied! {appliedCoupon.discount}% off
+                      </p>
+                    )}
+                  </div>
+                  <Link
+                    to="/checkout"
+                    state={{ couponCode: appliedCoupon?.code }}
+                    className={`bg-blue-900 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full flex items-center justify-center hover:bg-blue-500 transition-all duration-300 shadow-md w-full text-sm sm:text-base ${
+                      isUpdating ? 'opacity-50 pointer-events-none' : ''
+                    }`}
+                  >
+                    <ShoppingBag size={16} className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                    Proceed to Checkout
+                  </Link>
                 </div>
-              )}
-              <div className="flex justify-end">
-                <Link
-                  to="/checkout"
-                  state={{ couponCode: appliedCoupon?.code }}
-                  className={`bg-blue-900 text-white px-6 py-3 rounded-full flex items-center hover:bg-blue-800 transition-all duration-300 shadow-md ${
-                    isUpdating ? 'opacity-50 pointer-events-none' : ''
-                  }`}
-                >
-                  <ShoppingBag size={20} className="mr-2" />
-                  Proceed to Checkout
-                </Link>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          </div>
         )}
       </div>
     </div>

@@ -17,7 +17,11 @@ const orderSchema = new mongoose.Schema(
       id: String,
       method: String,
       amount: Number,
-      status: String,
+      status: {
+        type: String,
+        default: "Pending",
+        enum: ["Pending", "Completed", "Failed", "Cash on Delivery"],
+      },
       created: Number,
       currency: String,
     },
@@ -31,6 +35,7 @@ const orderSchema = new mongoose.Schema(
         "Dispatched",
         "Cancelled",
         "Delivered",
+        "Pending",
       ],
     },
     orderby: {
