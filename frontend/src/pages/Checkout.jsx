@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CreditCard, Lock, Wallet } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -12,7 +12,7 @@ const Checkout = () => {
   const location = useLocation();
   const { cartItems, cartTotal, totalAfterDiscount, emptyCart } = useCart();
   const [step, setStep] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState("COD"); // Default to COD
+  const [paymentMethod, setPaymentMethod] = useState("COD");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -21,8 +21,18 @@ const Checkout = () => {
     country: "",
     zipCode: "",
   });
+  const [error, setError] = useState(null);
 
   const couponCode = location.state?.couponCode || null;
+
+  useEffect(() => {
+    const query = new URLSearchParams(location.search);
+    const errorMsg = query.get("error");
+    if (errorMsg) {
+      toast.error(errorMsg);
+      setError(errorMsg);
+    }
+  }, [location.search]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -314,6 +324,11 @@ const Checkout = () => {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6">Checkout</h1>
       <CheckoutProgress currentStep={step} />
+      {error && (
+        <div className="bg-red-100 text-red-700 p-4 rounded-md mb-4">
+          {error}
+        </div>
+      )}
       <motion.form
         onSubmit={handleSubmit}
         className="bg-white rounded-lg shadow-md p-6"

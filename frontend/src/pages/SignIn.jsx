@@ -59,7 +59,7 @@ const SignIn = () => {
         <div className="text-center mb-6 sm:mb-8">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-blue-900 tracking-tight">Sign In</h2>
           <p className="text-sm sm:text-base text-gray-600 mt-2 sm:mt-3">
-            Welcome back! Please sign in to your account.
+           Please sign in to your account.
           </p>
         </div>
 

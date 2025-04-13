@@ -3,6 +3,7 @@ const crypto = require("crypto");
 const Order = require("../models/orderModel");
 const Cart = require("../models/cartModel");
 const Product = require("../models/productModel");
+const Coupon = require("../models/couponModel");
 const uniqid = require("uniqid");
 
 // Use environment variable for eSewa secret key
@@ -46,7 +47,9 @@ const initiateEsewaPayment = asyncHandler(async (req, res) => {
     if (validCoupon) {
       finalAmount = userCart.totalAfterDiscount || (
         userCart.cartTotal - (userCart.cartTotal * validCoupon.discount) / 100
-      ).toFixed(2);
+      );
+    } else {
+      return res.status(400).json({ message: "Invalid or expired coupon" });
     }
   }
 
@@ -77,12 +80,12 @@ const initiateEsewaPayment = asyncHandler(async (req, res) => {
   // Prepare data for eSewa payment request
   const params = {
     amount: totalAmount,
-    tax_amount: "0",
+    tax_amount: "0.00",
     total_amount: totalAmount,
     transaction_uuid,
     product_code: process.env.ESEWA_PRODUCT_CODE,
-    product_service_charge: "0",
-    product_delivery_charge: "0",
+    product_service_charge: "0.00",
+    product_delivery_charge: "0.00",
     success_url: process.env.ESEWA_SUCCESS_URL,
     failure_url: process.env.ESEWA_FAILURE_URL,
   };
@@ -130,15 +133,15 @@ const verifyEsewaPayment = asyncHandler(async (req, res) => {
     product_code,
     status,
     total_amount,
-    transaction_code,
-    signed_field_names,
     signature,
   } = responseData;
 
-  const message = `transaction_code=${transaction_code},status=${status},total_amount=${total_amount},transaction_uuid=${transaction_uuid},product_code=${product_code},signed_field_names=${signed_field_names}`;
+  // Verify signature using the same fields as initiation
+  const message = `total_amount=${total_amount},transaction_uuid=${transaction_uuid},product_code=${product_code}`;
   const generatedSignature = generateSignature(message);
 
   if (generatedSignature !== signature) {
+    console.error("Signature verification failed:", { generatedSignature, receivedSignature: signature });
     return res.status(400).json({ message: "Signature verification failed" });
   }
 
@@ -152,6 +155,7 @@ const verifyEsewaPayment = asyncHandler(async (req, res) => {
     order.orderStatus = "Processing";
     await order.save();
 
+    // Update product quantities
     const update = order.products.map((item) => ({
       updateOne: {
         filter: { _id: item.product._id },
@@ -160,6 +164,7 @@ const verifyEsewaPayment = asyncHandler(async (req, res) => {
     }));
     await Product.bulkWrite(update, {});
 
+    // Clear the cart
     await Cart.findOneAndDelete({ orderby: order.orderby });
 
     res.redirect(`http://localhost:5173/order-confirmation?orderId=${order._id}`);

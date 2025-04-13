@@ -7,16 +7,12 @@ const dbConnect = require("./config/dbConnect");
 const { notFound, errorHandler } = require("./middlewares/errorHandler");
 const authRouter = require("./routes/authRoutes");
 const productRouter = require("./routes/productRoutes");
-const categoryRouter = require("./routes/prodcategoryRoutes");
 const brandRouter = require("./routes/brandRoutes");
-const colorRouter = require("./routes/colorRoutes");
-const enqRouter = require("./routes/enqRoutes");
 const couponRouter = require("./routes/couponRoutes");
 const uploadRouter = require("./routes/uploadRoutes");
 const chatRouter = require("./routes/chatRoutes");
-const saleProductRouter = require("./routes/saleProductRoutes");
 const heroBannerRouter = require("./routes/heroBannerRoutes");
-const esewaRouter = require("./routes/esewaRoutes"); // Add eSewa routes
+const esewaRouter = require("./routes/esewaRoutes");
 const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
 const cors = require("cors");
@@ -60,20 +56,16 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "Uploads")));
 
 app.use("/api/user", authRouter);
 app.use("/api/products", productRouter);
-app.use("/api/category", categoryRouter);
 app.use("/api/brand", brandRouter);
 app.use("/api/coupon", couponRouter);
-app.use("/api/color", colorRouter);
-app.use("/api/enquiry", enqRouter);
 app.use("/api/upload", uploadRouter);
 app.use("/api/chat", chatRouter);
-app.use("/api/sale-products", saleProductRouter);
 app.use("/api/hero-banners", heroBannerRouter);
-app.use("/api/esewa", esewaRouter); // Add eSewa routes
+app.use("/api/esewa", esewaRouter);
 
 app.use(notFound);
 app.use(errorHandler);

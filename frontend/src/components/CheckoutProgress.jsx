@@ -11,7 +11,7 @@ const CheckoutProgress = ({ currentStep }) => {
           <motion.div
             className={`w-8 h-8 rounded-full flex items-center justify-center ${
               index <= currentStep
-                ? "bg-primary-600 text-white"
+                ? "bg-blue-900 text-white"
                 : "bg-gray-200 text-gray-600"
             }`}
             initial={{ scale: 0 }}
@@ -23,7 +23,7 @@ const CheckoutProgress = ({ currentStep }) => {
           <motion.span
             className={`mt-2 text-sm ${
               index <= currentStep
-                ? "text-primary-600 font-semibold"
+                ? "text-blue-900 font-semibold"
                 : "text-gray-500"
             }`}
             initial={{ opacity: 0 }}

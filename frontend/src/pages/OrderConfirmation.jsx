@@ -47,7 +47,7 @@ const OrderConfirmation = () => {
           transition={{ delay: 0.5, duration: 0.5 }}
         >
           <h2 className="text-lg font-semibold mb-2">Order Number</h2>
-          <p className="text-2xl font-bold text-primary-600">{orderId}</p>
+          <p className="text-2xl font-bold text-blue-900">{orderId}</p>
         </motion.div>
         <motion.div
           className="flex justify-center items-center mb-8"
@@ -55,7 +55,7 @@ const OrderConfirmation = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6, duration: 0.5 }}
         >
-          <Package size={24} className="mr-2 text-primary-600" />
+          <Package size={24} className="mr-2 text-blue-900" />
           <p className="text-lg">Estimated delivery: 3-5 business days</p>
         </motion.div>
         <motion.div
@@ -65,7 +65,7 @@ const OrderConfirmation = () => {
         >
           <Link
             to="/"
-            className="bg-primary-600 text-white px-6 py-3 rounded-md hover:bg-primary-700 transition-colors inline-block"
+            className="bg-blue-900 text-white px-6 py-3 rounded-md hover:bg-blue-800 transition-colors inline-block"
           >
             Continue Shopping
           </Link>

@@ -40,15 +40,19 @@ const productSchema = new mongoose.Schema(
       default: 0,
       min: [0, 'Sold count cannot be negative'],
     },
-    images: {
-      type: [String],
-      validate: {
-        validator: function (arr) {
-          return Array.isArray(arr) && arr.every((url) => typeof url === 'string');
+    images: [
+      {
+        url: {
+          type: String,
+          required: true,
         },
-        message: 'Images should be an array of URLs',
+        type: {
+          type: String,
+          enum: ['main', 'sub'],
+          required: true,
+        },
       },
-    },
+    ],
     color: {
       type: String,
       required: [true, 'Product color is required'],
