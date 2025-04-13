@@ -325,12 +325,7 @@ const Header = () => {
                   </div>
                 )}
               </li>
-              <NavItem to="/sale" isActive={isActive} onClick={closeMenu} color="text-blue-900 hover:text-blue-500 hover:bg-gray-200 lg:hover:bg-transparent" activeColor="text-orange-500 bg-orange-500/10 lg:bg-transparent lg:border-b-2 lg:border-orange-500">
-                Sale
-                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-500 text-white">
-                  HOT
-                </span>
-              </NavItem>
+              
               <NavItem to="/locations" isActive={isActive} onClick={closeMenu} color="text-blue-900 hover:text-blue-500 hover:bg-gray-200 lg:hover:bg-transparent" activeColor="text-orange-500 bg-orange-500/10 lg:bg-transparent lg:border-b-2 lg:border-orange-500">
                 Stores
               </NavItem>

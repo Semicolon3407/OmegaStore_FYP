@@ -18,13 +18,12 @@ import AdminUserManagement from "./pages/admin/AdminUserManagement";
 import AdminRevenue from "./pages/admin/AdminRevenue";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminChat from "./pages/admin/AdminChat";
-import AdminSaleProducts from "./pages/admin/AdminSaleProducts";
+
 import AdminHeroBanners from "./pages/admin/AdminHeroBanners";
 import AdminCoupons from "./pages/admin/AdminCoupon";
 import UserChat from "./pages/UserChat";
 import Locations from "./pages/Locations";
-import SaleProducts from "./pages/SaleProducts";
-import SaleProductDetails from "./pages/SaleProductDetails";
+
 import SignIn from "./pages/SignIn";
 import Contact from "./pages/Contact";
 import CreateAccount from "./pages/CreateAccount";
@@ -40,7 +39,7 @@ import { WishlistProvider } from "./Context/wishlistContext";
 import { CompareProvider } from "./Context/compareContext";
 import { ChatProvider } from "./Context/chatContext";
 import { ReviewProvider } from "./Context/ReviewContext";
-import { SaleReviewProvider } from "./Context/SaleReviewContext";
+
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -153,8 +152,8 @@ const Layout = () => {
               <Route path="/products" element={<ProductListing />} />
               <Route path="/products/:id" element={<ProductDetails />} />
               <Route path="/locations" element={<Locations />} />
-              <Route path="/sale" element={<SaleProducts />} />
-              <Route path="/sale-products/:id" element={<SaleProductDetails />} />
+             
+             
               <Route path="/contact" element={<Contact />} />
               <Route path="/warranty" element={<Warranty />} />
               <Route path="/coupons" element={<Coupons />} />
@@ -181,7 +180,6 @@ const Layout = () => {
               <Route path="/admin/analytics" element={<ProtectedRoute requireAdmin={true}><AdminAnalytics /></ProtectedRoute>} />
               <Route path="/admin/users" element={<ProtectedRoute requireAdmin={true}><AdminUserManagement /></ProtectedRoute>} />
               <Route path="/admin/chat" element={<ProtectedRoute requireAdmin={true}><AdminChat /></ProtectedRoute>} />
-              <Route path="/admin/sale-products" element={<ProtectedRoute requireAdmin={true}><AdminSaleProducts /></ProtectedRoute>} />
               <Route path="/admin/hero-banners" element={<ProtectedRoute requireAdmin={true}><AdminHeroBanners /></ProtectedRoute>} />
               <Route path="/admin/coupons" element={<ProtectedRoute requireAdmin={true}><AdminCoupons /></ProtectedRoute>} />
 
@@ -205,10 +203,10 @@ function App() {
             <CompareProvider>
               <ChatProvider>
                 <ReviewProvider>
-                  <SaleReviewProvider>
+                 
                     <ToastContainer position="bottom-right" autoClose={3000} />
                     <Layout />
-                  </SaleReviewProvider>
+                 
                 </ReviewProvider>
               </ChatProvider>
             </CompareProvider>
