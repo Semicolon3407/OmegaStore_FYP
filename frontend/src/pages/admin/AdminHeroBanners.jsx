@@ -1,46 +1,81 @@
 import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
+  EyeOff,
+  Loader2,
+  Image as ImageIcon,
+  X,
+} from "lucide-react";
 import axios from "axios";
-import { motion } from "framer-motion";
-import { Plus, Edit, Trash2, Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
-import Navbar from "../../components/AdminNav";
+import { useNavigate, useLocation } from "react-router-dom";
+import AdminSidebar from "../../components/AdminNav";
+
+const initialFormData = {
+  title: "",
+  highlightedTitle: "",
+  description: "",
+  highlightedDescription: "",
+  backgroundColor: "bg-gradient-to-br from-gray-900 via-black to-gray-950",
+  offerTitle: "SHIELD+ Protection",
+  offerWorth: "Worth NPR 13,000",
+  offerItems: [
+    { title: "Extended Warranty", description: "1 Year" },
+    { title: "Front Screen", description: "1 Replacement" },
+    { title: "Back Glass", description: "1 Replacement" },
+  ],
+  image: null,
+};
 
 const AdminHeroBanners = () => {
   const [banners, setBanners] = useState([]);
-  const [formData, setFormData] = useState({
-    title: "",
-    highlightedTitle: "",
-    description: "",
-    highlightedDescription: "",
-    backgroundColor: "bg-gradient-to-br from-gray-900 via-black to-gray-950",
-    offerTitle: "SHIELD+ Protection",
-    offerWorth: "Worth NPR 13,000",
-    offerItems: [
-      { title: "Extended Warranty", description: "1 Year" },
-      { title: "Front Screen", description: "1 Replacement" },
-      { title: "Back Glass", description: "1 Replacement" },
-    ],
-    image: null,
-  });
+  const [formData, setFormData] = useState(initialFormData);
   const [editId, setEditId] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isToggleModalOpen, setIsToggleModalOpen] = useState(false);
+  const [bannerToDelete, setBannerToDelete] = useState(null);
+  const [bannerToToggle, setBannerToToggle] = useState(null);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const API_URL = "http://localhost:5001/api/hero-banners";
 
   const fetchBanners = async () => {
     try {
+      setLoading(true);
+      setError("");
       const response = await axios.get(API_URL, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       setBanners(response.data);
     } catch (error) {
-      toast.error("Failed to fetch banners: " + (error.response?.data?.message || error.message));
+      const errorMsg =
+        error.response?.data?.message || "Failed to fetch banners.";
+      setError(errorMsg);
+      if (error.response?.status === 401) {
+        toast.info("Session expired, please login");
+        navigate("/sign-in");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchBanners();
-  }, []);
+    const role = localStorage.getItem("role");
+    if (role !== "admin") {
+      toast.info("Access denied. Admins only.");
+      navigate("/sign-in");
+    } else {
+      fetchBanners();
+    }
+  }, [navigate, location.pathname]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -59,8 +94,17 @@ const AdminHeroBanners = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    if (
+      !formData.title ||
+      !formData.highlightedTitle ||
+      !formData.description ||
+      (!formData.image && !editId)
+    ) {
+      toast.error("Please fill all required fields and select an image.");
+      return;
+    }
 
+    setLoading(true);
     const data = new FormData();
     for (const key in formData) {
       if (key === "offerItems") {
@@ -91,8 +135,7 @@ const AdminHeroBanners = () => {
       fetchBanners();
       resetForm();
     } catch (error) {
-      toast.error("Failed to save banner: " + (error.response?.data?.message || error.message));
-      console.error("Error details:", error.response?.data);
+      toast.error(error.response?.data?.message || "Failed to save banner.");
     } finally {
       setLoading(false);
     }
@@ -113,196 +156,269 @@ const AdminHeroBanners = () => {
     });
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this banner?")) {
-      try {
-        await axios.delete(`${API_URL}/delete/${id}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        });
-        toast.success("Banner deleted successfully!");
-        fetchBanners();
-      } catch (error) {
-        toast.error("Failed to delete banner: " + (error.response?.data?.message || error.message));
-      }
+  const handleDelete = async () => {
+    try {
+      setLoading(true);
+      await axios.delete(`${API_URL}/delete/${bannerToDelete}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      toast.success("Banner deleted successfully!");
+      fetchBanners();
+      setIsDeleteModalOpen(false);
+      setBannerToDelete(null);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to delete banner.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleToggleStatus = async (id) => {
+  const handleToggleStatus = async () => {
     try {
-      await axios.put(`${API_URL}/toggle/${id}`, {}, {
+      setLoading(true);
+      await axios.put(`${API_URL}/toggle/${bannerToToggle}`, {}, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       toast.success("Banner status updated!");
       fetchBanners();
+      setIsToggleModalOpen(false);
+      setBannerToToggle(null);
     } catch (error) {
-      toast.error("Failed to toggle status: " + (error.response?.data?.message || error.message));
+      toast.error(error.response?.data?.message || "Failed to toggle status.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const resetForm = () => {
     setEditId(null);
-    setFormData({
-      title: "",
-      highlightedTitle: "",
-      description: "",
-      highlightedDescription: "",
-      backgroundColor: "bg-gradient-to-br from-gray-900 via-black to-gray-950",
-      offerTitle: "SHIELD+ Protection",
-      offerWorth: "Worth NPR 13,000",
-      offerItems: [
-        { title: "Extended Warranty", description: "1 Year" },
-        { title: "Front Screen", description: "1 Replacement" },
-        { title: "Back Glass", description: "1 Replacement" },
-      ],
-      image: null,
-    });
+    setFormData(initialFormData);
   };
 
-  return (
-    <div>
-      <Navbar />
-      <div className="container mx-auto px-6 py-12">
-        <h1 className="text-4xl font-bold mb-8 text-gray-900 tracking-tight">
-          Manage Hero Banners ({banners.length} Active)
-        </h1>
+  if (loading && !banners.length) {
+    return (
+      <div className="flex min-h-screen bg-gray-100">
+        <AdminSidebar />
+        <div className="flex-1 flex items-center justify-center p-4 md:p-6">
+          <div className="text-center">
+            <Loader2 className="animate-spin text-blue-600 mx-auto mb-4" size={40} />
+            <p className="text-gray-600 text-lg">Loading banners...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
+  return (
+    <div className="flex min-h-screen bg-gray-100">
+      <AdminSidebar />
+      <div className="flex-1 p-4 md:p-6">
         <motion.div
-          className="bg-white rounded-2xl shadow-xl p-8 mb-12 border border-gray-200"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-8"
+        >
+          <h1 className="text-3xl font-bold text-blue-900 mb-2">
+            Manage Hero Banners
+          </h1>
+          <p className="text-gray-600 text-base">
+            Create and manage promotional banners for the homepage.
+          </p>
+        </motion.div>
+
+        {/* Error Message */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-4 bg-red-100 text-red-700 rounded-lg border-l-4 border-red-500"
+          >
+            {error}
+          </motion.div>
+        )}
+
+        {/* Form */}
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="bg-white rounded-lg shadow-md p-6 mb-6 border border-gray-200"
         >
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Plus size={24} className="text-blue-600" />
+            <h2 className="text-xl font-semibold text-gray-800">
+              {editId ? "Edit Banner" : "Add New Banner"}
+            </h2>
+          </div>
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
+              <label className="block text-gray-700 mb-1 font-medium">Title</label>
               <input
                 type="text"
                 name="title"
                 value={formData.title}
                 onChange={handleInputChange}
-                className="w-full p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100 transition-all duration-300"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 disabled:opacity-50"
                 required
                 placeholder="e.g., The Future"
+                disabled={loading}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Highlighted Title</label>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Highlighted Title
+              </label>
               <input
                 type="text"
                 name="highlightedTitle"
                 value={formData.highlightedTitle}
                 onChange={handleInputChange}
-                className="w-full p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100 transition-all duration-300"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 disabled:opacity-50"
                 required
                 placeholder="e.g., Reimagined"
+                disabled={loading}
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+            <div className="sm:col-span-2">
+              <label className="block text-gray-700 mb-1 font-medium">
+                Description
+              </label>
               <textarea
                 name="description"
                 value={formData.description}
                 onChange={handleInputChange}
-                className="w-full p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100 transition-all duration-300"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 disabled:opacity-50"
                 required
                 placeholder="e.g., Discover the iPhone 16 Pro..."
+                disabled={loading}
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Highlighted Description (Optional)</label>
+            <div className="sm:col-span-2">
+              <label className="block text-gray-700 mb-1 font-medium">
+                Highlighted Description (Optional)
+              </label>
               <input
                 type="text"
                 name="highlightedDescription"
                 value={formData.highlightedDescription}
                 onChange={handleInputChange}
-                className="w-full p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100 transition-all duration-300"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 disabled:opacity-50"
                 placeholder="e.g., iPhone 16 Pro"
+                disabled={loading}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Background Color</label>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Background Color
+              </label>
               <select
                 name="backgroundColor"
                 value={formData.backgroundColor}
                 onChange={handleInputChange}
-                className="w-full p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100 transition-all duration-300"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 disabled:opacity-50"
+                disabled={loading}
               >
-                <option value="bg-gradient-to-br from-gray-900 via-black to-gray-950">Dark Gradient (Default)</option>
-                <option value="bg-gradient-to-br from-blue-900 via-blue-700 to-blue-950">Blue Gradient</option>
-                <option value="bg-gradient-to-br from-purple-900 via-purple-700 to-purple-950">Purple Gradient</option>
-                <option value="bg-gradient-to-br from-green-900 via-green-700 to-green-950">Green Gradient</option>
+                <option value="bg-gradient-to-br from-gray-900 via-black to-gray-950">
+                  Dark Gradient
+                </option>
+                <option value="bg-gradient-to-br from-blue-900 via-blue-700 to-blue-950">
+                  Blue Gradient
+                </option>
+                <option value="bg-gradient-to-br from-purple-900 via-purple-700 to-purple-950">
+                  Purple Gradient
+                </option>
+                <option value="bg-gradient-to-br from-green-900 via-green-700 to-green-950">
+                  Green Gradient
+                </option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Offer Title</label>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Offer Title
+              </label>
               <input
                 type="text"
                 name="offerTitle"
                 value={formData.offerTitle}
                 onChange={handleInputChange}
-                className="w-full p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100 transition-all duration-300"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 disabled:opacity-50"
                 placeholder="e.g., SHIELD+ Protection"
+                disabled={loading}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Offer Worth</label>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Offer Worth
+              </label>
               <input
                 type="text"
                 name="offerWorth"
                 value={formData.offerWorth}
                 onChange={handleInputChange}
-                className="w-full p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100 transition-all duration-300"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 disabled:opacity-50"
                 placeholder="e.g., Worth NPR 13,000"
+                disabled={loading}
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Offer Items (Exactly 3)</label>
+            <div className="sm:col-span-2">
+              <label className="block text-gray-700 mb-1 font-medium">
+                Offer Items (Exactly 3)
+              </label>
               {formData.offerItems.map((item, index) => (
-                <div key={index} className="flex space-x-4 mb-2">
+                <div key={index} className="flex gap-4 mb-2">
                   <input
                     type="text"
                     value={item.title}
-                    onChange={(e) => handleOfferItemChange(index, "title", e.target.value)}
-                    className="w-1/2 p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100 transition-all duration-300"
+                    onChange={(e) =>
+                      handleOfferItemChange(index, "title", e.target.value)
+                    }
+                    className="w-1/2 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 disabled:opacity-50"
                     placeholder={`Item ${index + 1} Title`}
                     required
+                    disabled={loading}
                   />
                   <input
                     type="text"
                     value={item.description}
-                    onChange={(e) => handleOfferItemChange(index, "description", e.target.value)}
-                    className="w-1/2 p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100 transition-all duration-300"
+                    onChange={(e) =>
+                      handleOfferItemChange(index, "description", e.target.value)
+                    }
+                    className="w-1/2 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 disabled:opacity-50"
                     placeholder={`Item ${index + 1} Description`}
                     required
+                    disabled={loading}
                   />
                 </div>
               ))}
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Image</label>
+            <div className="sm:col-span-2">
+              <label className="block text-gray-700 mb-1 font-medium">Image</label>
               <input
                 type="file"
                 name="image"
                 onChange={handleFileChange}
-                className="w-full p-3 border rounded-lg bg-gray-100"
+                className="w-full p-2 border border-gray-300 rounded-lg disabled:opacity-50"
                 accept="image/*"
                 required={!editId}
+                disabled={loading}
               />
             </div>
-            <div className="flex space-x-4">
+            <div className="sm:col-span-2 flex gap-4">
               <button
                 type="submit"
-                className="flex items-center justify-center bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-8 rounded-full hover:shadow-xl transition-all duration-300 shadow-md disabled:opacity-50"
                 disabled={loading}
+                className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center"
               >
-                {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
-                {loading ? "Saving..." : editId ? "Update Banner" : "Add Banner"}
+                <Plus size={20} className="mr-2" />
+                {editId ? "Update Banner" : "Add Banner"}
               </button>
               {editId && (
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="bg-gray-300 text-gray-700 py-3 px-8 rounded-full hover:bg-gray-400 transition-all duration-300"
+                  disabled={loading}
+                  className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
@@ -311,80 +427,273 @@ const AdminHeroBanners = () => {
           </form>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {banners.map((banner) => (
+        {/* Banner Grid */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="bg-white rounded-lg shadow-md border border-gray-200"
+        >
+          <div className="p-4 bg-gray-100 flex items-center gap-2">
+            <ImageIcon size={20} className="text-blue-600" />
+            <h2 className="text-lg font-semibold text-gray-800">Banner List</h2>
+            <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+              {banners.length} {banners.length === 1 ? "banner" : "banners"}
+            </span>
+          </div>
+          {banners.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+              <AnimatePresence>
+                {banners.map((banner, index) => (
+                  <motion.div
+                    key={banner._id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                    className="bg-white rounded-lg shadow-md border border-gray-200 p-4 hover:shadow-lg transition-shadow"
+                  >
+                    <img
+                      src={`http://localhost:5001${banner.image}`}
+                      alt={banner.title}
+                      className="w-full h-48 object-cover rounded-lg mb-4"
+                    />
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      {banner.title}{" "}
+                      <span className="text-blue-600">
+                        {banner.highlightedTitle}
+                      </span>
+                    </h3>
+                    <p className="text-gray-600 text-sm">
+                      {banner.highlightedDescription ? (
+                        <>
+                          {banner.description.split(
+                            banner.highlightedDescription
+                          )[0]}
+                          <span className="font-semibold text-blue-600">
+                            {banner.highlightedDescription}
+                          </span>
+                          {banner.description.split(
+                            banner.highlightedDescription
+                          )[1]}
+                        </>
+                      ) : (
+                        banner.description
+                      )}
+                    </p>
+                    <div className="mt-2 text-sm text-gray-600">
+                      <p>
+                        <span className="font-medium">Background:</span>{" "}
+                        {banner.backgroundColor
+                          .split(" ")[0]
+                          .replace("bg-gradient-to-br", "")
+                          .replace("from-", "")}
+                      </p>
+                      <p>
+                        <span className="font-medium">Offer:</span>{" "}
+                        {banner.offerTitle} - {banner.offerWorth}
+                      </p>
+                      <ul className="list-disc list-inside">
+                        {banner.offerItems.map((item, idx) => (
+                          <li key={idx}>
+                            {item.title}: {item.description}
+                          </li>
+                        ))}
+                      </ul>
+                      <p>
+                        <span className="font-medium">Status:</span>{" "}
+                        <span
+                          className={`${
+                            banner.isActive
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }`}
+                        >
+                          {banner.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </p>
+                    </div>
+                    <div className="mt-4 flex gap-3">
+                      <button
+                        onClick={() => handleEdit(banner)}
+                        className="text-orange-500 hover:text-orange-600 transition-colors"
+                        title="Edit Banner"
+                        disabled={loading}
+                      >
+                        <Edit size={20} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setBannerToDelete(banner._id);
+                          setIsDeleteModalOpen(true);
+                        }}
+                        className="text-red-500 hover:text-red-600 transition-colors"
+                        title="Delete Banner"
+                        disabled={loading}
+                      >
+                        <Trash2 size={20} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setBannerToToggle(banner._id);
+                          setIsToggleModalOpen(true);
+                        }}
+                        className={`${
+                          banner.isActive
+                            ? "text-green-500 hover:text-green-600"
+                            : "text-gray-500 hover:text-gray-600"
+                        } transition-colors`}
+                        title={
+                          banner.isActive ? "Hide Banner" : "Show Banner"
+                        }
+                        disabled={loading}
+                      >
+                        {banner.isActive ? (
+                          <EyeOff size={20} />
+                        ) : (
+                          <Eye size={20} />
+                        )}
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500 flex flex-col items-center gap-2">
+              <ImageIcon size={48} className="text-blue-600" />
+              <p>No banners available.</p>
+              <p className="text-sm">Add a banner using the form above.</p>
+            </div>
+          )}
+        </motion.div>
+
+        {/* Delete Confirmation Modal */}
+        <AnimatePresence>
+          {isDeleteModalOpen && (
             <motion.div
-              key={banner._id}
-              className="bg-white rounded-2xl shadow-xl p-6 border border-gray-200"
+              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
             >
-              <img
-                src={`http://localhost:5001${banner.image}`}
-                alt={banner.title}
-                className="w-full h-48 object-cover rounded-lg mb-4"
-              />
-              <h3 className="text-lg font-semibold text-gray-900">
-                {banner.title}{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-                  {banner.highlightedTitle}
-                </span>
-              </h3>
-              <p className="text-gray-600">
-                {banner.highlightedDescription ? (
-                  <>
-                    {banner.description.split(banner.highlightedDescription)[0]}
-                    <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-                      {banner.highlightedDescription}
-                    </span>
-                    {banner.description.split(banner.highlightedDescription)[1]}
-                  </>
-                ) : (
-                  banner.description
-                )}
-              </p>
-              <div className="mt-2">
-                <p className="text-sm text-gray-700">Background: {banner.backgroundColor}</p>
-                <p className="text-sm text-gray-700">
-                  Offer: {banner.offerTitle} - {banner.offerWorth}
+              <motion.div
+                className="bg-white rounded-lg shadow-md p-6 w-full max-w-sm relative"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <button
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+                  title="Close"
+                >
+                  <X size={24} />
+                </button>
+                <div className="flex items-center gap-2 mb-4">
+                  <Trash2 size={24} className="text-red-500" />
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    Confirm Deletion
+                  </h2>
+                </div>
+                <p className="text-gray-600 mb-6">
+                  Are you sure you want to delete this banner? This action cannot
+                  be undone.
                 </p>
-                <ul className="text-sm text-gray-600 list-disc list-inside">
-                  {banner.offerItems.map((item, index) => (
-                    <li key={index}>
-                      {item.title}: {item.description}
-                    </li>
-                  ))}
-                </ul>
-                <p className="text-sm text-gray-700">Status: {banner.isActive ? "Active" : "Inactive"}</p>
-              </div>
-              <div className="mt-4 flex space-x-4">
-                <button
-                  onClick={() => handleEdit(banner)}
-                  className="text-blue-600 hover:text-blue-800 transition-colors duration-300"
-                >
-                  <Edit size={20} />
-                </button>
-                <button
-                  onClick={() => handleDelete(banner._id)}
-                  className="text-red-600 hover:text-red-800 transition-colors duration-300"
-                >
-                  <Trash2 size={20} />
-                </button>
-                <button
-                  onClick={() => handleToggleStatus(banner._id)}
-                  className={
-                    banner.isActive
-                      ? "text-green-600 hover:text-green-800 transition-colors duration-300"
-                      : "text-gray-600 hover:text-gray-800 transition-colors duration-300"
-                  }
-                >
-                  {banner.isActive ? <Eye size={20} /> : <EyeOff size={20} />}
-                </button>
-              </div>
+                <div className="flex gap-4">
+                  <button
+                    onClick={handleDelete}
+                    disabled={loading}
+                    className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    Delete
+                  </button>
+                  <button
+                    onClick={() => setIsDeleteModalOpen(false)}
+                    disabled={loading}
+                    className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </motion.div>
             </motion.div>
-          ))}
-        </div>
+          )}
+        </AnimatePresence>
+
+        {/* Toggle Status Confirmation Modal */}
+        <AnimatePresence>
+          {isToggleModalOpen && (
+            <motion.div
+              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <motion.div
+                className="bg-white rounded-lg shadow-md p-6 w-full max-w-sm relative"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <button
+                  onClick={() => setIsToggleModalOpen(false)}
+                  className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+                  title="Close"
+                >
+                  <X size={24} />
+                </button>
+                <div className="flex items-center gap-2 mb-4">
+                  {banners.find((b) => b._id === bannerToToggle)?.isActive ? (
+                    <EyeOff size={24} className="text-gray-500" />
+                  ) : (
+                    <Eye size={24} className="text-green-500" />
+                  )}
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    Confirm Status Change
+                  </h2>
+                </div>
+                <p className="text-gray-600 mb-6">
+                  Are you sure you want to{" "}
+                  {banners.find((b) => b._id === bannerToToggle)?.isActive
+                    ? "hide"
+                    : "show"}{" "}
+                  this banner?
+                </p>
+                <div className="flex gap-4">
+                  <button
+                    onClick={handleToggleStatus}
+                    disabled={loading}
+                    className={`${
+                      banners.find((b) => b._id === bannerToToggle)?.isActive
+                        ? "bg-gray-500"
+                        : "bg-green-500"
+                    } text-white px-6 py-2 rounded-lg hover:${
+                      banners.find((b) => b._id === bannerToToggle)?.isActive
+                        ? "bg-gray-600"
+                        : "bg-green-600"
+                    } transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed`}
+                  >
+                    {banners.find((b) => b._id === bannerToToggle)?.isActive
+                      ? "Hide"
+                      : "Show"}
+                  </button>
+                  <button
+                    onClick={() => setIsToggleModalOpen(false)}
+                    disabled={loading}
+                    className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

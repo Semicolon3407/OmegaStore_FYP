@@ -1,68 +1,86 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Home, Box, ShoppingCart, Users, BarChart2, DollarSign, Menu, X, LogOut, ChevronRight, MessageSquare } from "lucide-react";
+import {
+  Home,
+  Box,
+  ShoppingCart,
+  Users,
+  BarChart2,
+  DollarSign,
+  Menu,
+  X,
+  LogOut,
+  MessageSquare,
+  Tag,
+  Image,
+  Percent,
+} from "lucide-react";
 import { toast } from "react-toastify";
+import logo from "/assets/images/logo.png"; // Reuse the same logo as Header
 
-const Navbar = () => {
+const AdminSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userRole, setUserRole] = useState("");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
+  const [userRole, setUserRole] = useState(localStorage.getItem("role") || "");
+  const sidebarRef = useRef(null);
 
   const navLinks = [
-    { title: "Dashboard", path: "/admin", icon: <Home size={18} /> },
-    { title: "Products", path: "/admin/products", icon: <Box size={18} /> },
-    { title: "Orders", path: "/admin/orders", icon: <ShoppingCart size={18} /> },
-    { title: "Users", path: "/admin/users", icon: <Users size={18} /> },
-    { title: "Chat", path: "/admin/chat", icon: <MessageSquare size={18} /> },
-    { title: "Analytics", path: "/admin/analytics", icon: <BarChart2 size={18} /> },
-    { title: "Revenue", path: "/admin/revenue", icon: <DollarSign size={18} /> },
+    { title: "Dashboard", path: "/admin", icon: <Home size={20} /> },
+    { title: "Products", path: "/admin/products", icon: <Box size={20} /> },
+    { title: "Orders", path: "/admin/orders", icon: <ShoppingCart size={20} /> },
+    { title: "Coupons", path: "/admin/coupons", icon: <Percent size={20} /> },
+    { title: "Users", path: "/admin/users", icon: <Users size={20} /> },
+    { title: "Chat", path: "/admin/chat", icon: <MessageSquare size={20} /> },
+    { title: "Analytics", path: "/admin/analytics", icon: <BarChart2 size={20} /> },
+    { title: "Revenue", path: "/admin/revenue", icon: <DollarSign size={20} /> },
+    { title: "Hero Banners", path: "/admin/hero-banners", icon: <Image size={20} /> },
   ];
 
   useEffect(() => {
     const checkAuthStatus = () => {
       const token = localStorage.getItem("token");
-      const role = localStorage.getItem("role"); // Changed from "admin" to "role"
+      const role = localStorage.getItem("role");
       setIsLoggedIn(!!token);
       setUserRole(role || "");
+      if (!token || role !== "admin") {
+        navigate("/sign-in");
+      }
     };
 
     checkAuthStatus();
-
     window.addEventListener("storage", checkAuthStatus);
 
-    const handleRouteChange = () => setIsMenuOpen(false);
-    window.addEventListener("popstate", handleRouteChange);
-
-    return () => {
-      window.removeEventListener("storage", checkAuthStatus);
-      window.removeEventListener("popstate", handleRouteChange);
-    };
-  }, []);
+    return () => window.removeEventListener("storage", checkAuthStatus);
+  }, [navigate]);
 
   useEffect(() => {
-    setIsMenuOpen(false);
-  }, [location.pathname]);
+    const handleClickOutside = (event) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target) && isSidebarOpen) {
+        setIsSidebarOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isSidebarOpen]);
 
   const handleLogout = async () => {
     try {
       await axios.get("http://localhost:5001/api/user/logout", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         withCredentials: true,
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
       });
       toast.success("Logged out successfully");
     } catch (error) {
-      console.error("Logout failed:", error.response?.data || error.message);
+      console.error("Logout failed:", error);
       toast.info("Session cleared");
     } finally {
       localStorage.clear();
       setIsLoggedIn(false);
       setUserRole("");
-      setIsMenuOpen(false);
+      setIsSidebarOpen(false);
       navigate("/", { replace: true });
       window.dispatchEvent(new Event("storage"));
     }
@@ -77,92 +95,77 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="hidden md:block bg-gray-800 text-white sticky top-0 z-50 shadow-md">
-        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-          <Link to="/admin" className="text-2xl font-bold flex items-center gap-2 hover:text-yellow-400 transition-colors">
-            <span className="text-yellow-400 font-bold">Ω</span>
-            <span>Omega Admin</span>
-          </Link>
-          <ul className="flex items-center space-x-1 lg:space-x-4">
-            {navLinks.map((link, index) => (
-              <li key={index}>
-                <Link
-                  to={link.path}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-md transition-all duration-200 ${
-                    isActive(link.path) ? "text-yellow-400 font-medium bg-gray-700" : "hover:text-yellow-400 hover:bg-gray-700"
-                  }`}
-                >
-                  {link.icon}
-                  <span className="hidden lg:inline">{link.title}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-          {isLoggedIn && (
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md transition-all duration-200"
-            >
-              <LogOut size={18} />
-              <span>Logout</span>
-            </button>
-          )}
-        </div>
-      </nav>
+      {/* Mobile Toggle Button */}
+      <button
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        className="fixed top-4 left-4 z-50 md:hidden p-2 rounded-full bg-blue-900 text-white hover:bg-blue-800 transition-colors"
+        aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
+      >
+        {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
+      </button>
 
-      <nav className="md:hidden bg-gray-800 text-white sticky top-0 z-50 shadow-md">
-        <div className="flex justify-between items-center p-4">
-          <Link to="/admin" className="text-xl font-bold flex items-center gap-1">
-            <span className="text-yellow-400 font-bold">Ω</span>
-            <span>Omega Admin</span>
-          </Link>
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="p-2 rounded-md hover:bg-gray-700 focus:outline-none transition-colors"
-            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-          >
-            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
-        </div>
+      {/* Sidebar - width exactly 16rem (64) with no margin */}
+      <aside
+        ref={sidebarRef}
+        className={`fixed top-0 left-0 h-full w-64 bg-white shadow-lg z-40 transform transition-transform duration-300 ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } md:translate-x-0 md:w-64 md:static md:min-h-screen border-r border-gray-200`}
+      >
+        <div className="flex flex-col h-full">
+          {/* Logo */}
+          <div className="p-6 border-b border-gray-200">
+            <Link to="/admin" className="flex items-center space-x-2">
+              <img src={logo} alt="OmegaStore Logo" className="h-12 w-auto" />
+              <span className="text-xl font-bold text-blue-900">Admin Pannel</span>
+            </Link>
+          </div>
 
-        {isMenuOpen && (
-          <div className="absolute top-full left-0 right-0 bg-gray-800 shadow-lg z-50">
-            <ul className="flex flex-col border-t border-gray-700">
+          {/* Navigation */}
+          <nav className="flex-1 overflow-y-auto py-4">
+            <ul className="space-y-2 px-4">
               {navLinks.map((link, index) => (
                 <li key={index}>
                   <Link
                     to={link.path}
-                    className={`flex items-center justify-between px-4 py-3 border-b border-gray-700 hover:bg-gray-700 transition-colors ${
-                      isActive(link.path) ? "text-yellow-400 bg-gray-700" : ""
+                    onClick={() => setIsSidebarOpen(false)}
+                    className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-base font-medium transition-all ${
+                      isActive(link.path)
+                        ? "text-orange-500 bg-orange-500/10"
+                        : "text-blue-900 hover:text-blue-500 hover:bg-gray-100"
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      {link.icon}
-                      <span>{link.title}</span>
-                    </div>
-                    <ChevronRight size={16} className={isActive(link.path) ? "text-yellow-400" : "text-gray-400"} />
+                    {link.icon}
+                    <span>{link.title}</span>
                   </Link>
                 </li>
               ))}
-              {isLoggedIn && (
-                <li>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center justify-between w-full text-left px-4 py-3 hover:bg-gray-700 text-red-400 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <LogOut size={18} />
-                      <span>Logout</span>
-                    </div>
-                  </button>
-                </li>
-              )}
             </ul>
-          </div>
-        )}
-      </nav>
+          </nav>
+
+          {/* Logout */}
+          {isLoggedIn && (
+            <div className="p-4 border-t border-gray-200">
+              <button
+                onClick={handleLogout}
+                className="flex items-center space-x-3 w-full px-4 py-3 text-orange-500 hover:bg-orange-500/10 rounded-lg transition-colors"
+              >
+                <LogOut size={20} />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </aside>
+
+      {/* Overlay for Mobile */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
     </>
   );
 };
 
-export default Navbar;
+export default AdminSidebar;

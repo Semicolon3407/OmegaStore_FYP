@@ -15,7 +15,7 @@ import {
   Percent,
 } from "lucide-react";
 import axios from "axios";
-import Navbar from "../../components/AdminNav";
+import AdminSidebar from "../../components/AdminNav"; 
 
 const AdminDashboard = () => {
   const [totalProducts, setTotalProducts] = useState(0);
@@ -83,7 +83,7 @@ const AdminDashboard = () => {
     { title: "Manage Products", icon: Package, link: "/admin/products" },
     { title: "Manage Sale Products", icon: Tag, link: "/admin/sale-products" },
     { title: "Manage Orders", icon: ShoppingCart, link: "/admin/orders" },
-    { title: "Manage Coupons", icon: Percent, link: "/admin/coupons" }, // New link
+    { title: "Manage Coupons", icon: Percent, link: "/admin/coupons" },
     { title: "User Management", icon: Users, link: "/admin/users" },
     { title: "View Analytics", icon: BarChart, link: "/admin/analytics" },
     { title: "View Revenue", icon: IndianRupee, link: "/admin/revenue" },
@@ -97,70 +97,75 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <div>
-      <Navbar />
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-6 text-gray-900">Admin Dashboard</h1>
+    <div className="flex min-h-screen bg-gray-100">
+      {/* Sidebar */}
+      <AdminSidebar />
 
-        {loading ? (
-          <div className="text-center text-gray-500">
-            <svg
-              className="animate-spin h-8 w-8 text-blue-600 mx-auto mb-2"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
-            Loading stats...
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {stats.map((stat, index) => (
-              <motion.div
-                key={index}
-                className="bg-white rounded-lg shadow-md p-6 flex items-center hover:shadow-lg transition-shadow duration-300"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+      {/* Main Content - No padding on both mobile and desktop */}
+      <div className="flex-1">
+        <div className="p-4 md:p-6">
+          <h1 className="text-3xl font-bold mb-6 text-blue-900">Admin Dashboard</h1>
+
+          {loading ? (
+            <div className="text-center text-gray-500">
+              <svg
+                className="animate-spin h-8 w-8 text-blue-600 mx-auto mb-2"
+                fill="none"
+                viewBox="0 0 24 24"
               >
-                <Link to={stat.link} className="flex items-center w-full">
-                  {stat.icon && <stat.icon size={40} className="text-blue-600 mr-4" />}
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-700">{stat.title}</h2>
-                    <p className="text-2xl font-bold text-gray-800">{stat.value}</p>
-                  </div>
-                </Link>
-              </motion.div>
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+              Loading stats...
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+              {stats.map((stat, index) => (
+                <motion.div
+                  key={index}
+                  className="bg-white rounded-lg shadow-md p-4 md:p-6 flex items-center hover:shadow-lg transition-shadow duration-300"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                >
+                  <Link to={stat.link} className="flex items-center w-full">
+                    {stat.icon && <stat.icon size={40} className="text-blue-600 mr-4" />}
+                    <div>
+                      <h2 className="text-lg font-semibold text-gray-700">{stat.title}</h2>
+                      <p className="text-2xl font-bold text-gray-800">{stat.value}</p>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-6 md:mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            {quickLinks.map((link, index) => (
+              <Link
+                key={index}
+                to={link.link}
+                className="bg-white text-blue-600 rounded-lg shadow-md p-4 md:p-6 hover:bg-blue-50 transition-colors duration-300 flex items-center justify-between relative"
+              >
+                <div className="flex items-center">
+                  {link.icon && <link.icon size={24} className="mr-3" />}
+                  <span className="font-semibold text-gray-800">{link.title}</span>
+                </div>
+                <div className="flex items-center">
+                  {link.badge && (
+                    <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center mr-2">
+                      {link.badge}
+                    </span>
+                  )}
+                  <ChevronRight size={20} />
+                </div>
+              </Link>
             ))}
           </div>
-        )}
-
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {quickLinks.map((link, index) => (
-            <Link
-              key={index}
-              to={link.link}
-              className="bg-white text-blue-600 rounded-lg shadow-md p-6 hover:bg-blue-50 transition-colors duration-300 flex items-center justify-between relative"
-            >
-              <div className="flex items-center">
-                {link.icon && <link.icon size={24} className="mr-3" />}
-                <span className="font-semibold text-gray-800">{link.title}</span>
-              </div>
-              <div className="flex items-center">
-                {link.badge && (
-                  <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center mr-2">
-                    {link.badge}
-                  </span>
-                )}
-                <ChevronRight size={20} />
-              </div>
-            </Link>
-          ))}
         </div>
       </div>
     </div>
