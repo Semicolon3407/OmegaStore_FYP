@@ -23,6 +23,8 @@ const ProductDetails = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [relatedProducts, setRelatedProducts] = useState([]);
+  const [accessories, setAccessories] = useState([]);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
@@ -31,6 +33,7 @@ const ProductDetails = () => {
     details: true,
     reviews: true,
     related: true,
+    accessories: true,
   });
 
   const BASE_URL = 'http://localhost:5001';
@@ -52,20 +55,8 @@ const ProductDetails = () => {
 
       await fetchReviews(id);
 
-      const params = new URLSearchParams();
-      params.append('category', productData.category);
-      params.append('limit', 4);
-      params.append('excludeId', id);
-
-      const relatedRes = await axios.get(`${API_BASE_URL}/products?${params.toString()}`);
-      const mappedRelated = relatedRes.data.products.map((p) => ({
-        ...p,
-        images: p.images.map((img) => ({
-          ...img,
-          url: img.url.startsWith('http') ? img.url : `${BASE_URL}${img.url}`,
-        })),
-      }));
-      setRelatedProducts(mappedRelated || []);
+      // Fetch AI-powered recommendations
+      await fetchRecommendations(id);
     } catch (err) {
       console.error('Error fetching product details:', err);
       setError(err.response?.data?.message || 'Failed to load product details. Please try again.');
@@ -75,11 +66,66 @@ const ProductDetails = () => {
     }
   }, [id, fetchReviews]);
 
+  // Fetch AI-powered recommendations (similar products and accessories)
+  const fetchRecommendations = async (productId) => {
+    try {
+      setRecommendationsLoading(true);
+      const response = await axios.get(`${API_BASE_URL}/recommendations/products/${productId}`);
+      
+      if (response.data.success) {
+        // Process similar products
+        const mappedSimilarProducts = response.data.recommendations.similarProducts.map((p) => ({
+          ...p,
+          images: p.images.map((img) => ({
+            ...img,
+            url: img.url.startsWith('http') ? img.url : `${BASE_URL}${img.url}`,
+          })),
+        }));
+        setRelatedProducts(mappedSimilarProducts || []);
+        
+        // Process accessories
+        const mappedAccessories = response.data.recommendations.accessories.map((p) => ({
+          ...p,
+          images: p.images.map((img) => ({
+            ...img,
+            url: img.url.startsWith('http') ? img.url : `${BASE_URL}${img.url}`,
+          })),
+        }));
+        setAccessories(mappedAccessories || []);
+      }
+    } catch (err) {
+      console.error('Error fetching recommendations:', err);
+      // Fallback to category-based related products if AI recommendations fail
+      try {
+        if (product && product.category) {
+          const params = new URLSearchParams();
+          params.append('category', product.category);
+          params.append('limit', 4);
+          params.append('excludeId', productId);
+
+          const relatedRes = await axios.get(`${API_BASE_URL}/products?${params.toString()}`);
+          const mappedRelated = relatedRes.data.products.map((p) => ({
+            ...p,
+            images: p.images.map((img) => ({
+              ...img,
+              url: img.url.startsWith('http') ? img.url : `${BASE_URL}${img.url}`,
+            })),
+          }));
+          setRelatedProducts(mappedRelated || []);
+        }
+      } catch (fallbackErr) {
+        console.error('Error fetching fallback related products:', fallbackErr);
+      }
+    } finally {
+      setRecommendationsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchProductDetails();
   }, [fetchProductDetails]);
 
-  const handleAddToCart = async () => {
+  const handleAddToCart = async (productId = null, qty = null) => {
     const token = localStorage.getItem('token');
     if (!token) {
       toast.info('Please sign in to add products to cart');
@@ -87,14 +133,18 @@ const ProductDetails = () => {
       return;
     }
 
-    if (isInCart(product._id)) {
+    // Use provided productId and quantity or default to current product
+    const targetProductId = productId || product._id;
+    const targetQuantity = qty || quantity;
+
+    if (isInCart(targetProductId)) {
       toast.info('This product is already in your cart');
       return;
     }
 
-    const success = await addToCart(product._id, quantity);
+    const success = await addToCart(targetProductId, targetQuantity);
     if (success) {
-      toast.success(`Added ${quantity} item${quantity > 1 ? 's' : ''} to cart!`);
+      toast.success(`Added ${targetQuantity} item${targetQuantity > 1 ? 's' : ''} to cart!`);
     } else {
       toast.error('Failed to add to cart');
     }
@@ -470,7 +520,7 @@ const ProductDetails = () => {
               )}
             </FilterSection>
 
-            <FilterSection title="Related Products" section="related">
+            <FilterSection title="AI Recommended Similar Products" section="related">
               {relatedProducts.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                   {relatedProducts.map((related) => {
@@ -499,12 +549,12 @@ const ProductDetails = () => {
                                 Rs {Math.round(relatedDiscountedPrice).toLocaleString()}
                               </p>
                               <p className="text-xs sm:text-sm text-blue-900/60 line-through ml-1 sm:ml-2">
-                                Rs {Math.round(related.price).toLocaleString()}
+                                Rs {related.price.toLocaleString()}
                               </p>
                             </div>
                           ) : (
                             <p className="text-base sm:text-xl font-bold text-blue-900">
-                              Rs {Math.round(related.price).toLocaleString()}
+                              Rs {related.price.toLocaleString()}
                             </p>
                           )}
                         </Link>
@@ -513,7 +563,70 @@ const ProductDetails = () => {
                   })}
                 </div>
               ) : (
-                <p className="text-blue-900/80 text-sm sm:text-base">No related products found.</p>
+                <p className="text-blue-900/80 text-sm sm:text-base">
+                  {recommendationsLoading ? 'Loading similar products...' : 'No similar products found.'}
+                </p>
+              )}
+            </FilterSection>
+
+            <FilterSection title="Recommended Accessories" section="accessories">
+              {accessories.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                  {accessories.map((accessory) => {
+                    const accessoryDiscountedPrice = accessory.isOnSale && accessory.discountPercentage > 0
+                      ? accessory.price * (1 - accessory.discountPercentage / 100)
+                      : null;
+
+                    return (
+                      <motion.div
+                        key={accessory._id}
+                        className="bg-white rounded-xl shadow-md p-3 sm:p-4 hover:shadow-lg transition-all duration-300 border border-gray-200"
+                        whileHover={{ y: -5 }}
+                      >
+                        <Link to={`/products/${accessory._id}`}>
+                          <div className="relative">
+                            <img
+                              src={accessory.images?.[0]?.url || '/placeholder.jpg'}
+                              alt={accessory.title}
+                              className="w-full h-32 sm:h-40 object-contain rounded-lg mb-2 sm:mb-4"
+                            />
+                            <div className="absolute top-2 right-2 bg-blue-900 text-white text-xs px-2 py-1 rounded-full">
+                              Accessory
+                            </div>
+                          </div>
+                          <h3 className="text-base sm:text-lg font-semibold text-blue-900 mb-1 sm:mb-2 line-clamp-1 hover:text-blue-500 transition-colors">
+                            {accessory.title}
+                          </h3>
+                          {accessory.isOnSale && accessoryDiscountedPrice !== null ? (
+                            <div className="flex items-center">
+                              <p className="text-base sm:text-xl font-bold text-blue-900">
+                                Rs {Math.round(accessoryDiscountedPrice).toLocaleString()}
+                              </p>
+                              <p className="text-xs sm:text-sm text-blue-900/60 line-through ml-1 sm:ml-2">
+                                Rs {accessory.price.toLocaleString()}
+                              </p>
+                            </div>
+                          ) : (
+                            <p className="text-base sm:text-xl font-bold text-blue-900">
+                              Rs {accessory.price.toLocaleString()}
+                            </p>
+                          )}
+                        </Link>
+                        <button
+                          onClick={() => handleAddToCart(accessory._id, 1)}
+                          className="mt-2 w-full bg-blue-900 text-white py-1.5 rounded-lg hover:bg-blue-800 transition-colors duration-300 flex items-center justify-center text-sm"
+                        >
+                          <ShoppingCart size={16} className="mr-1" />
+                          Add to Cart
+                        </button>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-blue-900/80 text-sm sm:text-base">
+                  {recommendationsLoading ? 'Loading accessories...' : 'No accessories found for this product.'}
+                </p>
               )}
             </FilterSection>
           </div>

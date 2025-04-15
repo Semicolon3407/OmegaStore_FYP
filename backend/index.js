@@ -12,6 +12,7 @@ const couponRouter = require("./routes/couponRoutes");
 const uploadRouter = require("./routes/uploadRoutes");
 const chatRouter = require("./routes/chatRoutes");
 const heroBannerRouter = require("./routes/heroBannerRoutes");
+const recommendationRouter = require("./routes/recommendationRoutes");
 const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
 const cors = require("cors");
@@ -81,6 +82,7 @@ app.use("/api/coupon", couponRouter);
 app.use("/api/upload", uploadRouter);
 app.use("/api/chat", chatRouter);
 app.use("/api/hero-banners", heroBannerRouter);
+app.use("/api/recommendations", recommendationRouter);
 
 app.use(notFound);
 app.use(errorHandler);
