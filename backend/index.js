@@ -52,10 +52,18 @@ app.use(
       FRONTEND_ORIGIN,
       "https://rc-epay.esewa.com.np",
       "https://epay.esewa.com.np",
+      "https://uat.esewa.com.np",
+      "https://esewa.com.np",
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: [
+      "Origin",
+      "X-Requested-With",
+      "Content-Type",
+      "Accept",
+      "Authorization",
+    ],
   })
 );
 app.use(cookieParser());

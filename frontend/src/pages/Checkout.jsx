@@ -41,6 +41,54 @@ const Checkout = () => {
     setPaymentMethod(method);
   };
 
+  const handleEsewaPayment = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Please log in to place an order");
+      }
+
+      // Show test credentials alert
+      toast.info(
+        "For testing, use these eSewa credentials:\neSewa ID: 9806800001\nPassword: Nepal@123\nToken: 123456",
+        { autoClose: 10000 }
+      );
+
+      const response = await axios.post(
+        "http://localhost:5001/api/user/esewa/initiate-payment",
+        {
+          couponApplied: !!couponCode,
+          couponCode,
+          shippingInfo: formData,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const { formData: paymentFormData, paymentUrl } = response.data;
+
+      // Create and submit form to redirect to eSewa
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = paymentUrl;
+
+      Object.keys(paymentFormData).forEach((key) => {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = key;
+        input.value = paymentFormData[key];
+        form.appendChild(input);
+      });
+
+      document.body.appendChild(form);
+      form.submit();
+    } catch (error) {
+      console.error("Error initiating eSewa payment:", error);
+      const errorMessage =
+        error.response?.data?.message || "Failed to initiate payment";
+      toast.error(errorMessage);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (step < 2) {
@@ -71,57 +119,11 @@ const Checkout = () => {
         } catch (error) {
           console.error("Error creating order:", error);
           const errorMessage =
-            error.response?.status === 401
-              ? "Session expired. Please log in again."
-              : error.response?.data?.message || "Failed to place order";
+            error.response?.data?.message || "Failed to place order";
           toast.error(errorMessage);
-          setError(errorMessage);
         }
       } else if (paymentMethod === "eSewa") {
-        try {
-          const token = localStorage.getItem("token");
-          if (!token) {
-            throw new Error("Please log in to place an order");
-          }
-          const response = await axios.post(
-            "http://localhost:5001/api/user/esewa/initiate-payment", // Fixed endpoint
-            {
-              couponApplied: !!couponCode,
-              couponCode,
-              shippingInfo: formData,
-            },
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-
-          const { formData: paymentFormData, paymentUrl } = response.data;
-
-          // Create a form and submit it to redirect to eSewa
-          const form = document.createElement("form");
-          form.method = "POST";
-          form.action = paymentUrl;
-
-          Object.keys(paymentFormData).forEach((key) => {
-            const input = document.createElement("input");
-            input.type = "hidden";
-            input.name = key;
-            input.value = paymentFormData[key];
-            form.appendChild(input);
-          });
-
-          document.body.appendChild(form);
-          form.submit();
-        } catch (error) {
-          console.error("Error initiating eSewa payment:", error);
-          const errorMessage =
-            error.response?.status === 404
-              ? "Payment service unavailable. Please try again later."
-              : error.response?.status === 401
-              ? "Session expired. Please log in again."
-              : error.response?.data?.message ||
-                "Failed to initiate eSewa payment";
-          toast.error(errorMessage);
-          setError(errorMessage);
-        }
+        await handleEsewaPayment();
       }
     }
   };
