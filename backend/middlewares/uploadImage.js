@@ -3,10 +3,15 @@ const sharp = require("sharp");
 const path = require("path");
 const fs = require("fs");
 
-// Ensure the products directory exists
+// Ensure directories exist
 const productDir = path.join(__dirname, "../public/images/products");
+const blogDir = path.join(__dirname, "../public/images/blogs");
+
 if (!fs.existsSync(productDir)) {
   fs.mkdirSync(productDir, { recursive: true });
+}
+if (!fs.existsSync(blogDir)) {
+  fs.mkdirSync(blogDir, { recursive: true });
 }
 
 const storage = multer.diskStorage({
@@ -15,7 +20,8 @@ const storage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     const uniquesuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, file.fieldname + "-" + uniquesuffix + ".jpeg");
+    const ext = path.extname(file.originalname).toLowerCase(); // Preserve original extension
+    cb(null, file.fieldname + "-" + uniquesuffix + ext);
   },
 });
 
@@ -30,17 +36,32 @@ const multerFilter = (req, file, cb) => {
 const uploadPhoto = multer({
   storage: storage,
   fileFilter: multerFilter,
-  limits: { fileSize: 1000000 }, // 1MB limit
+  limits: { fileSize: 5000000 }, // 1MB limit
 });
 
 const productImgResize = async (req, res, next) => {
   if (!req.files) return next();
   await Promise.all(
     req.files.map(async (file) => {
+      const ext = path.extname(file.filename).toLowerCase();
+      let format;
+      switch (ext) {
+        case ".png":
+          format = "png";
+          break;
+        case ".webp":
+          format = "webp";
+          break;
+        case ".gif":
+          format = "gif";
+          break;
+        default:
+          format = "jpeg"; // Fallback to JPEG for other formats
+      }
+
       await sharp(file.path)
         .resize(300, 300)
-        .toFormat("jpeg")
-        .jpeg({ quality: 90 })
+        .toFormat(format, { quality: format === "jpeg" ? 90 : undefined }) // Quality for JPEG only
         .toFile(path.join(productDir, file.filename));
       fs.unlinkSync(file.path); // Remove the original file
     })
@@ -52,12 +73,27 @@ const blogImgResize = async (req, res, next) => {
   if (!req.files) return next();
   await Promise.all(
     req.files.map(async (file) => {
+      const ext = path.extname(file.filename).toLowerCase();
+      let format;
+      switch (ext) {
+        case ".png":
+          format = "png";
+          break;
+        case ".webp":
+          format = "webp";
+          break;
+        case ".gif":
+          format = "gif";
+          break;
+        default:
+          format = "jpeg"; // Fallback to JPEG for other formats
+      }
+
       await sharp(file.path)
         .resize(300, 300)
-        .toFormat("jpeg")
-        .jpeg({ quality: 90 })
-        .toFile(path.join(__dirname, "../public/images/blogs", file.filename));
-      fs.unlinkSync(file.path);
+        .toFormat(format, { quality: format === "jpeg" ? 90 : undefined })
+        .toFile(path.join(blogDir, file.filename));
+      fs.unlinkSync(file.path); // Remove the original file
     })
   );
   next();
