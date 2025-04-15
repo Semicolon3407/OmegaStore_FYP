@@ -281,51 +281,226 @@ const resetPassword = asyncHandler(async (req, res) => {
 });
 
 const userCart = asyncHandler(async (req, res) => {
-  const { productId, quantity, color } = req.body;
-  const { _id } = req.user;
-  validateMongoDbId(_id);
-
   try {
-    const user = await User.findById(_id);
-    let existingCart = await Cart.findOne({ orderby: user._id }).populate(
-      "products.product"
-    );
+    const { _id } = req.user;
+    validateMongoDbId(_id);
 
-    if (!existingCart) {
-      existingCart = new Cart({ products: [], cartTotal: 0, orderby: user._id });
+    // For PUT requests (update quantity)
+    if (req.method === 'PUT') {
+      const { productId } = req.params;
+      const { quantity } = req.body;
+      
+      validateMongoDbId(productId);
+      
+      if (!quantity || quantity < 1) {
+        return res.status(400).json({ message: "Invalid quantity" });
+      }
+
+      const product = await Product.findById(productId);
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+
+      if (product.quantity < quantity) {
+        return res.status(400).json({ message: "Not enough stock available" });
+      }
+
+      // Find cart or create if it doesn't exist
+      let cart = await Cart.findOne({ orderby: _id });
+      if (!cart) {
+        cart = await Cart.create({
+          products: [],
+          cartTotal: 0,
+          orderby: _id,
+        });
+      }
+
+      // Find product in cart
+      const itemIndex = cart.products.findIndex(
+        item => item.product.toString() === productId
+      );
+
+      if (itemIndex === -1) {
+        return res.status(404).json({ message: "Product not found in cart" });
+      }
+
+      // Update product quantity
+      cart.products[itemIndex].count = quantity;
+
+      // Calculate cart total
+      cart.cartTotal = cart.products.reduce(
+        (total, item) => total + (item.price * item.count),
+        0
+      );
+
+      // Save cart
+      await cart.save();
+
+      // Return updated cart
+      const updatedCart = await Cart.findById(cart._id).populate("products.product");
+      
+      return res.json({
+        message: "Cart updated successfully",
+        products: updatedCart.products,
+        cartTotal: updatedCart.cartTotal,
+        totalAfterDiscount: updatedCart.totalAfterDiscount
+      });
+    }
+
+    // For POST requests (add to cart)
+    const { productId, quantity = 1, color = "" } = req.body;
+    
+    validateMongoDbId(productId);
+    
+    if (!productId) {
+      return res.status(400).json({ message: "Product ID is required" });
     }
 
     const product = await Product.findById(productId);
-    if (!product) throw new Error("Product not found");
-    if (product.quantity < quantity) throw new Error("Insufficient stock");
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
 
-    const itemIndex = existingCart.products.findIndex(
-      (item) => item.product.toString() === productId && item.color === color
+    // Check stock
+    if (product.quantity < quantity) {
+      return res.status(400).json({ message: "Not enough stock available" });
+    }
+
+    // Find cart or create if it doesn't exist
+    let cart = await Cart.findOne({ orderby: _id });
+    if (!cart) {
+      cart = await Cart.create({
+        products: [],
+        cartTotal: 0,
+        orderby: _id,
+      });
+    }
+
+    // Check if product already exists in cart
+    const existingProductIndex = cart.products.findIndex(
+      item => item.product.toString() === productId
     );
 
-    if (itemIndex > -1) {
-      existingCart.products[itemIndex].count += quantity;
+    if (existingProductIndex > -1) {
+      // Update existing product quantity
+      cart.products[existingProductIndex].count = quantity;
     } else {
-      existingCart.products.push({
+      // Add new product to cart
+      cart.products.push({
         product: productId,
         count: quantity,
-        color: color || product.color,
+        color: color,
         price: product.price,
       });
     }
 
-    existingCart.cartTotal = existingCart.products.reduce(
-      (total, item) => total + item.price * item.count,
+    // Calculate cart total
+    cart.cartTotal = cart.products.reduce(
+      (total, item) => total + (item.price * item.count),
       0
     );
 
-    await existingCart.save();
-    const populatedCart = await Cart.findById(existingCart._id).populate(
-      "products.product"
-    );
-    res.json(populatedCart);
+    // Save cart
+    await cart.save();
+
+    // Return updated cart
+    const updatedCart = await Cart.findById(cart._id).populate("products.product");
+    
+    return res.json({
+      message: "Product added to cart successfully",
+      products: updatedCart.products,
+      cartTotal: updatedCart.cartTotal,
+      totalAfterDiscount: updatedCart.totalAfterDiscount
+    });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Cart operation error:', error);
+    res.status(500).json({ message: "Failed to process cart operation", error: error.message });
+  }
+});
+
+const removeFromCart = asyncHandler(async (req, res) => {
+  try {
+    const { _id } = req.user;
+    const { productId } = req.params;
+
+    validateMongoDbId(_id);
+    validateMongoDbId(productId);
+
+    // Find cart
+    let cart = await Cart.findOne({ orderby: _id });
+    if (!cart) {
+      return res.status(404).json({ message: "Cart not found" });
+    }
+
+    // Find product in cart
+    const productIndex = cart.products.findIndex(
+      item => item.product.toString() === productId
+    );
+
+    if (productIndex === -1) {
+      return res.status(404).json({ message: "Product not found in cart" });
+    }
+
+    // Remove product
+    cart.products.splice(productIndex, 1);
+
+    // Calculate cart total
+    cart.cartTotal = cart.products.reduce(
+      (total, item) => total + (item.price * item.count),
+      0
+    );
+
+    // Save cart
+    await cart.save();
+
+    // Return updated cart
+    const updatedCart = await Cart.findById(cart._id).populate("products.product");
+    
+    return res.json({
+      message: "Product removed from cart successfully",
+      products: updatedCart.products,
+      cartTotal: updatedCart.cartTotal,
+      totalAfterDiscount: updatedCart.totalAfterDiscount
+    });
+  } catch (error) {
+    console.error('Remove from cart error:', error);
+    res.status(500).json({ message: "Failed to remove product from cart", error: error.message });
+  }
+});
+
+const emptyCart = asyncHandler(async (req, res) => {
+  try {
+    const { _id } = req.user;
+    validateMongoDbId(_id);
+
+    // Find cart
+    let cart = await Cart.findOne({ orderby: _id });
+    if (!cart) {
+      return res.status(200).json({
+        message: "Cart is already empty",
+        products: [],
+        cartTotal: 0,
+        totalAfterDiscount: 0
+      });
+    }
+
+    // Empty cart
+    cart.products = [];
+    cart.cartTotal = 0;
+    cart.totalAfterDiscount = 0;
+
+    // Save cart
+    await cart.save();
+
+    res.json({
+      message: "Cart emptied successfully",
+      products: [],
+      cartTotal: 0,
+      totalAfterDiscount: 0
+    });
+  } catch (error) {
+    console.error('Empty cart error:', error);
+    res.status(500).json({ message: "Failed to empty cart", error: error.message });
   }
 });
 
@@ -366,37 +541,11 @@ const getUserCarts = asyncHandler(async (req, res) => {
     });
   } catch (error) {
     console.error("GetUserCart Error:", error);
-    res.status(500).json({ message: "Failed to fetch cart", error: error.message });
+    res.status(500).json({
+      message: "Failed to fetch cart",
+      error: error.message,
+    });
   }
-});
-
-const removeFromCart = asyncHandler(async (req, res) => {
-  const { productId } = req.params;
-  const { _id } = req.user;
-  validateMongoDbId(_id);
-  validateMongoDbId(productId);
-
-  const cart = await Cart.findOne({ orderby: _id });
-  if (!cart) throw new Error("Cart not found");
-
-  cart.products = cart.products.filter(
-    (item) => item.product.toString() !== productId
-  );
-  cart.cartTotal = cart.products.reduce(
-    (total, item) => total + item.price * item.count,
-    0
-  );
-
-  await cart.save();
-  const populatedCart = await Cart.findById(cart._id).populate("products.product");
-  res.json(populatedCart);
-});
-
-const emptyCart = asyncHandler(async (req, res) => {
-  const { _id } = req.user;
-  validateMongoDbId(_id);
-  const cart = await Cart.findOneAndRemove({ orderby: _id });
-  res.json(cart || { message: "Cart emptied" });
 });
 
 const applyCoupon = asyncHandler(async (req, res) => {
@@ -452,7 +601,10 @@ const getUserOrders = asyncHandler(async (req, res) => {
       .sort({ createdAt: -1 });
     res.json(orders);
   } catch (error) {
-    res.status(500).json({ message: "Failed to fetch orders", error: error.message });
+    res.status(500).json({
+      message: "Failed to fetch orders",
+      error: error.message,
+    });
   }
 });
 

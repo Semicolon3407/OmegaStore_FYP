@@ -9,7 +9,7 @@ import { useWishlist } from '../Context/wishlistContext';
 import { useCompare } from '../Context/compareContext';
 
 const ProductListing = () => {
-  const { cartItems, addToCart } = useCart();
+  const { cartItems, addToCart, isInCart } = useCart();
   const { wishlistItems, addToWishlist, removeFromWishlist } = useWishlist();
   const { addToCompare } = useCompare();
   const navigate = useNavigate();
@@ -158,14 +158,21 @@ const ProductListing = () => {
   };
 
   const handleAddToCart = async (productId) => {
-    if (!localStorage.getItem('token')) {
-      toast.info('Please login to add products to cart');
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.info('Please sign in to add products to cart');
       navigate('/sign-in');
       return;
     }
+
+    if (isInCart(productId)) {
+      toast.info('This product is already in your cart');
+      return;
+    }
+
     const success = await addToCart(productId);
     if (success) {
-      toast.success('Added to cart!');
+      toast.success('Product added to cart!');
     } else {
       toast.error('Failed to add to cart');
     }
@@ -604,14 +611,22 @@ const ProductListing = () => {
                               handleAddToCart(product._id);
                             }}
                             disabled={product.quantity <= 0}
-                            className={`w-full py-2 sm:py-3 rounded-full flex items-center justify-center transition-all duration-300 shadow-md text-sm sm:text-base ${
+                            className={`w-full flex items-center justify-center space-x-2 py-2 sm:py-3 px-4 sm:px-6 rounded-full text-sm sm:text-base font-medium transition-all duration-300 ${
                               product.quantity <= 0
-                                ? 'bg-gray-200 text-blue-900/50 cursor-not-allowed'
+                                ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                : isInCart(product._id)
+                                ? 'bg-green-500 text-white hover:bg-green-600'
                                 : 'bg-blue-900 text-white hover:bg-blue-800'
                             }`}
                           >
-                            <ShoppingCart size={16} className="mr-1 sm:mr-2" />
-                            {product.quantity <= 0 ? 'Out of Stock' : 'Add to Cart'}
+                            <ShoppingCart size={16} className="w-4 h-4 sm:w-5 sm:h-5" />
+                            <span>
+                              {product.quantity <= 0
+                                ? 'Out of Stock'
+                                : isInCart(product._id)
+                                ? 'In Cart'
+                                : 'Add to Cart'}
+                            </span>
                           </button>
                         </div>
                       </motion.div>

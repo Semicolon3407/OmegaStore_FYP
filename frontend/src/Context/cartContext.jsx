@@ -27,6 +27,10 @@ export const CartProvider = ({ children }) => {
     };
   };
 
+  const isInCart = useCallback((productId) => {
+    return cartItems.some(item => (item.product?._id || item.product) === productId);
+  }, [cartItems]);
+
   const fetchCart = useCallback(async () => {
     try {
       setCartLoading(true);
@@ -105,34 +109,6 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  const removeFromCart = async (productId) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        toast.info('Please login to modify cart');
-        navigate('/sign-in');
-        return false;
-      }
-
-      const { data } = await axios.delete(`${BASE_URL}/api/user/cart/${productId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const mappedItems = data.products.map((item) => ({
-        ...item,
-        product: item.product ? mapImageUrls(item.product) : item.product,
-        image: item.image ? (item.image.startsWith('http') ? item.image : `${BASE_URL}${item.image}`) : null,
-      }));
-      setCartItems(mappedItems);
-      setTotalAfterDiscount(data.totalAfterDiscount || null);
-      return true;
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to remove item');
-      if (error.response?.status === 401) navigate('/sign-in');
-      return false;
-    }
-  };
-
   const updateCartItem = async (productId, quantity) => {
     try {
       const token = localStorage.getItem('token');
@@ -142,22 +118,59 @@ export const CartProvider = ({ children }) => {
         return false;
       }
 
-      const { data } = await axios.post(
-        `${BASE_URL}/api/user/cart`,
-        { productId, quantity },
+      const { data } = await axios.put(
+        `${BASE_URL}/api/user/cart/${productId}`,
+        { quantity },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      const mappedItems = data.products.map((item) => ({
-        ...item,
-        product: item.product ? mapImageUrls(item.product) : item.product,
-        image: item.image ? (item.image.startsWith('http') ? item.image : `${BASE_URL}${item.image}`) : null,
-      }));
-      setCartItems(mappedItems);
-      setTotalAfterDiscount(data.totalAfterDiscount || null);
-      return true;
+      if (data && data.products) {
+        const mappedItems = data.products.map((item) => ({
+          ...item,
+          product: mapImageUrls(item.product),
+        }));
+        setCartItems(mappedItems);
+        setTotalAfterDiscount(data.totalAfterDiscount);
+        toast.success(data.message || 'Cart updated successfully');
+        return true;
+      }
+      return false;
     } catch (error) {
+      console.error('Update cart error:', error);
       toast.error(error.response?.data?.message || 'Failed to update quantity');
+      if (error.response?.status === 401) navigate('/sign-in');
+      return false;
+    }
+  };
+
+  const removeFromCart = async (productId) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.info('Please login to modify cart');
+        navigate('/sign-in');
+        return false;
+      }
+
+      const { data } = await axios.delete(
+        `${BASE_URL}/api/user/cart/${productId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (data && data.products) {
+        const mappedItems = data.products.map((item) => ({
+          ...item,
+          product: mapImageUrls(item.product),
+        }));
+        setCartItems(mappedItems);
+        setTotalAfterDiscount(data.totalAfterDiscount);
+        toast.success(data.message || 'Item removed from cart');
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Remove from cart error:', error);
+      toast.error(error.response?.data?.message || 'Failed to remove item');
       if (error.response?.status === 401) navigate('/sign-in');
       return false;
     }
@@ -172,15 +185,17 @@ export const CartProvider = ({ children }) => {
         return false;
       }
 
-      await axios.delete(`${BASE_URL}/api/user/empty-cart`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const { data } = await axios.delete(
+        `${BASE_URL}/api/user/cart/empty`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
       setCartItems([]);
       setTotalAfterDiscount(null);
-      toast.success('Cart emptied successfully');
+      toast.success(data.message || 'Cart emptied successfully');
       return true;
     } catch (error) {
+      console.error('Empty cart error:', error);
       toast.error(error.response?.data?.message || 'Failed to empty cart');
       if (error.response?.status === 401) navigate('/sign-in');
       return false;
@@ -234,26 +249,33 @@ export const CartProvider = ({ children }) => {
     return () => window.removeEventListener('storage', handleAuthChange);
   }, [fetchCart]);
 
-  const value = {
-    cartItems,
-    cartTotal,
-    itemCount,
-    cartLoading,
-    cartError,
-    totalAfterDiscount,
-    fetchCart,
-    addToCart,
-    removeFromCart,
-    updateCartItem,
-    emptyCart,
-    applyCoupon,
-  };
-
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+  return (
+    <CartContext.Provider
+      value={{
+        cartItems,
+        cartLoading,
+        cartError,
+        cartTotal,
+        itemCount,
+        totalAfterDiscount,
+        fetchCart,
+        addToCart,
+        removeFromCart,
+        updateCartItem,
+        emptyCart,
+        applyCoupon,
+        isInCart,
+      }}
+    >
+      {children}
+    </CartContext.Provider>
+  );
 };
 
 export const useCart = () => {
   const context = useContext(CartContext);
-  if (!context) throw new Error('useCart must be used within a CartProvider');
+  if (!context) {
+    throw new Error('useCart must be used within a CartProvider');
+  }
   return context;
 };

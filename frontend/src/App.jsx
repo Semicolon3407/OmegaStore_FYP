@@ -203,10 +203,8 @@ function App() {
             <CompareProvider>
               <ChatProvider>
                 <ReviewProvider>
-                 
-                    <ToastContainer position="bottom-right" autoClose={3000} />
-                    <Layout />
-                 
+                  <ToastContainer position="bottom-right" autoClose={3000} />
+                  <Layout />
                 </ReviewProvider>
               </ChatProvider>
             </CompareProvider>

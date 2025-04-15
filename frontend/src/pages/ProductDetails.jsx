@@ -12,7 +12,7 @@ import { useReview } from '../Context/ReviewContext';
 const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { addToCart } = useCart();
+  const { addToCart, isInCart } = useCart();
   const { wishlistItems, addToWishlist, removeFromWishlist } = useWishlist();
   const { addToCompare } = useCompare();
   const { reviews, loading: reviewLoading, fetchReviews, addReview } = useReview();
@@ -86,6 +86,12 @@ const ProductDetails = () => {
       navigate('/sign-in');
       return;
     }
+
+    if (isInCart(product._id)) {
+      toast.info('This product is already in your cart');
+      return;
+    }
+
     const success = await addToCart(product._id, quantity);
     if (success) {
       toast.success(`Added ${quantity} item${quantity > 1 ? 's' : ''} to cart!`);
@@ -332,14 +338,22 @@ const ProductDetails = () => {
               <button
                 onClick={handleAddToCart}
                 disabled={product.quantity <= 0}
-                className={`w-full py-2 sm:py-3 rounded-full flex items-center justify-center transition-all duration-300 shadow-md text-sm sm:text-base ${
+                className={`w-full flex items-center justify-center space-x-2 py-2 sm:py-3 px-4 sm:px-6 rounded-full text-sm sm:text-base font-medium transition-all duration-300 ${
                   product.quantity <= 0
-                    ? 'bg-gray-200 text-blue-900/50 cursor-not-allowed'
+                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                    : isInCart(product._id)
+                    ? 'bg-green-500 text-white hover:bg-green-600'
                     : 'bg-blue-900 text-white hover:bg-blue-800'
                 }`}
               >
-                <ShoppingCart size={16} className="mr-1 sm:mr-2" />
-                {product.quantity <= 0 ? 'Out of Stock' : 'Add to Cart'}
+                <ShoppingCart size={16} className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span>
+                  {product.quantity <= 0
+                    ? 'Out of Stock'
+                    : isInCart(product._id)
+                    ? 'In Cart'
+                    : 'Add to Cart'}
+                </span>
               </button>
               <button
                 onClick={() => {

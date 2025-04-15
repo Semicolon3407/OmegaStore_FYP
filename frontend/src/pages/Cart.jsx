@@ -63,19 +63,25 @@ const Cart = () => {
       setIsUpdating(true);
       const newCount = Math.max(1, item.count + change);
 
-      if (item.count <= 1 && change < 0) {
+      // Don't allow decrease below 1
+      if (newCount < 1) {
+        return;
+      }
+
+      // Check stock availability
+      if (item.product && item.product.quantity < newCount) {
+        toast.error('Cannot exceed available stock');
         return;
       }
 
       const success = await updateCartItem(productId, newCount);
-      if (!success) {
-        toast.error('Failed to update quantity');
-      } else {
-        setAppliedCoupon(null); // Reset coupon on cart change
+      if (success) {
+        await fetchCart(); // Refresh cart after successful update
+        toast.success('Quantity updated successfully');
       }
     } catch (error) {
       console.error('Error updating quantity:', error);
-      toast.error(error.response?.data?.message || 'Something went wrong');
+      toast.error(error.response?.data?.message || 'Failed to update quantity');
     } finally {
       setIsUpdating(false);
     }
@@ -94,12 +100,34 @@ const Cart = () => {
       setIsUpdating(true);
       const success = await removeFromCart(productId);
       if (success) {
-        toast.success('Item removed from cart');
-        setAppliedCoupon(null); // Reset coupon on cart change
+        await fetchCart(); // Refresh cart after successful removal
+        toast.success('Product removed from cart');
       }
     } catch (error) {
       console.error('Error removing item:', error);
       toast.error(error.response?.data?.message || 'Failed to remove item');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleEmptyCart = async () => {
+    if (isUpdating) return;
+
+    if (!window.confirm('Are you sure you want to empty your cart?')) {
+      return;
+    }
+
+    try {
+      setIsUpdating(true);
+      const success = await emptyCart();
+      if (success) {
+        await fetchCart(); // Refresh cart after emptying
+        toast.success('Cart emptied successfully');
+      }
+    } catch (error) {
+      console.error('Error emptying cart:', error);
+      toast.error(error.response?.data?.message || 'Failed to empty cart');
     } finally {
       setIsUpdating(false);
     }
@@ -168,17 +196,17 @@ const Cart = () => {
     <div className="bg-gray-100 min-h-screen pt-24 sm:pt-28 md:pt-32 lg:pt-36">
       <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-8 sm:py-12 md:py-16">
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="mb-6 sm:mb-8 flex justify-between items-center border-b border-gray-200 pb-4"
+          className="flex justify-between items-center mb-6 sm:mb-8"
         >
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-blue-900 tracking-tight">
-            Your Cart
+          <h1 className="text-2xl sm:text-3xl font-semibold text-blue-900 tracking-tight">
+            Shopping Cart
           </h1>
           {cartItems.length > 0 && (
             <button
-              onClick={emptyCart}
+              onClick={handleEmptyCart}
               className="text-red-500 hover:text-red-700 font-medium transition-colors duration-300 px-4 sm:px-6 py-2 sm:py-3 rounded-full border border-red-500 hover:bg-red-50 text-sm sm:text-base"
               disabled={isUpdating}
             >

@@ -66,9 +66,10 @@ router.put("/unblock-user/:id", authMiddleware, isAdmin, unblockUser);
 // Cart Routes
 router.post("/cart", authMiddleware, userCart);
 router.get("/user-cart", authMiddleware, getUserCarts);
-router.delete("/empty-cart", authMiddleware, emptyCart);
+router.delete("/cart/empty", authMiddleware, emptyCart);
 router.post("/cart/applycoupon", authMiddleware, applyCoupon);
 router.post("/cart/cash-order", authMiddleware, createOrder);
+router.put("/cart/:productId", authMiddleware, userCart);
 router.delete("/cart/:productId", authMiddleware, removeFromCart);
 
 // Order Routes
