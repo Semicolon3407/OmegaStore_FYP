@@ -33,7 +33,8 @@ const ProductDetails = () => {
     related: true,
   });
 
-  const API_BASE_URL = 'http://localhost:5001/api';
+  const BASE_URL = 'http://localhost:5001';
+  const API_BASE_URL = `${BASE_URL}/api`;
 
   const fetchProductDetails = useCallback(async () => {
     try {
@@ -42,6 +43,11 @@ const ProductDetails = () => {
 
       const productRes = await axios.get(`${API_BASE_URL}/products/${id}`);
       const productData = productRes.data.product || productRes.data;
+      // Map image URLs
+      productData.images = productData.images.map((img) => ({
+        ...img,
+        url: img.url.startsWith('http') ? img.url : `${BASE_URL}${img.url}`,
+      }));
       setProduct(productData);
 
       await fetchReviews(id);
@@ -52,7 +58,14 @@ const ProductDetails = () => {
       params.append('excludeId', id);
 
       const relatedRes = await axios.get(`${API_BASE_URL}/products?${params.toString()}`);
-      setRelatedProducts(relatedRes.data.products || []);
+      const mappedRelated = relatedRes.data.products.map((p) => ({
+        ...p,
+        images: p.images.map((img) => ({
+          ...img,
+          url: img.url.startsWith('http') ? img.url : `${BASE_URL}${img.url}`,
+        })),
+      }));
+      setRelatedProducts(mappedRelated || []);
     } catch (err) {
       console.error('Error fetching product details:', err);
       setError(err.response?.data?.message || 'Failed to load product details. Please try again.');
@@ -67,9 +80,17 @@ const ProductDetails = () => {
   }, [fetchProductDetails]);
 
   const handleAddToCart = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.info('Please sign in to add products to cart');
+      navigate('/sign-in');
+      return;
+    }
     const success = await addToCart(product._id, quantity);
     if (success) {
       toast.success(`Added ${quantity} item${quantity > 1 ? 's' : ''} to cart!`);
+    } else {
+      toast.error('Failed to add to cart');
     }
   };
 
@@ -87,9 +108,13 @@ const ProductDetails = () => {
     try {
       if (isInWishlist) {
         await removeFromWishlist(product._id);
+        toast.success('Removed from wishlist');
       } else {
         await addToWishlist(product._id);
+        toast.success('Added to wishlist');
       }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update wishlist');
     } finally {
       setWishlistLoading(false);
     }
@@ -97,14 +122,21 @@ const ProductDetails = () => {
 
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.info('Please sign in to submit a review');
+      navigate('/sign-in');
+      return;
+    }
     const success = await addReview(id, rating, comment);
     if (success) {
       setRating(0);
       setComment('');
       setShowReviewForm(false);
-      await fetchProductDetails(); // Refresh product details to update totalrating and reviews
-    } else if (!localStorage.getItem('token')) {
-      navigate('/sign-in');
+      await fetchProductDetails(); // Refresh reviews
+      toast.success('Review submitted successfully');
+    } else {
+      toast.error('Failed to submit review');
     }
   };
 
@@ -127,6 +159,11 @@ const ProductDetails = () => {
       {expandedSections[section] && children}
     </div>
   );
+
+  // Calculate average rating from reviews
+  const averageRating = reviews.length
+    ? Math.round(reviews.reduce((sum, r) => sum + r.star, 0) / reviews.length)
+    : 0;
 
   if (loading) {
     return (
@@ -158,6 +195,10 @@ const ProductDetails = () => {
       </div>
     );
   }
+
+  const discountedPrice = product.isOnSale && product.discountPercentage > 0
+    ? product.price * (1 - product.discountPercentage / 100)
+    : null;
 
   return (
     <div className="bg-gray-100 min-h-screen pt-24 sm:pt-32 lg:pt-40">
@@ -197,7 +238,7 @@ const ProductDetails = () => {
 
               <div className="relative h-64 sm:h-80 lg:h-[28rem] bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center shadow-inner">
                 <img
-                  src={product.images?.[currentImageIndex] || '/placeholder.jpg'}
+                  src={product.images?.[currentImageIndex]?.url || '/placeholder.jpg'}
                   alt={product.title}
                   className="w-full h-full object-contain p-6 sm:p-8 transition-transform duration-300 hover:scale-105"
                 />
@@ -206,7 +247,7 @@ const ProductDetails = () => {
                     Sold Out
                   </div>
                 )}
-                {product.isOnSale && (
+                {product.isOnSale && product.discountPercentage > 0 && (
                   <div className="absolute top-3 sm:top-4 left-3 sm:left-4 bg-orange-500 text-white text-xs font-semibold px-2 sm:px-3 py-1 rounded-full shadow">
                     Sale - {product.discountPercentage}%
                   </div>
@@ -216,7 +257,7 @@ const ProductDetails = () => {
                 {product.images?.slice(0, 3).map((img, idx) => (
                   <motion.img
                     key={idx}
-                    src={img}
+                    src={img.url}
                     alt={`${product.title} thumbnail ${idx}`}
                     className={`w-16 sm:w-20 h-16 sm:h-20 object-cover rounded-lg cursor-pointer border-2 ${
                       currentImageIndex === idx ? 'border-blue-900' : 'border-gray-200'
@@ -237,7 +278,7 @@ const ProductDetails = () => {
                     key={i}
                     size={14}
                     className={`${
-                      i < Math.round(product.totalrating || 0)
+                      i < averageRating
                         ? 'text-yellow-400 fill-yellow-400'
                         : 'text-gray-300'
                     }`}
@@ -246,21 +287,21 @@ const ProductDetails = () => {
                 <span className="ml-2 text-blue-900/80 text-xs sm:text-sm">({reviews.length} reviews)</span>
               </div>
               <p className="text-blue-900/80 text-xs sm:text-sm mb-3 sm:mb-4 capitalize">
-                {product.brand} • {product.category}
+                {product.brand || 'N/A'} • {product.category || 'N/A'}
               </p>
               <div className="flex items-center mb-4 sm:mb-6">
-                {product.isOnSale && product.discountedPrice !== null ? (
+                {product.isOnSale && discountedPrice !== null ? (
                   <>
                     <p className="text-lg sm:text-xl lg:text-2xl font-bold text-blue-900">
-                      Rs {product.discountedPrice.toLocaleString()}
+                      Rs {Math.round(discountedPrice).toLocaleString()}
                     </p>
                     <p className="text-sm sm:text-lg text-blue-900/60 line-through ml-2 sm:ml-4">
-                      Rs {product.price.toLocaleString()}
+                      Rs {Math.round(product.price).toLocaleString()}
                     </p>
                   </>
                 ) : (
                   <p className="text-lg sm:text-xl lg:text-2xl font-bold text-blue-900">
-                    Rs {product.price.toLocaleString()}
+                    Rs {Math.round(product.price).toLocaleString()}
                   </p>
                 )}
               </div>
@@ -418,38 +459,44 @@ const ProductDetails = () => {
             <FilterSection title="Related Products" section="related">
               {relatedProducts.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                  {relatedProducts.map((related) => (
-                    <motion.div
-                      key={related._id}
-                      className="bg-white rounded-xl shadow-md p-3 sm:p-4 hover:shadow-lg transition-all duration-300 border border-gray-200"
-                      whileHover={{ y: -5 }}
-                    >
-                      <Link to={`/products/${related._id}`}>
-                        <img
-                          src={related.images?.[0] || '/placeholder.jpg'}
-                          alt={related.title}
-                          className="w-full h-32 sm:h-40 object-contain rounded-lg mb-2 sm:mb-4"
-                        />
-                        <h3 className="text-base sm:text-lg font-semibold text-blue-900 mb-1 sm:mb-2 line-clamp-1 hover:text-blue-500 transition-colors">
-                          {related.title}
-                        </h3>
-                        {related.isOnSale && related.discountedPrice !== null ? (
-                          <div className="flex items-center">
+                  {relatedProducts.map((related) => {
+                    const relatedDiscountedPrice = related.isOnSale && related.discountPercentage > 0
+                      ? related.price * (1 - related.discountPercentage / 100)
+                      : null;
+
+                    return (
+                      <motion.div
+                        key={related._id}
+                        className="bg-white rounded-xl shadow-md p-3 sm:p-4 hover:shadow-lg transition-all duration-300 border border-gray-200"
+                        whileHover={{ y: -5 }}
+                      >
+                        <Link to={`/products/${related._id}`}>
+                          <img
+                            src={related.images?.[0]?.url || '/placeholder.jpg'}
+                            alt={related.title}
+                            className="w-full h-32 sm:h-40 object-contain rounded-lg mb-2 sm:mb-4"
+                          />
+                          <h3 className="text-base sm:text-lg font-semibold text-blue-900 mb-1 sm:mb-2 line-clamp-1 hover:text-blue-500 transition-colors">
+                            {related.title}
+                          </h3>
+                          {related.isOnSale && relatedDiscountedPrice !== null ? (
+                            <div className="flex items-center">
+                              <p className="text-base sm:text-xl font-bold text-blue-900">
+                                Rs {Math.round(relatedDiscountedPrice).toLocaleString()}
+                              </p>
+                              <p className="text-xs sm:text-sm text-blue-900/60 line-through ml-1 sm:ml-2">
+                                Rs {Math.round(related.price).toLocaleString()}
+                              </p>
+                            </div>
+                          ) : (
                             <p className="text-base sm:text-xl font-bold text-blue-900">
-                              Rs {related.discountedPrice.toLocaleString()}
+                              Rs {Math.round(related.price).toLocaleString()}
                             </p>
-                            <p className="text-xs sm:text-sm text-blue-900/60 line-through ml-1 sm:ml-2">
-                              Rs {related.price.toLocaleString()}
-                            </p>
-                          </div>
-                        ) : (
-                          <p className="text-base sm:text-xl font-bold text-blue-900">
-                            Rs {related.price.toLocaleString()}
-                          </p>
-                        )}
-                      </Link>
-                    </motion.div>
-                  ))}
+                          )}
+                        </Link>
+                      </motion.div>
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="text-blue-900/80 text-sm sm:text-base">No related products found.</p>

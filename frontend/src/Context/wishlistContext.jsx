@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const WishlistContext = createContext();
+const BASE_URL = 'http://localhost:5001';
 
 export const WishlistProvider = ({ children }) => {
   const [wishlistItems, setWishlistItems] = useState([]);
@@ -12,8 +13,18 @@ export const WishlistProvider = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // List of unauthenticated routes where logging should be suppressed
   const unauthenticatedRoutes = ["/sign-in", "/forgot-password", "/account/create", "/reset-password"];
+
+  const mapImageUrls = (item) => {
+    if (!item?.images) return item;
+    return {
+      ...item,
+      images: item.images.map((img) => ({
+        ...img,
+        url: img.url.startsWith('http') ? img.url : `${BASE_URL}${img.url}`,
+      })),
+    };
+  };
 
   const fetchWishlist = useCallback(async () => {
     try {
@@ -23,21 +34,21 @@ export const WishlistProvider = ({ children }) => {
 
       if (!token) {
         setWishlistItems([]);
-        // Suppress logging on unauthenticated routes
         if (!unauthenticatedRoutes.includes(location.pathname)) {
           console.log("No token found, setting empty wishlist");
         }
         return;
       }
 
-      const { data } = await axios.get('http://localhost:5001/api/user/wishlist', {
+      const { data } = await axios.get(`${BASE_URL}/api/user/wishlist`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       console.log("Wishlist API response:", data);
-      setWishlistItems(data.wishlist || []);
+      const mappedItems = (data.wishlist || []).map(mapImageUrls);
+      setWishlistItems(mappedItems);
     } catch (error) {
-      const errorMsg = error.response?.data?.message || error.message || 'Unknown error';
+      const errorMsg = error.response?.data?.message || error.message || 'Failed to fetch wishlist';
       console.error("Wishlist fetch error:", {
         status: error.response?.status,
         message: errorMsg,
@@ -46,12 +57,14 @@ export const WishlistProvider = ({ children }) => {
       setError(errorMsg);
       if (error.response?.status === 401) {
         toast.info('Session expired, please login');
+        localStorage.removeItem('token');
+        localStorage.removeItem('role');
         navigate('/sign-in');
       }
     } finally {
       setLoading(false);
     }
-  }, [navigate, location.pathname]); // Add location.pathname as a dependency
+  }, [navigate, location.pathname]);
 
   const addToWishlist = async (productId) => {
     try {
@@ -62,14 +75,22 @@ export const WishlistProvider = ({ children }) => {
         return false;
       }
 
+      const actualProductId = typeof productId === 'object' ? productId._id : productId;
+      if (!actualProductId) {
+        console.error("Invalid product ID:", productId);
+        toast.error('Invalid product format');
+        return false;
+      }
+
       const { data } = await axios.put(
-        'http://localhost:5001/api/user/wishlist',
-        { productId },
+        `${BASE_URL}/api/user/wishlist`,
+        { productId: actualProductId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       console.log("Add to wishlist response:", data);
-      setWishlistItems(data.wishlist || []);
+      const mappedItems = (data.wishlist || []).map(mapImageUrls);
+      setWishlistItems(mappedItems);
       toast.success('Added to wishlist!');
       return true;
     } catch (error) {
@@ -89,11 +110,19 @@ export const WishlistProvider = ({ children }) => {
         return false;
       }
 
-      const { data } = await axios.delete(`http://localhost:5001/api/user/wishlist/${productId}`, {
+      const actualProductId = typeof productId === 'object' ? productId._id : productId;
+      if (!actualProductId) {
+        console.error("Invalid product ID:", productId);
+        toast.error('Invalid product format');
+        return false;
+      }
+
+      const { data } = await axios.delete(`${BASE_URL}/api/user/wishlist/${actualProductId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setWishlistItems(data.wishlist || []);
+      const mappedItems = (data.wishlist || []).map(mapImageUrls);
+      setWishlistItems(mappedItems);
       toast.success('Removed from wishlist');
       return true;
     } catch (error) {

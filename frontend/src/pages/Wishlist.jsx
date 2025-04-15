@@ -6,13 +6,22 @@ import { toast } from 'react-toastify';
 import { useCart } from '../Context/cartContext';
 import { useWishlist } from '../Context/wishlistContext';
 
+const BASE_URL = 'http://localhost:5001';
+
 const Wishlist = () => {
   const { wishlistItems, loading, error, removeFromWishlist } = useWishlist();
   const { addToCart, cartItems } = useCart();
   const navigate = useNavigate();
 
+  const getImageUrl = (item) => {
+    const imageUrl = item.images?.[0]?.url;
+    if (!imageUrl) return '/placeholder.jpg';
+    return imageUrl.startsWith('http') ? imageUrl : `${BASE_URL}${imageUrl}`;
+  };
+
   const handleAddToCart = async (productId) => {
-    const success = await addToCart(productId);
+    const actualProductId = typeof productId === 'object' ? productId._id : productId;
+    const success = await addToCart(actualProductId);
     if (success) {
       toast.success('Added to cart!');
     }
@@ -72,7 +81,7 @@ const Wishlist = () => {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-center py-12 sm:py-16 bg-white rounded-lg shadow-md hover:shadow-xl border border-gray-200"
           >
-            <Heart size={60} sm:size={80} className="mx-auto mb-4 sm:mb-6 text-gray-300" />
+            <Heart size={60} className="mx-auto mb-4 sm:mb-6 text-gray-300" />
             <h2 className="text-xl sm:text-2xl font-semibold text-blue-900 mb-3 sm:mb-4 tracking-tight">
               Your Wishlist is Empty
             </h2>
@@ -106,9 +115,12 @@ const Wishlist = () => {
                   <Link to={`/products/${item._id}`}>
                     <div className="h-48 sm:h-56 md:h-64 bg-gray-100 flex items-center justify-center">
                       <img
-                        src={item.images?.[0] || '/assets/images/placeholder.png'}
+                        src={getImageUrl(item)}
                         alt={item.title || 'Product'}
                         className="w-full h-full object-contain p-4 sm:p-6 transition-transform duration-300 group-hover:scale-105"
+                        onError={(e) => {
+                          e.target.src = '/placeholder.jpg';
+                        }}
                       />
                     </div>
                   </Link>
@@ -116,7 +128,7 @@ const Wishlist = () => {
                     onClick={() => removeFromWishlist(item._id)}
                     className="absolute top-3 right-3 p-1 sm:p-2 rounded-full bg-white text-red-500 hover:text-red-600 transition-all duration-300 shadow-md"
                   >
-                    <Heart size={16} sm:size={20} fill="currentColor" />
+                    <Heart size={20} fill="currentColor" />
                   </button>
                 </div>
                 <div className="p-4 sm:p-6">
@@ -146,7 +158,7 @@ const Wishlist = () => {
                           : 'bg-blue-900 text-white hover:bg-blue-500'
                       }`}
                     >
-                      <ShoppingCart size={16} sm:size={18} className="mr-1 sm:mr-2" />
+                      <ShoppingCart size={18} className="mr-1 sm:mr-2" />
                       {cartItems.some((cartItem) => cartItem.product?._id === item._id)
                         ? 'Added'
                         : (item.quantity ?? 0) <= 0
@@ -157,7 +169,7 @@ const Wishlist = () => {
                       onClick={() => removeFromWishlist(item._id)}
                       className="text-red-500 hover:text-red-700 p-1 sm:p-2 flex items-center transition-colors duration-300 w-full sm:w-auto justify-center sm:justify-start"
                     >
-                      <Trash2 size={16} sm:size={20} className="mr-1 sm:mr-2" />
+                      <Trash2 size={20} className="mr-1 sm:mr-2" />
                       <span className="text-xs sm:text-sm font-medium hidden sm:inline">Remove</span>
                     </button>
                   </div>

@@ -2,6 +2,13 @@ const multer = require("multer");
 const sharp = require("sharp");
 const path = require("path");
 const fs = require("fs");
+
+// Ensure the products directory exists
+const productDir = path.join(__dirname, "../public/images/products");
+if (!fs.existsSync(productDir)) {
+  fs.mkdirSync(productDir, { recursive: true });
+}
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, path.join(__dirname, "../public/images/"));
@@ -23,7 +30,7 @@ const multerFilter = (req, file, cb) => {
 const uploadPhoto = multer({
   storage: storage,
   fileFilter: multerFilter,
-  limits: { fileSize: 1000000 },
+  limits: { fileSize: 1000000 }, // 1MB limit
 });
 
 const productImgResize = async (req, res, next) => {
@@ -34,8 +41,8 @@ const productImgResize = async (req, res, next) => {
         .resize(300, 300)
         .toFormat("jpeg")
         .jpeg({ quality: 90 })
-        .toFile(`public/images/products/${file.filename}`);
-      fs.unlinkSync(`public/images/products/${file.filename}`);
+        .toFile(path.join(productDir, file.filename));
+      fs.unlinkSync(file.path); // Remove the original file
     })
   );
   next();
@@ -49,10 +56,11 @@ const blogImgResize = async (req, res, next) => {
         .resize(300, 300)
         .toFormat("jpeg")
         .jpeg({ quality: 90 })
-        .toFile(`public/images/blogs/${file.filename}`);
-      fs.unlinkSync(`public/images/blogs/${file.filename}`);
+        .toFile(path.join(__dirname, "../public/images/blogs", file.filename));
+      fs.unlinkSync(file.path);
     })
   );
   next();
 };
+
 module.exports = { uploadPhoto, productImgResize, blogImgResize };

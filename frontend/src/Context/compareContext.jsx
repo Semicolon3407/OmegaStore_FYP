@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const CompareContext = createContext();
+const BASE_URL = 'http://localhost:5001';
 
 export const CompareProvider = ({ children }) => {
   const [compareItems, setCompareItems] = useState([]);
@@ -12,8 +13,18 @@ export const CompareProvider = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // List of unauthenticated routes where logging should be suppressed
   const unauthenticatedRoutes = ["/sign-in", "/forgot-password", "/account/create", "/reset-password"];
+
+  const mapImageUrls = (item) => {
+    if (!item?.images) return item;
+    return {
+      ...item,
+      images: item.images.map((img) => ({
+        ...img,
+        url: img.url.startsWith('http') ? img.url : `${BASE_URL}${img.url}`,
+      })),
+    };
+  };
 
   const fetchCompare = useCallback(async () => {
     try {
@@ -23,21 +34,21 @@ export const CompareProvider = ({ children }) => {
 
       if (!token) {
         setCompareItems([]);
-        // Suppress logging on unauthenticated routes
         if (!unauthenticatedRoutes.includes(location.pathname)) {
           console.log("No token found, setting empty compare list");
         }
         return;
       }
 
-      const { data } = await axios.get('http://localhost:5001/api/user/compare', {
+      const { data } = await axios.get(`${BASE_URL}/api/user/compare`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       console.log("Compare API response:", data);
-      setCompareItems(data.compare || []);
+      const mappedItems = (data.compare || []).map(mapImageUrls);
+      setCompareItems(mappedItems);
     } catch (error) {
-      const errorMsg = error.response?.data?.message || error.message || 'Unknown error';
+      const errorMsg = error.response?.data?.message || error.message || 'Failed to fetch compare list';
       console.error("Compare fetch error:", {
         status: error.response?.status,
         message: errorMsg,
@@ -46,12 +57,14 @@ export const CompareProvider = ({ children }) => {
       setError(errorMsg);
       if (error.response?.status === 401) {
         toast.info('Session expired, please login');
+        localStorage.removeItem('token');
+        localStorage.removeItem('role');
         navigate('/sign-in');
       }
     } finally {
       setLoading(false);
     }
-  }, [navigate, location.pathname]); // Add location.pathname as a dependency
+  }, [navigate, location.pathname]);
 
   const addToCompare = async (productId) => {
     try {
@@ -62,9 +75,7 @@ export const CompareProvider = ({ children }) => {
         return false;
       }
 
-      // Extract the ID if a product object was passed instead of an ID string
       const actualProductId = typeof productId === 'object' ? productId._id : productId;
-      
       if (!actualProductId) {
         console.error("Invalid product ID:", productId);
         toast.error('Invalid product format');
@@ -72,13 +83,14 @@ export const CompareProvider = ({ children }) => {
       }
 
       const { data } = await axios.put(
-        'http://localhost:5001/api/user/compare',
+        `${BASE_URL}/api/user/compare`,
         { productId: actualProductId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       console.log("Add to compare response:", data);
-      setCompareItems(data.compare || []);
+      const mappedItems = (data.compare || []).map(mapImageUrls);
+      setCompareItems(mappedItems);
       toast.success('Added to compare!');
       return true;
     } catch (error) {
@@ -98,20 +110,19 @@ export const CompareProvider = ({ children }) => {
         return false;
       }
 
-      // Extract the ID if a product object was passed instead of an ID string
       const actualProductId = typeof productId === 'object' ? productId._id : productId;
-      
       if (!actualProductId) {
         console.error("Invalid product ID:", productId);
         toast.error('Invalid product format');
         return false;
       }
 
-      const { data } = await axios.delete(`http://localhost:5001/api/user/compare/${actualProductId}`, {
+      const { data } = await axios.delete(`${BASE_URL}/api/user/compare/${actualProductId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setCompareItems(data.compare || []);
+      const mappedItems = (data.compare || []).map(mapImageUrls);
+      setCompareItems(mappedItems);
       toast.success('Removed from compare');
       return true;
     } catch (error) {
@@ -130,7 +141,7 @@ export const CompareProvider = ({ children }) => {
         return false;
       }
 
-      const { data } = await axios.delete('http://localhost:5001/api/user/compare/clear', {
+      const { data } = await axios.delete(`${BASE_URL}/api/user/compare/clear`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

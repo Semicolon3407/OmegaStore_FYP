@@ -46,10 +46,20 @@ const ProductListing = () => {
     sort: true,
   });
 
+  const BASE_URL = 'http://localhost:5001';
+  const API_URL = `${BASE_URL}/api/products`;
+
   const fetchAllProducts = useCallback(async () => {
     try {
-      const response = await axios.get('http://localhost:5001/api/products');
-      setAllProducts(response.data.products || []);
+      const response = await axios.get(API_URL);
+      const mappedProducts = response.data.products.map((product) => ({
+        ...product,
+        images: product.images.map((img) => ({
+          ...img,
+          url: img.url.startsWith('http') ? img.url : `${BASE_URL}${img.url}`,
+        })),
+      }));
+      setAllProducts(mappedProducts || []);
     } catch (err) {
       setError('Failed to load products. Please try again later.');
     }
@@ -70,11 +80,18 @@ const ProductListing = () => {
       params.append('limit', limit);
       params.append('page', page);
 
-      const response = await axios.get(`http://localhost:5001/api/products?${params.toString()}`);
-      setProducts(response.data.products || []);
+      const response = await axios.get(`${API_URL}?${params.toString()}`);
+      const mappedProducts = response.data.products.map((product) => ({
+        ...product,
+        images: product.images.map((img) => ({
+          ...img,
+          url: img.url.startsWith('http') ? img.url : `${BASE_URL}${img.url}`,
+        })),
+      }));
+      setProducts(mappedProducts || []);
       setError(null);
     } catch (err) {
-      setError('Failed to load products. Please try again later.');
+      setError(err.response?.data?.message || 'Failed to load products. Please try again later.');
       setProducts([]);
     } finally {
       setLoading(false);
@@ -94,38 +111,12 @@ const ProductListing = () => {
     setSearchTerm(newSearch);
     setCategoryFilter(newCategory);
     setBrandFilter(newBrand);
+    setPage(1); // Reset page when filters change
   }, [location.search]);
 
   const handleSearch = useCallback(() => {
-    if (!searchTerm.trim()) {
-      fetchProducts();
-      return;
-    }
-
-    const searchTermLower = searchTerm.toLowerCase();
-    const filtered = allProducts.filter(
-      (product) =>
-        product.title.toLowerCase().includes(searchTermLower) &&
-        (categoryFilter === 'All' || product.category === categoryFilter) &&
-        (brandFilter === 'All' || product.brand === brandFilter) &&
-        (colorFilter === 'All' || product.color === colorFilter) &&
-        (!minPrice || product.price >= parseFloat(minPrice)) &&
-        (!maxPrice || product.price <= parseFloat(maxPrice))
-    );
-
-    const sorted = [...filtered].sort((a, b) => {
-      if (sortBy === 'price') {
-        return sortOrder === 'asc' ? a.price - b.price : b.price - a.price;
-      } else if (sortBy === 'title') {
-        return sortOrder === 'asc'
-          ? a.title.localeCompare(b.title)
-          : b.title.localeCompare(a.title);
-      }
-      return 0;
-    });
-
-    setProducts(sorted);
-  }, [searchTerm, allProducts, categoryFilter, brandFilter, colorFilter, minPrice, maxPrice, sortBy, sortOrder, fetchProducts]);
+    fetchProducts(); // Rely on backend search for consistency
+  }, [fetchProducts]);
 
   useEffect(() => {
     handleSearch();
@@ -144,13 +135,13 @@ const ProductListing = () => {
     try {
       if (isInWishlist(productId)) {
         await removeFromWishlist(productId);
-        toast.success("Removed from wishlist");
+        toast.success('Removed from wishlist');
       } else {
         await addToWishlist(productId);
-        toast.success("Added to wishlist");
+        toast.success('Added to wishlist');
       }
     } catch (err) {
-      toast.error("Failed to update wishlist");
+      toast.error(err.response?.data?.message || 'Failed to update wishlist');
     } finally {
       setWishlistLoading((prev) => ({ ...prev, [productId]: false }));
     }
@@ -167,9 +158,16 @@ const ProductListing = () => {
   };
 
   const handleAddToCart = async (productId) => {
+    if (!localStorage.getItem('token')) {
+      toast.info('Please login to add products to cart');
+      navigate('/sign-in');
+      return;
+    }
     const success = await addToCart(productId);
     if (success) {
       toast.success('Added to cart!');
+    } else {
+      toast.error('Failed to add to cart');
     }
   };
 
@@ -178,9 +176,9 @@ const ProductListing = () => {
     const prices = source.map((p) => p.price);
 
     return {
-      categories: ['All', ...new Set(source.map((p) => p.category))].filter(Boolean),
-      brands: ['All', ...new Set(source.map((p) => p.brand))].filter(Boolean),
-      colors: ['All', ...new Set(source.map((p) => p.color))].filter(Boolean),
+      categories: ['All', ...new Set(source.map((p) => p.category).filter(Boolean))],
+      brands: ['All', ...new Set(source.map((p) => p.brand).filter(Boolean))],
+      colors: ['All', ...new Set(source.map((p) => p.color).filter(Boolean))],
       priceRange: {
         min: prices.length ? Math.floor(Math.min(...prices)) : 0,
         max: prices.length ? Math.ceil(Math.max(...prices)) : 1000,
@@ -497,122 +495,128 @@ const ProductListing = () => {
             ) : (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-                  {products.map((product) => (
-                    <motion.div
-                      key={product._id}
-                      className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 relative group border border-gray-200"
-                      whileHover={{ y: -5 }}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.4 }}
-                    >
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          toggleWishlist(product._id);
-                        }}
-                        disabled={wishlistLoading[product._id]}
-                        className={`absolute top-3 sm:top-4 right-3 sm:right-4 z-10 p-1 sm:p-2 rounded-full shadow-md ${
-                          isInWishlist(product._id)
-                            ? 'text-red-500 bg-red-50'
-                            : 'text-blue-900 bg-white hover:text-red-500'
-                        } transition-all duration-300`}
+                  {products.map((product) => {
+                    const discountedPrice = product.isOnSale && product.discountPercentage > 0
+                      ? product.price * (1 - product.discountPercentage / 100)
+                      : null;
+
+                    return (
+                      <motion.div
+                        key={product._id}
+                        className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 relative group border border-gray-200"
+                        whileHover={{ y: -5 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.4 }}
                       >
-                        <Heart
-                          size={16}
-                          fill={isInWishlist(product._id) ? 'currentColor' : 'none'}
-                        />
-                      </button>
-
-                      <Link to={`/products/${product._id}`} className="block">
-                        <div className="relative h-56 sm:h-64 overflow-hidden bg-gray-100 flex items-center justify-center">
-                          <img
-                            src={product.images?.[0] || '/placeholder.jpg'}
-                            alt={product.title}
-                            className="w-full h-full object-contain p-4 sm:p-6 transition-transform duration-300 group-hover:scale-105"
-                          />
-                          {product.quantity <= 0 && (
-                            <div className="absolute top-3 sm:top-4 left-3 sm:left-4 bg-red-500 text-white text-xs font-semibold px-2 sm:px-3 py-1 rounded-full shadow">
-                              Sold Out
-                            </div>
-                          )}
-                          {product.isOnSale && (
-                            <div className="absolute top-3 sm:top-4 left-3 sm:left-4 bg-orange-500 text-white text-xs font-semibold px-2 sm:px-3 py-1 rounded-full shadow">
-                              Sale - {product.discountPercentage}%
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="p-4 sm:p-6">
-                          <div className="flex items-center mb-1 sm:mb-2">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                size={14}
-                                className={`${
-                                  i < (product.totalrating || 0)
-                                    ? 'text-yellow-400 fill-yellow-400'
-                                    : 'text-gray-300'
-                                }`}
-                              />
-                            ))}
-                          </div>
-                          <h3 className="font-semibold text-base sm:text-lg text-blue-900 mb-1 sm:mb-2 line-clamp-1 group-hover:text-blue-500 transition-colors">
-                            {product.title}
-                          </h3>
-                          <p className="text-blue-900/80 text-xs sm:text-sm mb-2 sm:mb-3 capitalize">
-                            {product.brand} • {product.category}
-                          </p>
-                          <div className="flex items-center">
-                            {product.isOnSale && product.discountedPrice !== null ? (
-                              <>
-                                <p className="text-lg sm:text-xl font-bold text-blue-900">
-                                  Rs {product.discountedPrice.toLocaleString()}
-                                </p>
-                                <p className="text-xs sm:text-sm text-blue-900/60 line-through ml-1 sm:ml-2">
-                                  Rs {product.price.toLocaleString()}
-                                </p>
-                              </>
-                            ) : (
-                              <p className="text-lg sm:text-xl font-bold text-blue-900">
-                                Rs {product.price.toLocaleString()}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </Link>
-
-                      <div className="px-4 sm:px-6 pb-4 sm:pb-6">
-                        <div className="flex justify-between items-center mb-3 sm:mb-4">
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleAddToCompare(product);
-                            }}
-                            className="flex items-center text-blue-900 hover:text-blue-500 transition-colors text-xs sm:text-sm"
-                          >
-                            <GitCompare size={14} className="mr-1 sm:mr-2" />
-                            Add to Compare
-                          </button>
-                        </div>
                         <button
                           onClick={(e) => {
                             e.preventDefault();
-                            handleAddToCart(product._id);
+                            toggleWishlist(product._id);
                           }}
-                          disabled={product.quantity <= 0}
-                          className={`w-full py-2 sm:py-3 rounded-full flex items-center justify-center transition-all duration-300 shadow-md text-sm sm:text-base ${
-                            product.quantity <= 0
-                              ? 'bg-gray-200 text-blue-900/50 cursor-not-allowed'
-                              : 'bg-blue-900 text-white hover:bg-blue-800'
-                          }`}
+                          disabled={wishlistLoading[product._id]}
+                          className={`absolute top-3 sm:top-4 right-3 sm:right-4 z-10 p-1 sm:p-2 rounded-full shadow-md ${
+                            isInWishlist(product._id)
+                              ? 'text-red-500 bg-red-50'
+                              : 'text-blue-900 bg-white hover:text-red-500'
+                          } transition-all duration-300`}
                         >
-                          <ShoppingCart size={16} className="mr-1 sm:mr-2" />
-                          {product.quantity <= 0 ? 'Out of Stock' : 'Add to Cart'}
+                          <Heart
+                            size={16}
+                            fill={isInWishlist(product._id) ? 'currentColor' : 'none'}
+                          />
                         </button>
-                      </div>
-                    </motion.div>
-                  ))}
+
+                        <Link to={`/products/${product._id}`} className="block">
+                          <div className="relative h-56 sm:h-64 overflow-hidden bg-gray-100 flex items-center justify-center">
+                            <img
+                              src={product.images?.[0]?.url || '/placeholder.jpg'}
+                              alt={product.title}
+                              className="w-full h-full object-contain p-4 sm:p-6 transition-transform duration-300 group-hover:scale-105"
+                            />
+                            {product.quantity <= 0 && (
+                              <div className="absolute top-3 sm:top-4 left-3 sm:left-4 bg-red-500 text-white text-xs font-semibold px-2 sm:px-3 py-1 rounded-full shadow">
+                                Sold Out
+                              </div>
+                            )}
+                            {product.isOnSale && product.discountPercentage > 0 && (
+                              <div className="absolute top-3 sm:top-4 left-3 sm:left-4 bg-orange-500 text-white text-xs font-semibold px-2 sm:px-3 py-1 rounded-full shadow">
+                                Sale - {product.discountPercentage}%
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="p-4 sm:p-6">
+                            <div className="flex items-center mb-1 sm:mb-2">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  size={14}
+                                  className={`${
+                                    i < (product.rating || 0)
+                                      ? 'text-yellow-400 fill-yellow-400'
+                                      : 'text-gray-300'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <h3 className="font-semibold text-base sm:text-lg text-blue-900 mb-1 sm:mb-2 line-clamp-1 group-hover:text-blue-500 transition-colors">
+                              {product.title}
+                            </h3>
+                            <p className="text-blue-900/80 text-xs sm:text-sm mb-2 sm:mb-3 capitalize">
+                              {product.brand || 'N/A'} • {product.category || 'N/A'}
+                            </p>
+                            <div className="flex items-center">
+                              {product.isOnSale && discountedPrice !== null ? (
+                                <>
+                                  <p className="text-lg sm:text-xl font-bold text-blue-900">
+                                    Rs {Math.round(discountedPrice).toLocaleString()}
+                                  </p>
+                                  <p className="text-xs sm:text-sm text-blue-900/60 line-through ml-1 sm:ml-2">
+                                    Rs {Math.round(product.price).toLocaleString()}
+                                  </p>
+                                </>
+                              ) : (
+                                <p className="text-lg sm:text-xl font-bold text-blue-900">
+                                  Rs {Math.round(product.price).toLocaleString()}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </Link>
+
+                        <div className="px-4 sm:px-6 pb-4 sm:pb-6">
+                          <div className="flex justify-between items-center mb-3 sm:mb-4">
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleAddToCompare(product);
+                              }}
+                              className="flex items-center text-blue-900 hover:text-blue-500 transition-colors text-xs sm:text-sm"
+                            >
+                              <GitCompare size={14} className="mr-1 sm:mr-2" />
+                              Add to Compare
+                            </button>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleAddToCart(product._id);
+                            }}
+                            disabled={product.quantity <= 0}
+                            className={`w-full py-2 sm:py-3 rounded-full flex items-center justify-center transition-all duration-300 shadow-md text-sm sm:text-base ${
+                              product.quantity <= 0
+                                ? 'bg-gray-200 text-blue-900/50 cursor-not-allowed'
+                                : 'bg-blue-900 text-white hover:bg-blue-800'
+                            }`}
+                          >
+                            <ShoppingCart size={16} className="mr-1 sm:mr-2" />
+                            {product.quantity <= 0 ? 'Out of Stock' : 'Add to Cart'}
+                          </button>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
                 </div>
 
                 {products.length > 0 && (

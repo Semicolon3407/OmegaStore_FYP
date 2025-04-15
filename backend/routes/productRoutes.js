@@ -8,20 +8,34 @@ const {
   rating,
 } = require("../controller/productController");
 const { isAdmin, authMiddleware } = require("../middlewares/authMiddleware");
-const { uploadPhoto } = require("../middlewares/uploadImage");
+const { uploadPhoto, productImgResize } = require("../middlewares/uploadImage");
 
 const router = express.Router();
 
 // Admin-only routes (product management)
-router.post("/", authMiddleware, isAdmin, uploadPhoto.single("image"), createProduct); // Create product with image upload
-router.put("/:id", authMiddleware, isAdmin, uploadPhoto.single("image"), updateProduct); // Update product with optional image upload
-router.delete("/:id", authMiddleware, isAdmin, deleteProduct); // Delete product
+router.post(
+  "/",
+  authMiddleware,
+  isAdmin,
+  uploadPhoto.array("images", 10),
+  productImgResize,
+  createProduct
+);
+router.put(
+  "/:id",
+  authMiddleware,
+  isAdmin,
+  uploadPhoto.array("images", 10),
+  productImgResize,
+  updateProduct
+);
+router.delete("/:id", authMiddleware, isAdmin, deleteProduct);
 
 // Public routes (product retrieval)
-router.get("/", getAllProducts); // Get all products (public)
-router.get("/:id", getSingleProduct); // Get single product (public)
+router.get("/", getAllProducts);
+router.get("/:id", getSingleProduct);
 
 // User interaction routes (requires authentication)
-router.put('/items/rating', authMiddleware, rating); // Rating requires only authentication
+router.put("/items/rating", authMiddleware, rating);
 
 module.exports = router;

@@ -13,7 +13,19 @@ const createProduct = asyncHandler(async (req, res) => {
         message: "Product name is required and must be a string",
       });
     }
+
+    // Handle images
+    let images = [];
+    if (req.files && req.files.length > 0) {
+      images = req.files.map((file, index) => ({
+        url: `/images/products/${file.filename}`,
+        type: index === 0 ? "main" : "sub",
+      }));
+    }
+
     req.body.slug = slugify(req.body.title, { lower: true, strict: true });
+    req.body.images = images;
+
     const newProduct = await Product.create(req.body);
     res.status(201).json({
       success: true,
@@ -38,14 +50,17 @@ const getSingleProduct = asyncHandler(async (req, res) => {
       });
     }
 
-    const product = await Product.findById(req.params.id).populate('ratings.postedby', 'firstname lastname');
+    const product = await Product.findById(req.params.id).populate(
+      "ratings.postedby",
+      "firstname lastname"
+    );
     if (!product) {
       return res.status(404).json({
         success: false,
         message: "Product not found",
       });
     }
-    // Calculate discounted price if on sale
+
     const discountedPrice = product.isOnSale
       ? product.price * (1 - product.discountPercentage / 100)
       : null;
@@ -82,7 +97,6 @@ const getAllProducts = asyncHandler(async (req, res) => {
 
     let filter = {};
 
-    // Search functionality
     if (search) {
       filter.$or = [
         { title: { $regex: search, $options: "i" } },
@@ -98,7 +112,7 @@ const getAllProducts = asyncHandler(async (req, res) => {
     }
     if (color) filter.color = color;
 
-    let sort = { createdAt: -1 }; // Default sorting by newest
+    let sort = { createdAt: -1 };
     if (sortBy) sort = { [sortBy]: sortOrder === "desc" ? -1 : 1 };
 
     let projection = {};
@@ -116,12 +130,11 @@ const getAllProducts = asyncHandler(async (req, res) => {
         .sort(sort)
         .skip(skip)
         .limit(limitNumber)
-        .populate('ratings.postedby', 'firstname lastname'),
+        .populate("ratings.postedby", "firstname lastname"),
       Product.countDocuments(filter),
     ]);
 
-    // Add discounted price to each product
-    const productsWithDiscount = products.map(product => {
+    const productsWithDiscount = products.map((product) => {
       const discountedPrice = product.isOnSale
         ? product.price * (1 - product.discountPercentage / 100)
         : null;
@@ -166,11 +179,18 @@ const updateProduct = asyncHandler(async (req, res) => {
       req.body.slug = slugify(req.body.title, { lower: true, strict: true });
     }
 
-    const product = await Product.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    ).populate('ratings.postedby', 'firstname lastname');
+    // Handle images
+    if (req.files && req.files.length > 0) {
+      req.body.images = req.files.map((file, index) => ({
+        url: `/images/products/${file.filename}`,
+        type: index === 0 ? "main" : "sub",
+      }));
+    }
+
+    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    }).populate("ratings.postedby", "firstname lastname");
 
     if (!product) {
       return res.status(404).json({
@@ -217,6 +237,25 @@ const deleteProduct = asyncHandler(async (req, res) => {
       });
     }
 
+    // Optionally delete associated images
+    if (product.images && product.images.length > 0) {
+      const fs = require("fs").promises;
+      const path = require("path");
+      for (const image of product.images) {
+        const filename = image.url.split("/").pop();
+        const filePath = path.join(
+          __dirname,
+          "../public/images/products",
+          filename
+        );
+        try {
+          await fs.unlink(filePath);
+        } catch (error) {
+          console.error(`Failed to delete image ${filename}:`, error);
+        }
+      }
+    }
+
     res.status(200).json({
       success: true,
       message: "Product deleted successfully!",
@@ -234,31 +273,32 @@ const rating = asyncHandler(async (req, res) => {
   const { star, comment, prodId } = req.body;
   const userId = req.user._id;
 
-  // Input validation
   if (!prodId || !mongoose.Types.ObjectId.isValid(prodId)) {
     return res.status(400).json({ success: false, message: "Invalid product ID" });
   }
   if (!star || star < 1 || star > 5) {
-    return res.status(400).json({ success: false, message: "Rating must be between 1 and 5" });
+    return res.status(400).json({
+      success: false,
+      message: "Rating must be between 1 and 5",
+    });
   }
 
-  // Find the product
   const product = await Product.findById(prodId);
   if (!product) {
     return res.status(404).json({ success: false, message: "Product not found" });
   }
 
-  // Add new rating
   product.ratings.push({ star, comment: comment || "", postedby: userId });
 
-  // Calculate average rating
   const totalRatings = product.ratings.length;
   const ratingSum = product.ratings.reduce((sum, r) => sum + r.star, 0);
   product.totalrating = totalRatings > 0 ? Number((ratingSum / totalRatings).toFixed(1)) : 0;
 
-  // Save and populate
   await product.save();
-  const updatedProduct = await Product.findById(prodId).populate('ratings.postedby', 'firstname lastname');
+  const updatedProduct = await Product.findById(prodId).populate(
+    "ratings.postedby",
+    "firstname lastname"
+  );
 
   const discountedPrice = updatedProduct.isOnSale
     ? updatedProduct.price * (1 - updatedProduct.discountPercentage / 100)

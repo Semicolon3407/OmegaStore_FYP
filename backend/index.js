@@ -56,6 +56,9 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Serve static files for images
+app.use("/images", express.static(path.join(__dirname, "public/images")));
+// Serve static files for hero banner uploads
 app.use("/uploads", express.static(path.join(__dirname, "Uploads")));
 
 app.use("/api/user", authRouter);

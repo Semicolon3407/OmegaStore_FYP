@@ -5,7 +5,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useCart } from '../Context/cartContext';
 import { useCoupon } from '../Context/couponContext';
-import axios from 'axios';
+
+const BASE_URL = 'http://localhost:5001';
 
 const Cart = () => {
   const {
@@ -43,6 +44,12 @@ const Cart = () => {
     return item.product?._id || item._id;
   };
 
+  const getImageUrl = (item) => {
+    const imageUrl = item.product?.images?.[0]?.url || item.image;
+    if (!imageUrl) return '/placeholder.jpg';
+    return imageUrl.startsWith('http') ? imageUrl : `${BASE_URL}${imageUrl}`;
+  };
+
   const handleUpdateQuantity = async (item, change) => {
     if (isUpdating) return;
 
@@ -68,7 +75,7 @@ const Cart = () => {
       }
     } catch (error) {
       console.error('Error updating quantity:', error);
-      toast.error('Something went wrong');
+      toast.error(error.response?.data?.message || 'Something went wrong');
     } finally {
       setIsUpdating(false);
     }
@@ -92,7 +99,7 @@ const Cart = () => {
       }
     } catch (error) {
       console.error('Error removing item:', error);
-      toast.error('Failed to remove item');
+      toast.error(error.response?.data?.message || 'Failed to remove item');
     } finally {
       setIsUpdating(false);
     }
@@ -108,7 +115,7 @@ const Cart = () => {
       setIsUpdating(true);
       const token = localStorage.getItem('token');
       const response = await axios.post(
-        'http://localhost:5001/api/user/cart/applycoupon',
+        `${BASE_URL}/api/user/cart/applycoupon`,
         { coupon: couponCode },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -160,7 +167,6 @@ const Cart = () => {
   return (
     <div className="bg-gray-100 min-h-screen pt-24 sm:pt-28 md:pt-32 lg:pt-36">
       <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-8 sm:py-12 md:py-16">
-        {/* Header Section */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -202,7 +208,6 @@ const Cart = () => {
           </motion.div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-            {/* Cart Items Section */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -223,18 +228,21 @@ const Cart = () => {
                   >
                     <div className="flex items-center w-full sm:w-auto">
                       <Link to={`/products/${getProductId(item)}`}>
-                        <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center mr-4 sm:mr-6">
+                        <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center mr-4 sm:mr-6 overflow-hidden">
                           <img
-                            src={item.product?.images?.[0] || '/placeholder.jpg'}
+                            src={getImageUrl(item)}
                             alt={item.product?.title || 'Product'}
                             className="w-full h-full object-contain p-2"
+                            onError={(e) => {
+                              e.target.src = '/placeholder.jpg';
+                            }}
                           />
                         </div>
                       </Link>
                       <div className="flex-1">
                         <Link to={`/products/${getProductId(item)}`}>
                           <h3 className="text-sm sm:text-lg font-semibold text-blue-900 hover:text-orange-500 transition-colors duration-300">
-                            {item.product?.title || 'Unknown Product'}
+                            {item.product?.title || item.title || 'Unknown Product'}
                           </h3>
                         </Link>
                         <p className="text-blue-900 text-sm sm:text-base font-bold mt-1">
@@ -282,7 +290,6 @@ const Cart = () => {
               </div>
             </motion.div>
 
-            {/* Order Summary Section */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -317,7 +324,7 @@ const Cart = () => {
                         value={couponCode}
                         onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                         placeholder="Enter coupon code"
-                        className="w-full p-2 border border-gray-200 rounded-md text-sm"
+                        className="w-full p-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         disabled={isUpdating}
                       />
                       <button

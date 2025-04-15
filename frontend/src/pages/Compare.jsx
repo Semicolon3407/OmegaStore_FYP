@@ -6,13 +6,14 @@ import { toast } from 'react-toastify';
 import { useCart } from '../Context/cartContext';
 import { useCompare } from '../Context/compareContext';
 
+const BASE_URL = 'http://localhost:5001';
+
 const Compare = () => {
   const { compareItems, loading, error, removeFromCompare, clearCompare } = useCompare();
   const { addToCart, cartItems } = useCart();
   const navigate = useNavigate();
   const [features, setFeatures] = useState([]);
 
-  // Extract all possible features from products for comparison
   useEffect(() => {
     if (compareItems.length > 0) {
       const allFeatures = ['brand', 'category', 'color', 'price', 'quantity'];
@@ -33,6 +34,12 @@ const Compare = () => {
     if (success) {
       toast.success('Compare list cleared!');
     }
+  };
+
+  const getImageUrl = (item) => {
+    const imageUrl = item.images?.[0]?.url;
+    if (!imageUrl) return '/placeholder.jpg';
+    return imageUrl.startsWith('http') ? imageUrl : `${BASE_URL}${imageUrl}`;
   };
 
   const renderFeatureValue = (product, feature) => {
@@ -81,7 +88,6 @@ const Compare = () => {
   return (
     <div className="bg-gray-100 min-h-screen pt-24 sm:pt-28 md:pt-32 lg:pt-36">
       <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-8 sm:py-12 md:py-16">
-        {/* Header Section */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -145,9 +151,7 @@ const Compare = () => {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="bg-white rounded-lg shadow-md border border-gray-200"
           >
-            {/* Product Cards Grid for Comparison */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 p-4 sm:p-6">
-              {/* Feature Labels Column */}
               <div className="sticky top-0 bg-white z-10">
                 <div className="h-48 sm:h-56 flex items-center justify-center border-b border-gray-200">
                   <h3 className="text-sm sm:text-lg font-semibold text-blue-900">Features</h3>
@@ -171,7 +175,6 @@ const Compare = () => {
                 </div>
               </div>
 
-              {/* Product Columns */}
               {compareItems.map((item) => (
                 <div key={item._id} className="relative border border-gray-200 rounded-lg">
                   <button
@@ -183,9 +186,12 @@ const Compare = () => {
                   <Link to={`/products/${item._id}`}>
                     <div className="h-48 sm:h-56 flex items-center justify-center border-b border-gray-200">
                       <img
-                        src={item.images?.[0] || '/assets/images/placeholder.png'}
+                        src={getImageUrl(item)}
                         alt={item.title || 'Product'}
                         className="h-full object-contain p-4"
+                        onError={(e) => {
+                          e.target.src = '/placeholder.jpg';
+                        }}
                       />
                     </div>
                     <div className="border-b border-gray-200 py-3 sm:py-4 px-4">

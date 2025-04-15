@@ -1,10 +1,10 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const productSchema = new mongoose.Schema(
   {
     title: {
       type: String,
-      required: [true, 'Product title is required'],
+      required: [true, "Product title is required"],
       trim: true,
     },
     slug: {
@@ -15,30 +15,30 @@ const productSchema = new mongoose.Schema(
     },
     description: {
       type: String,
-      required: [true, 'Product description is required'],
+      required: [true, "Product description is required"],
     },
     price: {
       type: Number,
-      required: [true, 'Product price is required'],
-      min: [0, 'Price cannot be negative'],
+      required: [true, "Product price is required"],
+      min: [0, "Price cannot be negative"],
     },
     category: {
       type: String,
-      required: [true, 'Product category is required'],
+      required: [true, "Product category is required"],
     },
     brand: {
       type: String,
-      required: [true, 'Product brand is required'],
+      required: [true, "Product brand is required"],
     },
     quantity: {
       type: Number,
-      required: [true, 'Product quantity is required'],
-      min: [0, 'Quantity cannot be negative'],
+      required: [true, "Product quantity is required"],
+      min: [0, "Quantity cannot be negative"],
     },
     sold: {
       type: Number,
       default: 0,
-      min: [0, 'Sold count cannot be negative'],
+      min: [0, "Sold count cannot be negative"],
     },
     images: [
       {
@@ -48,31 +48,31 @@ const productSchema = new mongoose.Schema(
         },
         type: {
           type: String,
-          enum: ['main', 'sub'],
+          enum: ["main", "sub"],
           required: true,
         },
       },
     ],
     color: {
       type: String,
-      required: [true, 'Product color is required'],
+      required: [true, "Product color is required"],
     },
     ratings: [
       {
         star: {
           type: Number,
-          required: [true, 'Rating star is required'],
-          min: [1, 'Rating must be at least 1'],
-          max: [5, 'Rating cannot exceed 5'],
+          required: [true, "Rating star is required"],
+          min: [1, "Rating must be at least 1"],
+          max: [5, "Rating cannot exceed 5"],
         },
         comment: {
           type: String,
-          default: '',
+          default: "",
         },
         postedby: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: 'User',
-          required: [true, 'Reviewer ID is required'],
+          ref: "User",
+          required: [true, "Reviewer ID is required"],
         },
         createdAt: {
           type: Date,
@@ -83,8 +83,8 @@ const productSchema = new mongoose.Schema(
     totalrating: {
       type: Number,
       default: 0,
-      min: [0, 'Total rating cannot be negative'],
-      max: [5, 'Total rating cannot exceed 5'],
+      min: [0, "Total rating cannot be negative"],
+      max: [5, "Total rating cannot exceed 5"],
     },
     isOnSale: {
       type: Boolean,
@@ -93,8 +93,8 @@ const productSchema = new mongoose.Schema(
     discountPercentage: {
       type: Number,
       default: 0,
-      min: [0, 'Discount percentage cannot be negative'],
-      max: [100, 'Discount percentage cannot exceed 100'],
+      min: [0, "Discount percentage cannot be negative"],
+      max: [100, "Discount percentage cannot exceed 100"],
     },
   },
   {
@@ -102,4 +102,4 @@ const productSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model('Product', productSchema);
+module.exports = mongoose.model("Product", productSchema);
