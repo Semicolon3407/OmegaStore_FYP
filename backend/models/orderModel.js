@@ -20,10 +20,11 @@ const orderSchema = new mongoose.Schema(
       status: {
         type: String,
         default: "Pending",
-        enum: ["Pending", "Completed", "Failed", "Cash on Delivery"],
+        enum: ["Pending", "Completed", "Failed", "Cash on Delivery", "eSewa"],
       },
       created: Number,
       currency: String,
+      transactionCode: String, // For eSewa transaction code
     },
     orderStatus: {
       type: String,
@@ -36,6 +37,7 @@ const orderSchema = new mongoose.Schema(
         "Cancelled",
         "Delivered",
         "Pending",
+        "eSewa",
       ],
     },
     orderby: {
@@ -50,6 +52,13 @@ const orderSchema = new mongoose.Schema(
     totalAfterDiscount: {
       type: Number,
       default: null,
+    },
+    shippingInfo: {
+      name: { type: String },
+      email: { type: String },
+      address: { type: String },
+      city: { type: String },
+      phone: { type: String },
     },
   },
   {

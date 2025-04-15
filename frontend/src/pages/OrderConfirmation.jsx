@@ -1,76 +1,73 @@
-import React from "react";
-import { motion } from "framer-motion";
-import { CheckCircle, Package } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
-import CheckoutProgress from "../components/CheckoutProgress";
+import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const OrderConfirmation = () => {
-  const location = useLocation();
-  const orderId = location.state?.orderId || "N/A";
+  const navigate = useNavigate();
+  const location = new URLSearchParams(useLocation().search);
+  const orderId = location.get("orderId");
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchOrder = async () => {
+      try {
+        const response = await axios.get("http://localhost:5001/api/user/get-orders", {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+        const foundOrder = response.data.find((o) => o._id === orderId);
+        if (foundOrder) {
+          setOrder(foundOrder);
+        } else {
+          setError("Order not found");
+        }
+      } catch (err) {
+        setError("Failed to fetch order details");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (orderId) {
+      fetchOrder();
+    } else {
+      setError("No order ID provided");
+      setLoading(false);
+    }
+  }, [orderId]);
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p className="text-red-500">{error}</p>;
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <CheckoutProgress currentStep={3} />
-      <motion.div
-        className="bg-white rounded-lg shadow-md p-6 text-center"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+    <div className="container mx-auto p-4">
+      <h2 className="text-2xl font-bold mb-4">Order Confirmation</h2>
+      <p className="text-green-500 mb-4">Thank you for your order!</p>
+      <div className="border p-4 rounded">
+        <h3 className="text-lg font-semibold">Order ID: {order._id}</h3>
+        <p>Status: {order.orderStatus}</p>
+        <p>Total: NPR {order.totalAfterDiscount}</p>
+        <p>Payment Method: {order.paymentIntent.method}</p>
+        <h4 className="mt-4 font-semibold">Shipping Information:</h4>
+        <p>Name: {order.shippingInfo.name}</p>
+        <p>Email: {order.shippingInfo.email}</p>
+        <p>Address: {order.shippingInfo.address}, {order.shippingInfo.city}</p>
+        <p>Phone: {order.shippingInfo.phone}</p>
+        <h4 className="mt-4 font-semibold">Items:</h4>
+        {order.products.map((item) => (
+          <div key={item._id} className="flex justify-between">
+            <span>{item.product.title} x {item.count}</span>
+            <span>NPR {item.price * item.count}</span>
+          </div>
+        ))}
+      </div>
+      <button
+        onClick={() => navigate("/")}
+        className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
       >
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-        >
-          <CheckCircle size={64} className="mx-auto mb-4 text-green-500" />
-        </motion.div>
-        <motion.h1
-          className="text-3xl font-bold mb-4"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
-        >
-          Order Confirmed!
-        </motion.h1>
-        <motion.p
-          className="text-xl text-gray-600 mb-8"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
-        >
-          Thank you for your purchase. Your order has been received and is being processed.
-        </motion.p>
-        <motion.div
-          className="bg-gray-100 p-4 rounded-md mb-8 inline-block"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.5 }}
-        >
-          <h2 className="text-lg font-semibold mb-2">Order Number</h2>
-          <p className="text-2xl font-bold text-blue-900">{orderId}</p>
-        </motion.div>
-        <motion.div
-          className="flex justify-center items-center mb-8"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6, duration: 0.5 }}
-        >
-          <Package size={24} className="mr-2 text-blue-900" />
-          <p className="text-lg">Estimated delivery: 3-5 business days</p>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7, duration: 0.5 }}
-        >
-          <Link
-            to="/"
-            className="bg-blue-900 text-white px-6 py-3 rounded-md hover:bg-blue-800 transition-colors inline-block"
-          >
-            Continue Shopping
-          </Link>
-        </motion.div>
-      </motion.div>
+        Continue Shopping
+      </button>
     </div>
   );
 };

@@ -15,14 +15,17 @@ import {
   Tag,
   Image,
   Percent,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import logo from "/assets/images/logo.png"; // Reuse the same logo as Header
+import logo from "/assets/images/logo.png";
 
 const AdminSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
   const [userRole, setUserRole] = useState(localStorage.getItem("role") || "");
   const sidebarRef = useRef(null);
@@ -66,6 +69,21 @@ const AdminSidebar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isSidebarOpen]);
 
+  useEffect(() => {
+    // Load collapsed state from localStorage
+    const savedState = localStorage.getItem("adminSidebarCollapsed");
+    if (savedState !== null) {
+      setIsCollapsed(JSON.parse(savedState));
+    }
+  }, []);
+
+  const toggleCollapse = () => {
+    const newState = !isCollapsed;
+    setIsCollapsed(newState);
+    // Save to localStorage
+    localStorage.setItem("adminSidebarCollapsed", JSON.stringify(newState));
+  };
+
   const handleLogout = async () => {
     try {
       await axios.get("http://localhost:5001/api/user/logout", {
@@ -104,38 +122,52 @@ const AdminSidebar = () => {
         {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
-      {/* Sidebar - width exactly 16rem (64) with no margin */}
+      {/* Sidebar - width responsive based on collapse state */}
       <aside
         ref={sidebarRef}
-        className={`fixed top-0 left-0 h-full w-64 bg-white shadow-lg z-40 transform transition-transform duration-300 ${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0 md:w-64 md:static md:min-h-screen border-r border-gray-200`}
+        className={`fixed top-0 left-0 h-full z-40 transform transition-all duration-300 
+        ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"} 
+        md:translate-x-0 md:static md:min-h-screen border-r border-gray-200 bg-white shadow-lg
+        ${isCollapsed ? "md:w-20" : "md:w-64"} 
+        w-64`} // Mobile width is always 64 (16rem)
       >
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full relative">
+          {/* Collapse Toggle Button - Only visible on desktop */}
+          <button
+            onClick={toggleCollapse}
+            className="hidden md:flex absolute -right-3 top-24 z-10 p-1 bg-blue-900 text-white rounded-full shadow-md hover:bg-blue-800 transition-colors"
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          </button>
+
           {/* Logo */}
-          <div className="p-6 border-b border-gray-200">
-            <Link to="/admin" className="flex items-center space-x-2">
+          <div className={`p-6 border-b border-gray-200 ${isCollapsed ? "flex justify-center" : ""}`}>
+            <Link to="/admin" className={`flex items-center ${isCollapsed ? "" : "space-x-2"}`}>
               <img src={logo} alt="OmegaStore Logo" className="h-12 w-auto" />
-              <span className="text-xl font-bold text-blue-900">Admin Pannel</span>
+              {!isCollapsed && <span className="text-xl font-bold text-blue-900">Admin Panel</span>}
             </Link>
           </div>
 
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto py-4">
-            <ul className="space-y-2 px-4">
+            <ul className={`space-y-2 ${isCollapsed ? "px-2" : "px-4"}`}>
               {navLinks.map((link, index) => (
                 <li key={index}>
                   <Link
                     to={link.path}
                     onClick={() => setIsSidebarOpen(false)}
-                    className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-base font-medium transition-all ${
+                    className={`flex items-center ${
+                      isCollapsed ? "justify-center" : "space-x-3"
+                    } px-4 py-3 rounded-lg text-base font-medium transition-all ${
                       isActive(link.path)
                         ? "text-orange-500 bg-orange-500/10"
                         : "text-blue-900 hover:text-blue-500 hover:bg-gray-100"
                     }`}
+                    title={isCollapsed ? link.title : ""}
                   >
                     {link.icon}
-                    <span>{link.title}</span>
+                    {!isCollapsed && <span>{link.title}</span>}
                   </Link>
                 </li>
               ))}
@@ -144,13 +176,16 @@ const AdminSidebar = () => {
 
           {/* Logout */}
           {isLoggedIn && (
-            <div className="p-4 border-t border-gray-200">
+            <div className={`p-4 border-t border-gray-200 ${isCollapsed ? "flex justify-center" : ""}`}>
               <button
                 onClick={handleLogout}
-                className="flex items-center space-x-3 w-full px-4 py-3 text-orange-500 hover:bg-orange-500/10 rounded-lg transition-colors"
+                className={`flex items-center ${
+                  isCollapsed ? "justify-center w-12 h-12" : "space-x-3 w-full px-4 py-3"
+                } text-orange-500 hover:bg-orange-500/10 rounded-lg transition-colors`}
+                title={isCollapsed ? "Sign Out" : ""}
               >
                 <LogOut size={20} />
-                <span>Sign Out</span>
+                {!isCollapsed && <span>Sign Out</span>}
               </button>
             </div>
           )}

@@ -18,8 +18,7 @@ const Checkout = () => {
     email: "",
     address: "",
     city: "",
-    country: "",
-    zipCode: "",
+    phone: "",
   });
   const [error, setError] = useState(null);
 
@@ -50,31 +49,46 @@ const Checkout = () => {
       if (paymentMethod === "COD") {
         try {
           const token = localStorage.getItem("token");
+          if (!token) {
+            throw new Error("Please log in to place an order");
+          }
           const response = await axios.post(
             "http://localhost:5001/api/user/cart/cash-order",
             {
               COD: true,
               couponApplied: !!couponCode,
               couponCode,
+              shippingInfo: formData,
             },
             { headers: { Authorization: `Bearer ${token}` } }
           );
 
           await emptyCart();
           toast.success("Order placed successfully!");
-          navigate("/order-confirmation", { state: { orderId: response.data.orderId } });
+          navigate("/order-confirmation", {
+            state: { orderId: response.data.orderId },
+          });
         } catch (error) {
           console.error("Error creating order:", error);
-          toast.error(error.response?.data?.message || "Failed to place order");
+          const errorMessage =
+            error.response?.status === 401
+              ? "Session expired. Please log in again."
+              : error.response?.data?.message || "Failed to place order";
+          toast.error(errorMessage);
+          setError(errorMessage);
         }
       } else if (paymentMethod === "eSewa") {
         try {
           const token = localStorage.getItem("token");
+          if (!token) {
+            throw new Error("Please log in to place an order");
+          }
           const response = await axios.post(
-            "http://localhost:5001/api/esewa/initiate-payment",
+            "http://localhost:5001/api/user/esewa/initiate-payment", // Fixed endpoint
             {
               couponApplied: !!couponCode,
               couponCode,
+              shippingInfo: formData,
             },
             { headers: { Authorization: `Bearer ${token}` } }
           );
@@ -98,7 +112,15 @@ const Checkout = () => {
           form.submit();
         } catch (error) {
           console.error("Error initiating eSewa payment:", error);
-          toast.error(error.response?.data?.message || "Failed to initiate eSewa payment");
+          const errorMessage =
+            error.response?.status === 404
+              ? "Payment service unavailable. Please try again later."
+              : error.response?.status === 401
+              ? "Session expired. Please log in again."
+              : error.response?.data?.message ||
+                "Failed to initiate eSewa payment";
+          toast.error(errorMessage);
+          setError(errorMessage);
         }
       }
     }
@@ -141,7 +163,7 @@ const Checkout = () => {
                   value={formData.name}
                   onChange={handleChange}
                   required
-                  className="w-full p-2 border rounded-md"
+                  className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-900"
                 />
               </div>
               <div>
@@ -155,7 +177,7 @@ const Checkout = () => {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="w-full p-2 border rounded-md"
+                  className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-900"
                 />
               </div>
               <div className="md:col-span-2">
@@ -169,7 +191,7 @@ const Checkout = () => {
                   value={formData.address}
                   onChange={handleChange}
                   required
-                  className="w-full p-2 border rounded-md"
+                  className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-900"
                 />
               </div>
               <div>
@@ -183,35 +205,21 @@ const Checkout = () => {
                   value={formData.city}
                   onChange={handleChange}
                   required
-                  className="w-full p-2 border rounded-md"
+                  className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-900"
                 />
               </div>
               <div>
-                <label htmlFor="country" className="block text-gray-700 mb-2">
-                  Country
+                <label htmlFor="phone" className="block text-gray-700 mb-2">
+                  Phone Number
                 </label>
                 <input
-                  type="text"
-                  id="country"
-                  name="country"
-                  value={formData.country}
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  value={formData.phone}
                   onChange={handleChange}
                   required
-                  className="w-full p-2 border rounded-md"
-                />
-              </div>
-              <div>
-                <label htmlFor="zipCode" className="block text-gray-700 mb-2">
-                  Zip Code
-                </label>
-                <input
-                  type="text"
-                  id="zipCode"
-                  name="zipCode"
-                  value={formData.zipCode}
-                  onChange={handleChange}
-                  required
-                  className="w-full p-2 border rounded-md"
+                  className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-900"
                 />
               </div>
             </div>
@@ -237,7 +245,7 @@ const Checkout = () => {
                   value="COD"
                   checked={paymentMethod === "COD"}
                   onChange={() => handlePaymentMethodChange("COD")}
-                  className="mr-3"
+                  className="mr-3 text-blue-900 focus:ring-blue-900"
                 />
                 <label htmlFor="cod" className="flex items-center cursor-pointer">
                   <CreditCard className="mr-2" size={20} />
@@ -252,7 +260,7 @@ const Checkout = () => {
                   value="eSewa"
                   checked={paymentMethod === "eSewa"}
                   onChange={() => handlePaymentMethodChange("eSewa")}
-                  className="mr-3"
+                  className="mr-3 text-blue-900 focus:ring-blue-900"
                 />
                 <label htmlFor="esewa" className="flex items-center cursor-pointer">
                   <Wallet className="mr-2" size={20} />
@@ -278,13 +286,14 @@ const Checkout = () => {
               <p>{formData.name}</p>
               <p>{formData.email}</p>
               <p>{formData.address}</p>
-              <p>
-                {formData.city}, {formData.country} {formData.zipCode}
-              </p>
+              <p>{formData.city}</p>
+              <p>{formData.phone}</p>
             </div>
             <div className="bg-gray-100 p-4 rounded-md mb-4">
               <h3 className="font-semibold mb-2">Payment Method</h3>
-              <p>{paymentMethod === "COD" ? "Cash on Delivery" : "Pay with eSewa"}</p>
+              <p>
+                {paymentMethod === "COD" ? "Cash on Delivery" : "Pay with eSewa"}
+              </p>
             </div>
             <div className="bg-gray-100 p-4 rounded-md mb-4">
               <h3 className="font-semibold mb-2">Order Summary</h3>
@@ -310,7 +319,9 @@ const Checkout = () => {
               )}
               <div className="flex justify-between font-semibold mt-2">
                 <span>Total:</span>
-                <span>Rs {(totalAfterDiscount || cartTotal).toLocaleString()}</span>
+                <span>
+                  Rs {(totalAfterDiscount || cartTotal).toLocaleString()}
+                </span>
               </div>
             </div>
           </motion.div>
@@ -321,8 +332,8 @@ const Checkout = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">Checkout</h1>
+    <div className="container mx-auto px-4 pt-28 md:pt-32 lg:pt-36">
+      <h1 className="text-3xl font-bold mb-6 text-blue-900">Checkout</h1>
       <CheckoutProgress currentStep={step} />
       {error && (
         <div className="bg-red-100 text-red-700 p-4 rounded-md mb-4">
@@ -331,7 +342,7 @@ const Checkout = () => {
       )}
       <motion.form
         onSubmit={handleSubmit}
-        className="bg-white rounded-lg shadow-md p-6"
+        className="bg-white rounded-lg shadow-md p-6 max-w-3xl mx-auto"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -352,8 +363,13 @@ const Checkout = () => {
             className="bg-blue-900 text-white px-6 py-3 rounded-md flex items-center hover:bg-blue-800 transition-colors ml-auto"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            disabled={!localStorage.getItem("token")}
           >
-            {step < 2 ? "Continue" : paymentMethod === "COD" ? "Place Order" : "Proceed to eSewa"}
+            {step < 2
+              ? "Continue"
+              : paymentMethod === "COD"
+              ? "Place Order"
+              : "Proceed to eSewa"}
             <Lock className="ml-2" size={20} />
           </motion.button>
         </div>

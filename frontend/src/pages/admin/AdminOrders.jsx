@@ -17,6 +17,7 @@ const AdminOrders = () => {
     status: "",
     date: "",
     coupon: null,
+    shippingInfo: { name: "", email: "", address: "", city: "", phone: "" },
   });
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState(null);
@@ -43,6 +44,13 @@ const AdminOrders = () => {
         status: order.orderStatus,
         date: new Date(order.createdAt).toLocaleDateString(),
         coupon: order.coupon ? order.coupon.name : "None",
+        shippingInfo: order.shippingInfo || {
+          name: "",
+          email: "",
+          address: "",
+          city: "",
+          phone: "",
+        },
       }));
       setOrders(formattedOrders);
     } catch (error) {
@@ -65,7 +73,7 @@ const AdminOrders = () => {
     } else {
       fetchOrders();
     }
-  }, [navigate, location.pathname]); // Added location.pathname to re-fetch on route change
+  }, [navigate, location.pathname]);
 
   const handleEditOrder = (order) => {
     setSelectedOrder(order);
@@ -88,7 +96,15 @@ const AdminOrders = () => {
         )
       );
       setIsEditing(false);
-      setEditOrder({ id: "", customer: "", total: "", status: "", date: "", coupon: null });
+      setEditOrder({
+        id: "",
+        customer: "",
+        total: "",
+        status: "",
+        date: "",
+        coupon: null,
+        shippingInfo: { name: "", email: "", address: "", city: "", phone: "" },
+      });
       toast.success("Order updated successfully!");
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to update order");
@@ -186,6 +202,7 @@ const AdminOrders = () => {
                 <th className="px-4 py-3 text-gray-700 font-medium">Status</th>
                 <th className="px-4 py-3 text-gray-700 font-medium">Date</th>
                 <th className="px-4 py-3 text-gray-700 font-medium">Coupon</th>
+                <th className="px-4 py-3 text-gray-700 font-medium">Shipping Info</th>
                 <th className="px-4 py-3 text-gray-700 font-medium">Actions</th>
               </tr>
             </thead>
@@ -218,6 +235,8 @@ const AdminOrders = () => {
                             ? "bg-red-100 text-red-700"
                             : order.status === "Cash on Delivery"
                             ? "bg-orange-100 text-orange-700"
+                            : order.status === "eSewa"
+                            ? "bg-teal-100 text-teal-700"
                             : "bg-gray-100 text-gray-700"
                         }`}
                       >
@@ -226,6 +245,19 @@ const AdminOrders = () => {
                     </td>
                     <td className="px-4 py-3 text-gray-800">{order.date}</td>
                     <td className="px-4 py-3 text-gray-800">{order.coupon}</td>
+                    <td className="px-4 py-3 text-gray-800">
+                      {order.shippingInfo ? (
+                        <div className="flex flex-col">
+                          <span>Name: {order.shippingInfo.name || "N/A"}</span>
+                          <span>Email: {order.shippingInfo.email || "N/A"}</span>
+                          <span>Address: {order.shippingInfo.address || "N/A"}</span>
+                          <span>City: {order.shippingInfo.city || "N/A"}</span>
+                          <span>Phone: {order.shippingInfo.phone || "N/A"}</span>
+                        </div>
+                      ) : (
+                        "N/A"
+                      )}
+                    </td>
                     <td className="px-4 py-3 flex gap-3 items-center">
                       <button
                         onClick={() => handleEditOrder(order)}
@@ -268,7 +300,7 @@ const AdminOrders = () => {
               transition={{ duration: 0.3 }}
             >
               <motion.div
-                className="bg-white rounded-lg shadow-md p-6 w-full max-w-md relative"
+                className="bg-white rounded-lg shadow-md p-6 w-full max-w-lg relative"
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
@@ -305,6 +337,16 @@ const AdminOrders = () => {
                     />
                   </div>
                   <div>
+                    <label className="block text-gray-700 mb-1 font-medium">Shipping Info</label>
+                    <div className="bg-gray-100 p-3 rounded-lg text-gray-600">
+                      <p>Name: {editOrder.shippingInfo.name}</p>
+                      <p>Email: {editOrder.shippingInfo.email}</p>
+                      <p>Address: {editOrder.shippingInfo.address}</p>
+                      <p>City: {editOrder.shippingInfo.city}</p>
+                      <p>Phone: {editOrder.shippingInfo.phone}</p>
+                    </div>
+                  </div>
+                  <div>
                     <label className="block text-gray-700 mb-1 font-medium">Status</label>
                     <select
                       value={editOrder.status}
@@ -315,6 +357,7 @@ const AdminOrders = () => {
                     >
                       <option value="Not Processed">Not Processed</option>
                       <option value="Cash on Delivery">Cash on Delivery</option>
+                      <option value="eSewa">eSewa</option>
                       <option value="Processing">Processing</option>
                       <option value="Dispatched">Dispatched</option>
                       <option value="Cancelled">Cancelled</option>
@@ -354,23 +397,15 @@ const AdminOrders = () => {
               transition={{ duration: 0.3 }}
             >
               <motion.div
-                className="bg-white rounded-lg shadow-md p-6 w-full max-w-sm relative"
+                className="bg-white rounded-lg shadow-md p-6 w-full max-w-md"
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <button
-                  onClick={() => setIsDeleteModalOpen(false)}
-                  className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-                  title="Close"
-                >
-                  <X size={24} />
-                </button>
-                <div className="flex items-center gap-2 mb-4">
-                  <Trash2 size={24} className="text-red-500" />
-                  <h2 className="text-xl font-semibold text-gray-800">Confirm Deletion</h2>
-                </div>
+                <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                  Confirm Deletion
+                </h2>
                 <p className="text-gray-600 mb-6">
                   Are you sure you want to delete this order? This action cannot be undone.
                 </p>

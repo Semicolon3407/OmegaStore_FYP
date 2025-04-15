@@ -33,6 +33,12 @@ const {
   clearCompare,
   getUserOrders,
 } = require("../controller/userController");
+const {
+  initiatePayment,
+  handleSuccess,
+  handleFailure,
+  checkTransactionStatus,
+} = require("../controller/esewaController");
 const { authMiddleware, isAdmin } = require("../middlewares/authMiddleware");
 const router = express.Router();
 
@@ -45,7 +51,7 @@ router.get("/logout", logout);
 
 // Password Management Routes
 router.post("/forgot-password-token", forgotPasswordToken);
-router.put("/reset-password", resetPassword); // Updated to use OTP in body instead of token in params
+router.put("/reset-password", resetPassword);
 router.put("/password", authMiddleware, updatePassword);
 
 // User Management Routes
@@ -66,11 +72,16 @@ router.post("/cart/cash-order", authMiddleware, createOrder);
 router.delete("/cart/:productId", authMiddleware, removeFromCart);
 
 // Order Routes
-router.get("/orders", authMiddleware, isAdmin, getAllOrders); // Fetch all orders
+router.get("/orders", authMiddleware, isAdmin, getAllOrders);
 router.get("/get-orders", authMiddleware, getUserOrders);
-router.post("/cart/cash-order", authMiddleware, createOrder); // Create order (adjust for admin use if needed)
-router.put("/order/:id", authMiddleware, isAdmin, updateOrder); // Update order
-router.delete("/order/:id", authMiddleware, isAdmin, deleteOrder); // Delete order
+router.put("/order/:id", authMiddleware, isAdmin, updateOrder);
+router.delete("/order/:id", authMiddleware, isAdmin, deleteOrder);
+
+// eSewa Routes
+router.post("/esewa/initiate-payment", authMiddleware, initiatePayment);
+router.get("/esewa/success", handleSuccess);
+router.get("/esewa/failure", handleFailure);
+router.get("/esewa/status/:transaction_uuid", authMiddleware, checkTransactionStatus);
 
 // Wishlist Routes
 router.get("/wishlist", authMiddleware, getWishlist);

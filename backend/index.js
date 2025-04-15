@@ -12,7 +12,6 @@ const couponRouter = require("./routes/couponRoutes");
 const uploadRouter = require("./routes/uploadRoutes");
 const chatRouter = require("./routes/chatRoutes");
 const heroBannerRouter = require("./routes/heroBannerRoutes");
-const esewaRouter = require("./routes/esewaRoutes");
 const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
 const cors = require("cors");
@@ -39,6 +38,9 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
   });
+  socket.on("error", (err) => {
+    console.error("Socket.IO error:", err);
+  });
 });
 
 app.set("io", io);
@@ -46,7 +48,11 @@ app.set("io", io);
 app.use(morgan("dev"));
 app.use(
   cors({
-    origin: FRONTEND_ORIGIN,
+    origin: [
+      FRONTEND_ORIGIN,
+      "https://rc-epay.esewa.com.np",
+      "https://epay.esewa.com.np",
+    ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -56,9 +62,8 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Serve static files for images
+// Serve static files
 app.use("/images", express.static(path.join(__dirname, "public/images")));
-// Serve static files for hero banner uploads
 app.use("/uploads", express.static(path.join(__dirname, "Uploads")));
 
 app.use("/api/user", authRouter);
@@ -68,7 +73,6 @@ app.use("/api/coupon", couponRouter);
 app.use("/api/upload", uploadRouter);
 app.use("/api/chat", chatRouter);
 app.use("/api/hero-banners", heroBannerRouter);
-app.use("/api/esewa", esewaRouter);
 
 app.use(notFound);
 app.use(errorHandler);

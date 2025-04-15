@@ -259,9 +259,6 @@ const forgotPasswordToken = asyncHandler(async (req, res) => {
     html: resetMessage,
   };
 
-  console.log("Generated OTP:", otp);
-  console.log("Email data to be sent:", data);
-
   await sendEmail(data);
   res.json({ message: "OTP sent to your email" });
 });
@@ -460,12 +457,30 @@ const getUserOrders = asyncHandler(async (req, res) => {
 });
 
 const createOrder = asyncHandler(async (req, res) => {
-  const { COD, couponApplied, couponCode } = req.body;
+  const {
+    COD,
+    couponApplied,
+    couponCode,
+    shippingInfo,
+    paymentMethod,
+  } = req.body;
   const { _id } = req.user;
   validateMongoDbId(_id);
 
-  if (!COD) {
-    return res.status(400).json({ message: "Only Cash on Delivery is supported" });
+  if (!COD && paymentMethod !== "eSewa") {
+    return res.status(400).json({ message: "Invalid payment method" });
+  }
+
+  // Validate shipping info
+  if (
+    !shippingInfo ||
+    !shippingInfo.name ||
+    !shippingInfo.email ||
+    !shippingInfo.address ||
+    !shippingInfo.city ||
+    !shippingInfo.phone
+  ) {
+    return res.status(400).json({ message: "Complete shipping information is required" });
   }
 
   const user = await User.findById(_id);
@@ -476,8 +491,15 @@ const createOrder = asyncHandler(async (req, res) => {
   let userCart = await Cart.findOne({ orderby: user._id }).populate(
     "products.product"
   );
-  if (!userCart) {
+  if (!userCart || !userCart.products.length) {
     return res.status(400).json({ message: "Cart is empty" });
+  }
+
+  // Check stock
+  for (const item of userCart.products) {
+    if (item.product.quantity < item.count) {
+      return res.status(400).json({ message: `Insufficient stock for ${item.product.title}` });
+    }
   }
 
   let finalAmount = userCart.cartTotal;
@@ -488,49 +510,59 @@ const createOrder = asyncHandler(async (req, res) => {
       name: couponCode.toUpperCase(),
       expiry: { $gte: new Date() },
     });
-    if (validCoupon) {
-      finalAmount =
-        userCart.totalAfterDiscount ||
-        (userCart.cartTotal - (userCart.cartTotal * validCoupon.discount) / 100).toFixed(
-          2
-        );
-      appliedCoupon = validCoupon._id;
-    } else {
+    if (!validCoupon) {
       return res.status(400).json({ message: "Invalid or expired coupon" });
     }
+    finalAmount = (userCart.cartTotal * (100 - validCoupon.discount) / 100).toFixed(2);
+    appliedCoupon = validCoupon._id;
   }
 
-  let newOrder = await new Order({
-    products: userCart.products,
-    paymentIntent: {
+  if (COD) {
+    const paymentIntent = {
       id: uniqid(),
       method: "COD",
       amount: finalAmount,
       status: "Cash on Delivery",
       created: Date.now(),
-      currency: "usd",
-    },
-    orderby: user._id,
-    orderStatus: "Cash on Delivery",
-    coupon: appliedCoupon,
-  }).save();
+      currency: "NPR",
+    };
 
-  let update = userCart.products.map((item) => ({
-    updateOne: {
-      filter: { _id: item.product._id },
-      update: { $inc: { quantity: -item.count, sold: +item.count } },
-    },
-  }));
-  await Product.bulkWrite(update, {});
+    let newOrder = await new Order({
+      products: userCart.products,
+      paymentIntent,
+      orderStatus: "Processing",
+      orderby: user._id,
+      coupon: appliedCoupon,
+      totalAfterDiscount: finalAmount,
+      shippingInfo,
+    }).save();
 
-  await Cart.findOneAndDelete({ orderby: user._id });
+    // Update stock for COD orders
+    const updates = userCart.products.map((item) => ({
+      updateOne: {
+        filter: { _id: item.product._id },
+        update: { $inc: { quantity: -item.count, sold: +item.count } },
+      },
+    }));
+    await Product.bulkWrite(updates);
 
-  res.json({ message: "Order created successfully", orderId: newOrder._id });
+    await Cart.findOneAndDelete({ orderby: user._id });
+
+    res.json({
+      message: "Order created successfully",
+      orderId: newOrder._id,
+    });
+  } else {
+    // For eSewa, just return success to proceed to initiatePayment
+    res.json({
+      message: "Proceed to eSewa payment",
+    });
+  }
 });
 
 const getAllOrders = asyncHandler(async (req, res) => {
   const orders = await Order.find()
-    .populate("orderby", "name email")
+    .populate("orderby", "email firstname lastname")
     .populate("coupon", "name discount");
   res.json(orders);
 });

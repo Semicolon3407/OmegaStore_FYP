@@ -1,198 +1,275 @@
 const asyncHandler = require("express-async-handler");
-const crypto = require("crypto");
-const Order = require("../models/orderModel");
 const Cart = require("../models/cartModel");
-const Product = require("../models/productModel");
+const Order = require("../models/orderModel");
 const Coupon = require("../models/couponModel");
-const uniqid = require("uniqid");
+const User = require("../models/userModel");
+const Product = require("../models/productModel");
+const validateMongoDbId = require("../utils/validateMangodbid");
+const crypto = require("crypto");
+const axios = require("axios");
 
-// Use environment variable for eSewa secret key
-const ESEWA_SECRET_KEY = process.env.ESEWA_SECRET_KEY;
+// Environment variables
+const ESEWA_SECRET = process.env.ESEWA_SECRET || "8gBm/:&EnhH.1/q";
+const ESEWA_PRODUCT_CODE = process.env.ESEWA_PRODUCT_CODE || "EPAYTEST";
+const ESEWA_PAYMENT_URL =
+  process.env.NODE_ENV === "production"
+    ? "https://epay.esewa.com.np/api/epay/main/v2/form"
+    : "https://rc-epay.esewa.com.np/api/epay/main/v2/form";
+const ESEWA_STATUS_URL =
+  process.env.NODE_ENV === "production"
+    ? "https://epay.esewa.com.np/api/epay/transaction/status/"
+    : "https://rc-epay.esewa.com.np/api/epay/transaction/status/";
+const SUCCESS_URL = process.env.ESEWA_SUCCESS_URL;
+const FAILURE_URL = process.env.ESEWA_FAILURE_URL;
 
-// Verify that the secret key is loaded
-if (!ESEWA_SECRET_KEY) {
-  throw new Error("ESEWA_SECRET_KEY is not defined in the environment variables");
-}
-
-// Function to generate HMAC SHA256 signature
-const generateSignature = (message) => {
-  console.log("Message for signature:", message);
-  console.log("Using secret key:", ESEWA_SECRET_KEY);
-  const signature = crypto
-    .createHmac("sha256", ESEWA_SECRET_KEY)
-    .update(message)
-    .digest("base64");
-  console.log("Generated signature:", signature);
-  return signature;
+// Generate HMAC SHA256 signature
+const generateSignature = (message, secret) => {
+  return crypto.createHmac("sha256", secret).update(message).digest("base64");
 };
 
-// Initiate eSewa Payment
-const initiateEsewaPayment = asyncHandler(async (req, res) => {
+const initiatePayment = asyncHandler(async (req, res) => {
+  const { couponApplied, couponCode, shippingInfo } = req.body;
   const { _id } = req.user;
-  const { couponApplied, couponCode } = req.body;
+  validateMongoDbId(_id);
 
-  // Fetch user cart
-  const userCart = await Cart.findOne({ orderby: _id }).populate("products.product");
-  if (!userCart) {
+  // Validate shipping info
+  if (
+    !shippingInfo ||
+    !shippingInfo.name ||
+    !shippingInfo.email ||
+    !shippingInfo.address ||
+    !shippingInfo.city ||
+    !shippingInfo.phone
+  ) {
+    return res.status(400).json({ message: "Complete shipping information is required" });
+  }
+
+  const user = await User.findById(_id);
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  let userCart = await Cart.findOne({ orderby: user._id }).populate("products.product");
+  if (!userCart || !userCart.products.length) {
     return res.status(400).json({ message: "Cart is empty" });
   }
 
-  // Calculate final amount (considering coupon if applied)
+  // Check stock availability
+  for (const item of userCart.products) {
+    if (item.product.quantity < item.count) {
+      return res.status(400).json({ message: `Insufficient stock for ${item.product.title}` });
+    }
+  }
+
+  // Calculate final amount
   let finalAmount = userCart.cartTotal;
+  let appliedCoupon = null;
+
   if (couponApplied && couponCode) {
     const validCoupon = await Coupon.findOne({
       name: couponCode.toUpperCase(),
       expiry: { $gte: new Date() },
     });
-    if (validCoupon) {
-      finalAmount = userCart.totalAfterDiscount || (
-        userCart.cartTotal - (userCart.cartTotal * validCoupon.discount) / 100
-      );
-    } else {
+    if (!validCoupon) {
       return res.status(400).json({ message: "Invalid or expired coupon" });
     }
+    finalAmount = (userCart.cartTotal * (100 - validCoupon.discount) / 100).toFixed(2);
+    appliedCoupon = validCoupon._id;
   }
 
-  // Ensure finalAmount is a string with 2 decimal places
-  const totalAmount = Number(finalAmount).toFixed(2);
-  console.log("Total Amount (before sending):", totalAmount);
+  // Generate transaction ID
+  const transactionUuid = `ESW-${Date.now()}-${crypto.randomBytes(4).toString("hex")}`;
+  const totalAmount = parseFloat(finalAmount).toFixed(2);
+  const taxAmount = "0.00";
+  const amount = totalAmount;
 
-  // Generate a unique transaction ID
-  const transaction_uuid = uniqid();
-  console.log("Transaction UUID:", transaction_uuid);
+  // Generate signature
+  const message = `total_amount=${totalAmount},transaction_uuid=${transactionUuid},product_code=${ESEWA_PRODUCT_CODE}`;
+  const signature = generateSignature(message, ESEWA_SECRET);
 
-  // Create an order with "Pending" status
-  const newOrder = await new Order({
+  // Create order
+  const newOrder = await Order.create({
     products: userCart.products,
     paymentIntent: {
-      id: transaction_uuid,
+      id: transactionUuid,
       method: "eSewa",
       amount: totalAmount,
       status: "Pending",
       created: Date.now(),
       currency: "NPR",
     },
-    orderby: _id,
     orderStatus: "Pending",
+    orderby: user._id,
+    coupon: appliedCoupon,
     totalAfterDiscount: totalAmount,
-  }).save();
+    shippingInfo,
+  });
 
-  // Prepare data for eSewa payment request
-  const params = {
-    amount: totalAmount,
-    tax_amount: "0.00",
-    total_amount: totalAmount,
-    transaction_uuid,
-    product_code: process.env.ESEWA_PRODUCT_CODE,
-    product_service_charge: "0.00",
-    product_delivery_charge: "0.00",
-    success_url: process.env.ESEWA_SUCCESS_URL,
-    failure_url: process.env.ESEWA_FAILURE_URL,
-  };
-
-  // Log the params to verify values
-  console.log("eSewa params:", params);
-
-  // Fields to be signed
-  const signed_field_names = "total_amount,transaction_uuid,product_code";
-  const message = `total_amount=${params.total_amount},transaction_uuid=${params.transaction_uuid},product_code=${params.product_code}`;
-  
-  // Generate signature
-  const signature = generateSignature(message);
-
-  // Prepare form data for eSewa
+  // eSewa form data
   const formData = {
-    ...params,
-    signed_field_names,
+    amount,
+    tax_amount: taxAmount,
+    total_amount: totalAmount,
+    transaction_uuid: transactionUuid,
+    product_code: ESEWA_PRODUCT_CODE,
+    product_service_charge: "0",
+    product_delivery_charge: "0",
+    success_url: SUCCESS_URL,
+    failure_url: FAILURE_URL,
+    signed_field_names: "total_amount,transaction_uuid,product_code",
     signature,
   };
 
-  // Log the form data to verify
-  console.log("Form Data sent to eSewa:", formData);
-
   res.json({
-    message: "Payment initiated",
+    paymentUrl: ESEWA_PAYMENT_URL,
     formData,
-    paymentUrl: process.env.ESEWA_PAYMENT_URL,
     orderId: newOrder._id,
   });
 });
 
-// Verify eSewa Payment
-const verifyEsewaPayment = asyncHandler(async (req, res) => {
+const handleSuccess = asyncHandler(async (req, res) => {
   const { data } = req.query;
   if (!data) {
-    return res.status(400).json({ message: "Invalid response from eSewa" });
+    return res.redirect(`${process.env.FRONTEND_URL}/checkout?error=Invalid response from eSewa`);
   }
 
-  const decodedData = Buffer.from(data, "base64").toString("utf-8");
-  const responseData = JSON.parse(decodedData);
+  let decodedData;
+  try {
+    decodedData = JSON.parse(Buffer.from(data, "base64").toString("utf8"));
+    if (typeof decodedData === "string") {
+      decodedData = JSON.parse(decodedData);
+    }
+  } catch (error) {
+    console.error("Error decoding eSewa response:", error);
+    return res.redirect(`${process.env.FRONTEND_URL}/checkout?error=Invalid response format`);
+  }
 
   const {
-    transaction_uuid,
-    product_code,
+    transaction_code,
     status,
     total_amount,
+    transaction_uuid,
+    product_code,
+    signed_field_names,
     signature,
-  } = responseData;
+  } = decodedData;
 
-  // Verify signature using the same fields as initiation
-  const message = `total_amount=${total_amount},transaction_uuid=${transaction_uuid},product_code=${product_code}`;
-  const generatedSignature = generateSignature(message);
-
-  if (generatedSignature !== signature) {
-    console.error("Signature verification failed:", { generatedSignature, receivedSignature: signature });
-    return res.status(400).json({ message: "Signature verification failed" });
+  if (status !== "COMPLETE") {
+    return res.redirect(`${process.env.FRONTEND_URL}/checkout?error=Transaction not completed`);
   }
+
+  // Verify signature
+  const message = signed_field_names
+    .split(",")
+    .map((field) => `${field}=${decodedData[field]}`)
+    .join(",");
+  const computedSignature = generateSignature(message, ESEWA_SECRET);
+  if (computedSignature !== signature) {
+    return res.redirect(`${process.env.FRONTEND_URL}/checkout?error=Invalid signature`);
+  }
+
+  // Find order
+  const order = await Order.findOne({ "paymentIntent.id": transaction_uuid }).populate(
+    "products.product"
+  );
+  if (!order) {
+    return res.redirect(`${process.env.FRONTEND_URL}/checkout?error=Order not found`);
+  }
+
+  // Verify amount
+  if (parseFloat(total_amount).toFixed(2) !== parseFloat(order.totalAfterDiscount).toFixed(2)) {
+    return res.redirect(`${process.env.FRONTEND_URL}/checkout?error=Amount mismatch`);
+  }
+
+  // Update order
+  order.paymentIntent.status = "Completed";
+  order.paymentIntent.transactionCode = transaction_code;
+  order.orderStatus = "Processing";
+  await order.save();
+
+  // Update stock
+  const updates = order.products.map((item) => ({
+    updateOne: {
+      filter: { _id: item.product._id },
+      update: { $inc: { quantity: -item.count, sold: +item.count } },
+    },
+  }));
+  await Product.bulkWrite(updates);
+
+  // Clear cart
+  await Cart.findOneAndDelete({ orderby: order.orderby });
+
+  res.redirect(`${process.env.FRONTEND_URL}/order-confirmation?orderId=${order._id}`);
+});
+
+const handleFailure = asyncHandler(async (req, res) => {
+  const { transaction_uuid } = req.query;
+
+  if (transaction_uuid) {
+    const order = await Order.findOne({ "paymentIntent.id": transaction_uuid });
+    if (order) {
+      order.paymentIntent.status = "Failed";
+      order.orderStatus = "Cancelled";
+      await order.save();
+    }
+  }
+
+  res.redirect(`${process.env.FRONTEND_URL}/checkout?error=Payment failed or cancelled`);
+});
+
+const checkTransactionStatus = asyncHandler(async (req, res) => {
+  const { transaction_uuid } = req.params;
 
   const order = await Order.findOne({ "paymentIntent.id": transaction_uuid });
   if (!order) {
     return res.status(404).json({ message: "Order not found" });
   }
 
-  if (status === "COMPLETE") {
-    order.paymentIntent.status = "Completed";
-    order.orderStatus = "Processing";
-    await order.save();
-
-    // Update product quantities
-    const update = order.products.map((item) => ({
-      updateOne: {
-        filter: { _id: item.product._id },
-        update: { $inc: { quantity: -item.count, sold: +item.count } },
+  try {
+    const response = await axios.get(ESEWA_STATUS_URL, {
+      params: {
+        product_code: ESEWA_PRODUCT_CODE,
+        total_amount: order.paymentIntent.amount,
+        transaction_uuid,
       },
-    }));
-    await Product.bulkWrite(update, {});
+    });
 
-    // Clear the cart
-    await Cart.findOneAndDelete({ orderby: order.orderby });
+    const { status, ref_id } = response.data;
 
-    res.redirect(`http://localhost:5173/order-confirmation?orderId=${order._id}`);
-  } else {
-    order.paymentIntent.status = "Failed";
-    order.orderStatus = "Cancelled";
-    await order.save();
+    switch (status) {
+      case "COMPLETE":
+        order.paymentIntent.status = "Completed";
+        order.orderStatus = "Processing";
+        order.paymentIntent.transactionCode = ref_id;
+        await order.save();
+        await Cart.findOneAndDelete({ orderby: order.orderby });
+        break;
+      case "PENDING":
+        break;
+      default:
+        order.paymentIntent.status = "Failed";
+        order.orderStatus = "Cancelled";
+        await order.save();
+        break;
+    }
 
-    res.redirect(`http://localhost:5173/checkout?error=Payment failed`);
+    res.json({
+      status,
+      transactionId: ref_id,
+      orderStatus: order.orderStatus,
+    });
+  } catch (error) {
+    console.error("Error checking transaction status:", error.response?.data || error.message);
+    res.status(500).json({
+      message: "Failed to check transaction status",
+      error: error.message,
+    });
   }
-});
-
-// Handle Payment Failure
-const handlePaymentFailure = asyncHandler(async (req, res) => {
-  const { transaction_uuid } = req.query;
-
-  const order = await Order.findOne({ "paymentIntent.id": transaction_uuid });
-  if (order) {
-    order.paymentIntent.status = "Failed";
-    order.orderStatus = "Cancelled";
-    await order.save();
-  }
-
-  res.redirect(`http://localhost:5173/checkout?error=Payment failed`);
 });
 
 module.exports = {
-  initiateEsewaPayment,
-  verifyEsewaPayment,
-  handlePaymentFailure,
+  initiatePayment,
+  handleSuccess,
+  handleFailure,
+  checkTransactionStatus,
 };
