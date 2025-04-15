@@ -26,6 +26,8 @@ const Home = () => {
   const { wishlistItems, addToWishlist, removeFromWishlist } = useWishlist();
   const navigate = useNavigate();
 
+  const BASE_URL = "http://localhost:5001";
+
   const brands = [
     { name: "Apple", logo: "https://www.apple.com/ac/structured-data/images/knowledge_graph_logo.png" },
     { name: "Samsung", logo: "https://upload.wikimedia.org/wikipedia/commons/2/24/Samsung_Logo.svg" },
@@ -37,8 +39,20 @@ const Home = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get("http://localhost:5001/api/products");
-        setProducts(response.data.products);
+        const response = await axios.get(`${BASE_URL}/api/products`);
+
+        const processedProducts = response.data.products.map((product) => ({
+          ...product,
+          images: product.images.map((img) => {
+            if (typeof img === "string") {
+              return img.startsWith("http") ? img : `${BASE_URL}${img}`;
+            } else {
+              return img.url ? (img.url.startsWith("http") ? img.url : `${BASE_URL}${img.url}`) : "/placeholder.jpg";
+            }
+          }),
+        }));
+
+        setProducts(processedProducts);
         setLoading(false);
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -46,7 +60,7 @@ const Home = () => {
       }
     };
     fetchProducts();
-  }, []);
+  }, [BASE_URL]);
 
   useEffect(() => {
     if (products.length > 0) {
@@ -168,7 +182,7 @@ const Home = () => {
                         </div>
                         <div className="relative h-48 sm:h-56 md:h-64 bg-gray-100 flex items-center justify-center">
                           <Image
-                            src={product.images[0] || "/placeholder.jpg"}
+                            src={(typeof product.images[0] === "string" ? product.images[0] : product.images[0]?.url) || "/placeholder.jpg"}
                             alt={product.title}
                             className="w-full h-full object-contain p-4 sm:p-6 transition-transform duration-300 group-hover:scale-105"
                           />
@@ -283,7 +297,7 @@ const Home = () => {
                         </div>
                         <div className="relative h-48 sm:h-56 md:h-64 bg-gray-100 flex items-center justify-center">
                           <Image
-                            src={product.images[0] || "/placeholder.jpg"}
+                            src={(typeof product.images[0] === "string" ? product.images[0] : product.images[0]?.url) || "/placeholder.jpg"}
                             alt={product.title}
                             className="w-full h-full object-contain p-4 sm:p-6 transition-transform duration-300 group-hover:scale-105"
                           />
