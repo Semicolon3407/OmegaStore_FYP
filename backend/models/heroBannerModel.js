@@ -8,8 +8,8 @@ const heroBannerSchema = new mongoose.Schema(
     highlightedDescription: { type: String },
     image: { type: String, required: true },
     backgroundColor: { type: String, default: "bg-gradient-to-br from-gray-900 via-black to-gray-950" },
-    offerTitle: { type: String, default: "SHIELD+ Protection" },
-    offerWorth: { type: String, default: "Worth NPR 13,000" },
+    offerTitle: { type: String, },
+    offerWorth: { type: String, },
     offerItems: [
       {
         title: { type: String, required: true },
