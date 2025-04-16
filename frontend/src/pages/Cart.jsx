@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useCart } from '../Context/cartContext';
 import { useCoupon } from '../Context/couponContext';
+import axios from 'axios';
 
 const BASE_URL = 'http://localhost:5001';
 
@@ -135,7 +136,7 @@ const Cart = () => {
 
   const handleApplyCoupon = async () => {
     if (!couponCode) {
-      toast.error('Please enter a coupon code');
+      toast.error("Please enter a coupon code");
       return;
     }
 
@@ -150,9 +151,10 @@ const Cart = () => {
 
       setAppliedCoupon({
         code: couponCode,
-        discount: response.data.discountApplied,
+        discount: response.data.discount,
       });
-      toast.success(`Coupon "${couponCode}" applied successfully!`);
+      await fetchCart(); // Refresh cart to get updated totals
+      toast.success(response.data.message);
       setCouponCode('');
     } catch (error) {
       console.error('Error applying coupon:', error);

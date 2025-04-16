@@ -551,42 +551,37 @@ const getUserCarts = asyncHandler(async (req, res) => {
 const applyCoupon = asyncHandler(async (req, res) => {
   const { coupon } = req.body;
   const { _id } = req.user;
-  validateMongoDbId(_id);
+
+  if (!coupon) {
+    return res.status(400).json({ message: "Please provide a coupon code" });
+  }
+
+  // Find user's cart
+  const userCart = await Cart.findOne({ orderby: _id });
+  if (!userCart) {
+    return res.status(400).json({ message: "Cart not found" });
+  }
 
   const validCoupon = await Coupon.findOne({
     name: coupon.toUpperCase(),
-    expiry: { $gte: new Date() },
-    $or: [{ user: _id }, { user: null }],
+    expiry: { $gt: new Date() },
   });
 
   if (!validCoupon) {
     return res.status(400).json({ message: "Invalid or expired coupon" });
   }
 
-  const user = await User.findById(_id);
-  if (!user) {
-    return res.status(404).json({ message: "User not found" });
-  }
+  const cartTotal = userCart.cartTotal;
+  const totalAfterDiscount = (cartTotal * (100 - validCoupon.discount) / 100).toFixed(2);
 
-  let cart = await Cart.findOne({ orderby: user._id }).populate(
-    "products.product"
-  );
-  if (!cart) {
-    return res.status(400).json({ message: "Cart not found" });
-  }
-
-  const totalAfterDiscount = (
-    cart.cartTotal -
-    (cart.cartTotal * validCoupon.discount) / 100
-  ).toFixed(2);
-
-  cart.totalAfterDiscount = totalAfterDiscount;
-  await cart.save();
+  userCart.totalAfterDiscount = totalAfterDiscount;
+  await userCart.save();
 
   res.json({
-    totalAfterDiscount,
-    discountApplied: validCoupon.discount,
     message: "Coupon applied successfully",
+    totalAfterDiscount: parseFloat(totalAfterDiscount),
+    discount: validCoupon.discount,
+    discountAmount: cartTotal - totalAfterDiscount,
   });
 });
 
@@ -656,7 +651,9 @@ const createOrder = asyncHandler(async (req, res) => {
 
   let finalAmount = userCart.cartTotal;
   let appliedCoupon = null;
+  const deliveryCharge = 150;
 
+  // Process coupon if applied
   if (couponApplied && couponCode) {
     const validCoupon = await Coupon.findOne({
       name: couponCode.toUpperCase(),
@@ -665,10 +662,19 @@ const createOrder = asyncHandler(async (req, res) => {
     if (!validCoupon) {
       return res.status(400).json({ message: "Invalid or expired coupon" });
     }
+    
+    // Calculate discount
     finalAmount = (userCart.cartTotal * (100 - validCoupon.discount) / 100).toFixed(2);
     appliedCoupon = validCoupon._id;
+
+    // Delete the used coupon only after successful order creation
+    // await Coupon.findByIdAndDelete(validCoupon._id);
   }
 
+  // Add delivery charge
+  finalAmount = parseFloat(finalAmount) + deliveryCharge;
+
+  let newOrder;
   if (COD) {
     const paymentIntent = {
       id: uniqid(),
@@ -679,14 +685,16 @@ const createOrder = asyncHandler(async (req, res) => {
       currency: "NPR",
     };
 
-    let newOrder = await new Order({
+    newOrder = await new Order({
       products: userCart.products,
       paymentIntent,
       orderStatus: "Processing",
       orderby: user._id,
       coupon: appliedCoupon,
-      totalAfterDiscount: finalAmount,
+      totalAfterDiscount: finalAmount - deliveryCharge, // Store the amount before delivery charge
+      totalWithDelivery: finalAmount,
       shippingInfo,
+      deliveryCharge
     }).save();
 
     // Update stock for COD orders
@@ -700,14 +708,40 @@ const createOrder = asyncHandler(async (req, res) => {
 
     await Cart.findOneAndDelete({ orderby: user._id });
 
+    if (appliedCoupon) {
+      await Coupon.findByIdAndDelete(appliedCoupon);
+    }
+
     res.json({
-      message: "Order created successfully",
+      message: "Order placed successfully",
       orderId: newOrder._id,
+      redirect: '/'
     });
   } else {
-    // For eSewa, just return success to proceed to initiatePayment
+    // For eSewa, create order but don't update stock yet
+    const paymentIntent = {
+      method: "eSewa",
+      amount: finalAmount,
+      status: "Pending",
+      created: Date.now(),
+      currency: "NPR",
+    };
+
+    newOrder = await new Order({
+      products: userCart.products,
+      paymentIntent,
+      orderStatus: "Pending",
+      orderby: user._id,
+      coupon: appliedCoupon,
+      totalAfterDiscount: finalAmount - deliveryCharge, // Store the amount before delivery charge
+      totalWithDelivery: finalAmount,
+      shippingInfo,
+      deliveryCharge
+    }).save();
+
     res.json({
       message: "Proceed to eSewa payment",
+      orderId: newOrder._id
     });
   }
 });
@@ -917,6 +951,94 @@ const clearCompare = asyncHandler(async (req, res) => {
   }
 });
 
+const applyDiscountCoupon = asyncHandler(async (req, res) => {
+  try {
+    const { coupon, orderTotal } = req.body;
+    if (!coupon) {
+      return res.status(400).json({ message: "Coupon code is required" });
+    }
+    if (!orderTotal) {
+      return res.status(400).json({ message: "Order total is required" });
+    }
+
+    const validCoupon = await Coupon.findOne({ 
+      name: coupon.toUpperCase(),
+      expiry: { $gt: new Date() }
+    });
+
+    if (!validCoupon) {
+      return res.status(400).json({ message: "Invalid or expired coupon code" });
+    }
+
+    const discount = (orderTotal * validCoupon.discount) / 100;
+    const newTotal = orderTotal - discount;
+    const totalWithDelivery = newTotal + 150; // Adding delivery charge
+
+    return res.status(200).json({
+      message: "Discount applied successfully",
+      discount,
+      newTotal,
+      totalWithDelivery,
+      deliveryCharge: 150,
+      couponDetails: validCoupon
+    });
+  } catch (error) {
+    console.error("Error applying discount coupon", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+const handleEsewaPaymentComplete = asyncHandler(async (req, res) => {
+  try {
+    const { userId, orderId, status } = req.body;
+    
+    if (!orderId) {
+      throw new Error("Order ID is required");
+    }
+
+    // Find the order
+    const order = await Order.findById(orderId);
+    if (!order) {
+      throw new Error("Order not found");
+    }
+
+    // Only process if order is in pending state
+    if (order.orderStatus !== "Pending") {
+      throw new Error("Order is not in pending state");
+    }
+
+    // Update order status and payment
+    order.orderStatus = "Processing";
+    order.paymentIntent.status = "Paid";
+    await order.save();
+
+    // Update product stock
+    const updates = order.products.map((item) => ({
+      updateOne: {
+        filter: { _id: item.product },
+        update: { $inc: { quantity: -item.count, sold: +item.count } },
+      },
+    }));
+    await Product.bulkWrite(updates);
+
+    // If there's a coupon, delete it
+    if (order.coupon) {
+      await Coupon.findByIdAndDelete(order.coupon);
+    }
+
+    // Clear the cart
+    await Cart.findOneAndDelete({ orderby: userId });
+    
+    return res.status(200).json({
+      message: "Payment successful and order processed",
+      redirect: '/'
+    });
+  } catch (error) {
+    console.error("Error handling eSewa payment completion", error);
+    return res.status(500).json({ message: error.message || "Internal server error" });
+  }
+});
+
 module.exports = {
   createUser,
   loginUser,
@@ -950,4 +1072,6 @@ module.exports = {
   removeFromCompare,
   clearCompare,
   getUserOrders,
+  applyDiscountCoupon,
+  handleEsewaPaymentComplete,
 };

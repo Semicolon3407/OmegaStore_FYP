@@ -42,12 +42,74 @@ const Checkout = () => {
     setPaymentMethod(method);
   };
 
-  const handleEsewaPayment = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (step < 2) {
+      setStep(step + 1);
+    } else {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          throw new Error("Please log in to place an order");
+        }
+
+        // Validate required fields
+        const requiredFields = ['name', 'email', 'address', 'city', 'phone'];
+        const missingFields = requiredFields.filter(field => !formData[field]);
+        if (missingFields.length > 0) {
+          throw new Error(`Please fill in all required fields: ${missingFields.join(', ')}`);
+        }
+
+        if (paymentMethod === "COD") {
+          const response = await axios.post(
+            "http://localhost:5001/api/user/cart/cash-order",
+            {
+              COD: true,
+              couponApplied: !!couponCode,
+              couponCode,
+              shippingInfo: formData,
+              paymentMethod: "cash on delivery"
+            },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+
+          await emptyCart();
+          toast.success("Order placed successfully!");
+          navigate("/");
+        } else if (paymentMethod === "eSewa") {
+          const response = await axios.post(
+            "http://localhost:5001/api/user/cart/cash-order",
+            {
+              COD: false,
+              couponApplied: !!couponCode,
+              couponCode,
+              shippingInfo: formData,
+              paymentMethod: "eSewa"
+            },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+
+          if (response.data.orderId) {
+            await handleEsewaPayment(response.data.orderId);
+          }
+        }
+      } catch (error) {
+        console.error("Error creating order:", error);
+        const errorMessage = error.response?.data?.message || error.message || "Failed to place order";
+        toast.error(errorMessage);
+      }
+    }
+  };
+
+  const handleEsewaPayment = async (orderId) => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
         throw new Error("Please log in to place an order");
       }
+
+      // Store orderId for later use
+      localStorage.setItem("currentOrderId", orderId);
 
       // Validate required fields
       const requiredFields = ['name', 'email', 'address', 'city', 'phone'];
@@ -133,44 +195,47 @@ const Checkout = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (step < 2) {
-      setStep(step + 1);
-    } else {
-      if (paymentMethod === "COD") {
-        try {
-          const token = localStorage.getItem("token");
-          if (!token) {
-            throw new Error("Please log in to place an order");
-          }
-          const response = await axios.post(
-            "http://localhost:5001/api/user/cart/cash-order",
-            {
-              COD: true,
-              couponApplied: !!couponCode,
-              couponCode,
-              shippingInfo: formData,
-            },
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
+  const handleEsewaSuccess = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const userId = JSON.parse(localStorage.getItem("user"))._id;
+      const orderId = localStorage.getItem("currentOrderId");
 
-          await emptyCart();
-          toast.success("Order placed successfully!");
-          navigate("/order-confirmation", {
-            state: { orderId: response.data.orderId },
-          });
-        } catch (error) {
-          console.error("Error creating order:", error);
-          const errorMessage =
-            error.response?.data?.message || "Failed to place order";
-          toast.error(errorMessage);
-        }
-      } else if (paymentMethod === "eSewa") {
-        await handleEsewaPayment();
+      if (!orderId) {
+        throw new Error("Order ID not found");
       }
+
+      const response = await axios.post(
+        "http://localhost:5001/api/user/esewa/complete",
+        { 
+          userId,
+          orderId,
+          status: "success"
+        },
+        { 
+          headers: { 
+            Authorization: `Bearer ${token}` 
+          } 
+        }
+      );
+
+      await emptyCart();
+      localStorage.removeItem("currentOrderId");
+      navigate("/");
+      toast.success("Payment successful!");
+    } catch (error) {
+      console.error("Error processing eSewa payment:", error);
+      toast.error("Error processing eSewa payment");
     }
   };
+
+  useEffect(() => {
+    // Check if this is a return from eSewa payment
+    const isEsewaReturn = location.pathname === "/order/success";
+    if (isEsewaReturn) {
+      handleEsewaSuccess();
+    }
+  }, [location.pathname]);
 
   const pageVariants = {
     initial: { opacity: 0, x: "-100%" },
@@ -343,30 +408,24 @@ const Checkout = () => {
             </div>
             <div className="bg-gray-100 p-4 rounded-md mb-4">
               <h3 className="font-semibold mb-2">Order Summary</h3>
-              {cartItems.map((item) => (
-                <div key={item._id} className="flex justify-between mb-2">
-                  <span>
-                    {item.product?.title} (x{item.count})
-                  </span>
-                  <span>Rs {(item.price * item.count).toLocaleString()}</span>
-                </div>
-              ))}
               <div className="flex justify-between mb-2">
                 <span>Subtotal:</span>
                 <span>Rs {cartTotal.toLocaleString()}</span>
               </div>
-              {couponCode && totalAfterDiscount && (
-                <div className="flex justify-between mb-2">
-                  <span>Coupon ({couponCode}):</span>
-                  <span className="text-green-600">
-                    -Rs {(cartTotal - totalAfterDiscount).toLocaleString()}
-                  </span>
+              {couponCode && totalAfterDiscount !== null && totalAfterDiscount < cartTotal && (
+                <div className="flex justify-between mb-2 text-green-600">
+                  <span>Coupon Discount ({couponCode}):</span>
+                  <span>- Rs {(cartTotal - totalAfterDiscount).toLocaleString()}</span>
                 </div>
               )}
-              <div className="flex justify-between font-semibold mt-2">
+              <div className="flex justify-between mb-2">
+                <span>Delivery Charge:</span>
+                <span>Rs 150</span>
+              </div>
+              <div className="flex justify-between font-semibold mt-2 text-lg border-t pt-2">
                 <span>Total:</span>
                 <span>
-                  Rs {(totalAfterDiscount || cartTotal).toLocaleString()}
+                  Rs {((totalAfterDiscount || cartTotal) + 150).toLocaleString()}
                 </span>
               </div>
             </div>
