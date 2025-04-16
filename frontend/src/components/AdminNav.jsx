@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
@@ -7,12 +7,10 @@ import {
   ShoppingCart,
   Users,
   BarChart2,
-  DollarSign,
   Menu,
   X,
   LogOut,
   MessageSquare,
-  Tag,
   Image,
   Percent,
   ChevronLeft,
@@ -37,8 +35,6 @@ const AdminSidebar = () => {
     { title: "Coupons", path: "/admin/coupons", icon: <Percent size={20} /> },
     { title: "Users", path: "/admin/users", icon: <Users size={20} /> },
     { title: "Chat", path: "/admin/chat", icon: <MessageSquare size={20} /> },
-    { title: "Analytics", path: "/admin/analytics", icon: <BarChart2 size={20} /> },
-    { title: "Revenue", path: "/admin/revenue", icon: <DollarSign size={20} /> },
     { title: "Hero Banners", path: "/admin/hero-banners", icon: <Image size={20} /> },
   ];
 
@@ -70,7 +66,6 @@ const AdminSidebar = () => {
   }, [isSidebarOpen]);
 
   useEffect(() => {
-    // Load collapsed state from localStorage
     const savedState = localStorage.getItem("adminSidebarCollapsed");
     if (savedState !== null) {
       setIsCollapsed(JSON.parse(savedState));
@@ -80,7 +75,6 @@ const AdminSidebar = () => {
   const toggleCollapse = () => {
     const newState = !isCollapsed;
     setIsCollapsed(newState);
-    // Save to localStorage
     localStorage.setItem("adminSidebarCollapsed", JSON.stringify(newState));
   };
 
@@ -113,7 +107,6 @@ const AdminSidebar = () => {
 
   return (
     <>
-      {/* Mobile Toggle Button */}
       <button
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
         className="fixed top-4 left-4 z-50 md:hidden p-2 rounded-full bg-blue-900 text-white hover:bg-blue-800 transition-colors"
@@ -122,17 +115,15 @@ const AdminSidebar = () => {
         {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
-      {/* Sidebar - width responsive based on collapse state */}
       <aside
         ref={sidebarRef}
         className={`fixed top-0 left-0 h-full z-40 transform transition-all duration-300 
         ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"} 
         md:translate-x-0 md:static md:min-h-screen border-r border-gray-200 bg-white shadow-lg
         ${isCollapsed ? "md:w-20" : "md:w-64"} 
-        w-64`} // Mobile width is always 64 (16rem)
+        w-64`}
       >
         <div className="flex flex-col h-full relative">
-          {/* Collapse Toggle Button - Only visible on desktop */}
           <button
             onClick={toggleCollapse}
             className="hidden md:flex absolute -right-3 top-24 z-10 p-1 bg-blue-900 text-white rounded-full shadow-md hover:bg-blue-800 transition-colors"
@@ -141,7 +132,6 @@ const AdminSidebar = () => {
             {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
           </button>
 
-          {/* Logo */}
           <div className={`p-6 border-b border-gray-200 ${isCollapsed ? "flex justify-center" : ""}`}>
             <Link to="/admin" className={`flex items-center ${isCollapsed ? "" : "space-x-2"}`}>
               <img src={logo} alt="OmegaStore Logo" className="h-12 w-auto" />
@@ -149,7 +139,6 @@ const AdminSidebar = () => {
             </Link>
           </div>
 
-          {/* Navigation */}
           <nav className="flex-1 overflow-y-auto py-4">
             <ul className={`space-y-2 ${isCollapsed ? "px-2" : "px-4"}`}>
               {navLinks.map((link, index) => (
@@ -174,7 +163,6 @@ const AdminSidebar = () => {
             </ul>
           </nav>
 
-          {/* Logout */}
           {isLoggedIn && (
             <div className={`p-4 border-t border-gray-200 ${isCollapsed ? "flex justify-center" : ""}`}>
               <button
@@ -192,7 +180,6 @@ const AdminSidebar = () => {
         </div>
       </aside>
 
-      {/* Overlay for Mobile */}
       {isSidebarOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"

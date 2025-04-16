@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Header from "./components/Header";
@@ -15,15 +15,11 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminUserManagement from "./pages/admin/AdminUserManagement";
-import AdminRevenue from "./pages/admin/AdminRevenue";
-import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminChat from "./pages/admin/AdminChat";
-
 import AdminHeroBanners from "./pages/admin/AdminHeroBanners";
 import AdminCoupons from "./pages/admin/AdminCoupon";
 import UserChat from "./pages/UserChat";
 import Locations from "./pages/Locations";
-
 import SignIn from "./pages/SignIn";
 import Contact from "./pages/Contact";
 import CreateAccount from "./pages/CreateAccount";
@@ -39,7 +35,6 @@ import { WishlistProvider } from "./Context/wishlistContext";
 import { CompareProvider } from "./Context/compareContext";
 import { ChatProvider } from "./Context/chatContext";
 import { ReviewProvider } from "./Context/ReviewContext";
-
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -152,8 +147,6 @@ const Layout = () => {
               <Route path="/products" element={<ProductListing />} />
               <Route path="/products/:id" element={<ProductDetails />} />
               <Route path="/locations" element={<Locations />} />
-             
-             
               <Route path="/contact" element={<Contact />} />
               <Route path="/warranty" element={<Warranty />} />
               <Route path="/coupons" element={<Coupons />} />
@@ -176,8 +169,6 @@ const Layout = () => {
               <Route path="/admin" element={<ProtectedRoute requireAdmin={true}><AdminDashboard /></ProtectedRoute>} />
               <Route path="/admin/products" element={<ProtectedRoute requireAdmin={true}><AdminProducts /></ProtectedRoute>} />
               <Route path="/admin/orders" element={<ProtectedRoute requireAdmin={true}><AdminOrders /></ProtectedRoute>} />
-              <Route path="/admin/revenue" element={<ProtectedRoute requireAdmin={true}><AdminRevenue /></ProtectedRoute>} />
-              <Route path="/admin/analytics" element={<ProtectedRoute requireAdmin={true}><AdminAnalytics /></ProtectedRoute>} />
               <Route path="/admin/users" element={<ProtectedRoute requireAdmin={true}><AdminUserManagement /></ProtectedRoute>} />
               <Route path="/admin/chat" element={<ProtectedRoute requireAdmin={true}><AdminChat /></ProtectedRoute>} />
               <Route path="/admin/hero-banners" element={<ProtectedRoute requireAdmin={true}><AdminHeroBanners /></ProtectedRoute>} />
