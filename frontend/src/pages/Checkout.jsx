@@ -6,6 +6,7 @@ import CheckoutProgress from "../components/CheckoutProgress";
 import { useCart } from "../Context/cartContext";
 import axios from "axios";
 import { toast } from "react-toastify";
+import CryptoJS from 'crypto-js';
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -48,39 +49,82 @@ const Checkout = () => {
         throw new Error("Please log in to place an order");
       }
 
-      // Show test credentials alert
+      // Validate required fields
+      const requiredFields = ['name', 'email', 'address', 'city', 'phone'];
+      const missingFields = requiredFields.filter(field => !formData[field]);
+      if (missingFields.length > 0) {
+        throw new Error(`Please fill in all required fields: ${missingFields.join(', ')}`);
+      }
+
+      // Show test credentials alert with better formatting
       toast.info(
-        "For testing, use these eSewa credentials:\neSewa ID: 9806800001\nPassword: Nepal@123\nToken: 123456",
-        { autoClose: 10000 }
+        "🔑 Test eSewa Credentials:\n" +
+        "ID: 9806800001\n" +
+        "Password: Nepal@123\n" +
+        "Token: 123456",
+        { 
+          autoClose: 15000,
+          position: "top-center",
+          style: { whiteSpace: 'pre-line' }
+        }
       );
 
-      const response = await axios.post(
-        "http://localhost:5001/api/user/esewa/initiate-payment",
-        {
-          couponApplied: !!couponCode,
-          couponCode,
-          shippingInfo: formData,
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      // Calculate cart total and generate transaction UUID
+      const amount = cartTotal.toString();
+      const taxAmount = "0";
+      const totalAmount = amount;
+      const transactionUuid = `ESW-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const productCode = "EPAYTEST";
+      
+      // Generate HMAC signature
+      const message = `total_amount=${totalAmount},transaction_uuid=${transactionUuid},product_code=${productCode}`;
+      const secret = "8gBm/:&EnhH.1/q"; // eSewa test secret key
+      const signature = CryptoJS.HmacSHA256(message, secret).toString(CryptoJS.enc.Base64);
 
-      const { formData: paymentFormData, paymentUrl } = response.data;
-
-      // Create and submit form to redirect to eSewa
+      // Create a form for eSewa submission
       const form = document.createElement("form");
       form.method = "POST";
-      form.action = paymentUrl;
+      form.action = "https://rc-epay.esewa.com.np/api/epay/main/v2/form";
+      form.style.display = 'none';
 
-      Object.keys(paymentFormData).forEach((key) => {
+      // Add all required eSewa fields
+      const formFields = {
+        amount: amount,
+        tax_amount: taxAmount,
+        total_amount: totalAmount,
+        transaction_uuid: transactionUuid,
+        product_code: productCode,
+        product_service_charge: "0",
+        product_delivery_charge: "0",
+        success_url: `${window.location.origin}/order/success`,
+        failure_url: `${window.location.origin}/order/failure`,
+        signed_field_names: "total_amount,transaction_uuid,product_code",
+        signature: signature
+      };
+
+      // Create and append all form fields
+      Object.entries(formFields).forEach(([key, value]) => {
         const input = document.createElement("input");
         input.type = "hidden";
         input.name = key;
-        input.value = paymentFormData[key];
+        input.value = value;
         form.appendChild(input);
       });
 
+      // Append form to main document and submit
       document.body.appendChild(form);
       form.submit();
+      
+      // Remove the form after submission
+      setTimeout(() => {
+        document.body.removeChild(form);
+      }, 1000);
+
+      // Show processing message
+      toast.info("Processing payment in eSewa window. Please complete the payment there.", {
+        autoClose: false,
+        position: "bottom-right"
+      });
     } catch (error) {
       console.error("Error initiating eSewa payment:", error);
       const errorMessage =
