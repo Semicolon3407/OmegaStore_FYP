@@ -32,6 +32,7 @@ const {
   removeFromCompare,
   clearCompare,
   getUserOrders,
+  handleEsewaPaymentComplete,
 } = require("../controller/userController");
 const {
   initiatePayment,
@@ -80,6 +81,7 @@ router.delete("/order/:id", authMiddleware, isAdmin, deleteOrder);
 
 // eSewa Routes
 router.post("/esewa/initiate-payment", authMiddleware, initiatePayment);
+router.post("/esewa/complete", authMiddleware, handleEsewaPaymentComplete);
 router.get("/esewa/success", handleSuccess);
 router.get("/esewa/failure", handleFailure);
 router.get("/esewa/status/:transaction_uuid", authMiddleware, checkTransactionStatus);

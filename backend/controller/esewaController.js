@@ -17,8 +17,9 @@ const ESEWA_PAYMENT_URL = process.env.NODE_ENV === "production"
 const ESEWA_STATUS_URL = process.env.NODE_ENV === "production"
   ? "https://epay.esewa.com.np/api/epay/transaction/status"
   : "https://rc.esewa.com.np/api/epay/transaction/status";
-const SUCCESS_URL = process.env.ESEWA_SUCCESS_URL;
-const FAILURE_URL = process.env.ESEWA_FAILURE_URL;
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+const SUCCESS_URL = `${FRONTEND_URL}/checkout/success`;
+const FAILURE_URL = `${FRONTEND_URL}/checkout/failure`;
 
 // Generate HMAC SHA256 signature
 const generateSignature = (message, secret) => {
@@ -120,7 +121,7 @@ const handleSuccess = asyncHandler(async (req, res) => {
   const { data } = req.query;
 
   if (!orderId || !data) {
-    return res.redirect(`${process.env.FRONTEND_URL}/checkout?error=Invalid response`);
+    return res.redirect(`${FRONTEND_URL}/checkout?error=Invalid response`);
   }
 
   try {
@@ -144,12 +145,12 @@ const handleSuccess = asyncHandler(async (req, res) => {
     const computedSignature = generateSignature(message, ESEWA_SECRET);
 
     if (computedSignature !== signature || status !== "COMPLETE") {
-      return res.redirect(`${process.env.FRONTEND_URL}/checkout?error=Invalid transaction`);
+      return res.redirect(`${FRONTEND_URL}/checkout?error=Invalid transaction`);
     }
 
     const order = await Order.findById(orderId);
     if (!order) {
-      return res.redirect(`${process.env.FRONTEND_URL}/checkout?error=Order not found`);
+      return res.redirect(`${FRONTEND_URL}/checkout?error=Order not found`);
     }
 
     // Update order
@@ -170,10 +171,20 @@ const handleSuccess = asyncHandler(async (req, res) => {
     // Clear cart
     await Cart.findOneAndDelete({ orderby: order.orderby });
 
-    return res.redirect(`${process.env.FRONTEND_URL}/order-confirmation?orderId=${orderId}`);
+    // Return HTML that sends a message to the parent window
+    return res.send(`
+      <html>
+        <body>
+          <script>
+            window.opener.postMessage({ type: 'ESEWA_PAYMENT_SUCCESS' }, '*');
+            window.close();
+          </script>
+        </body>
+      </html>
+    `);
   } catch (error) {
     console.error("Error processing success:", error);
-    return res.redirect(`${process.env.FRONTEND_URL}/checkout?error=Processing failed`);
+    return res.redirect(`${FRONTEND_URL}/checkout?error=Processing failed`);
   }
 });
 
@@ -193,7 +204,7 @@ const handleFailure = asyncHandler(async (req, res) => {
     }
   }
 
-  return res.redirect(`${process.env.FRONTEND_URL}/checkout?error=Payment failed`);
+  return res.redirect(`${FRONTEND_URL}/checkout?error=Payment failed`);
 });
 
 const checkTransactionStatus = asyncHandler(async (req, res) => {

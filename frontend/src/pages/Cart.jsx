@@ -335,7 +335,7 @@ const Cart = () => {
                     <p className="text-sm sm:text-base font-semibold text-gray-900">Subtotal:</p>
                     <p className="text-sm sm:text-base font-semibold text-gray-900">Rs {cartTotal.toLocaleString()}</p>
                   </div>
-                  {totalAfterDiscount && totalAfterDiscount !== cartTotal && (
+                  {appliedCoupon && totalAfterDiscount && totalAfterDiscount !== cartTotal && (
                     <div className="flex justify-between items-center">
                       <p className="text-sm sm:text-base font-semibold text-gray-900">Total After Discount:</p>
                       <p className="text-sm sm:text-base font-semibold text-green-600">Rs {totalAfterDiscount.toLocaleString()}</p>

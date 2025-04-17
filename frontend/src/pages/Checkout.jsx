@@ -122,55 +122,51 @@ const Checkout = () => {
       toast.info(
         "🔑 Test eSewa Credentials:\n" +
         "ID: 9806800001\n" +
-        "Password: Nepal@123\n" +
-        "Token: 123456",
-        { 
-          autoClose: 15000,
-          position: "top-center",
-          style: { whiteSpace: 'pre-line' }
-        }
+        "Password: Nepal@123",
+        { autoClose: 10000 }
       );
 
-      // Calculate cart total and generate transaction UUID
-      const amount = cartTotal.toString();
-      const taxAmount = "0";
-      const totalAmount = amount;
-      const transactionUuid = `ESW-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      const productCode = "EPAYTEST";
-      
-      // Generate HMAC signature
-      const message = `total_amount=${totalAmount},transaction_uuid=${transactionUuid},product_code=${productCode}`;
-      const secret = "8gBm/:&EnhH.1/q"; // eSewa test secret key
-      const signature = CryptoJS.HmacSHA256(message, secret).toString(CryptoJS.enc.Base64);
+      // Initialize eSewa payment
+      const response = await axios.post(
+        "http://localhost:5001/api/user/esewa/initiate-payment",
+        {
+          couponApplied: !!couponCode,
+          couponCode,
+          shippingInfo: formData,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const { paymentUrl, formData: esewaFormData } = response.data;
 
       // Create a form for eSewa submission
       const form = document.createElement("form");
       form.method = "POST";
-      form.action = "https://rc-epay.esewa.com.np/api/epay/main/v2/form";
+      form.action = paymentUrl;
+      form.target = "esewaPopup"; // Set target to popup window
       form.style.display = 'none';
 
       // Add all required eSewa fields
-      const formFields = {
-        amount: amount,
-        tax_amount: taxAmount,
-        total_amount: totalAmount,
-        transaction_uuid: transactionUuid,
-        product_code: productCode,
-        product_service_charge: "0",
-        product_delivery_charge: "0",
-        success_url: `${window.location.origin}/order/success`,
-        failure_url: `${window.location.origin}/order/failure`,
-        signed_field_names: "total_amount,transaction_uuid,product_code",
-        signature: signature
-      };
-
-      // Create and append all form fields
-      Object.entries(formFields).forEach(([key, value]) => {
+      Object.entries(esewaFormData).forEach(([key, value]) => {
         const input = document.createElement("input");
         input.type = "hidden";
         input.name = key;
         input.value = value;
         form.appendChild(input);
+      });
+
+      // Open popup window
+      const popup = window.open("", "esewaPopup", "width=800,height=600");
+      if (!popup) {
+        throw new Error("Please allow popups for this site to process payment");
+      }
+
+      // Add message listener for payment completion
+      window.addEventListener("message", async (event) => {
+        if (event.data.type === "ESEWA_PAYMENT_SUCCESS") {
+          popup.close();
+          await handleEsewaSuccess();
+        }
       });
 
       // Append form to main document and submit
@@ -190,7 +186,7 @@ const Checkout = () => {
     } catch (error) {
       console.error("Error initiating eSewa payment:", error);
       const errorMessage =
-        error.response?.data?.message || "Failed to initiate payment";
+        error.response?.data?.message || error.message || "Failed to initiate payment";
       toast.error(errorMessage);
     }
   };
@@ -198,34 +194,33 @@ const Checkout = () => {
   const handleEsewaSuccess = async () => {
     try {
       const token = localStorage.getItem("token");
-      const userId = JSON.parse(localStorage.getItem("user"))._id;
       const orderId = localStorage.getItem("currentOrderId");
-
-      if (!orderId) {
-        throw new Error("Order ID not found");
+      
+      if (!token || !orderId) {
+        throw new Error("Missing authentication or order information");
       }
 
+      // Call the backend to complete the payment
       const response = await axios.post(
         "http://localhost:5001/api/user/esewa/complete",
-        { 
-          userId,
-          orderId,
-          status: "success"
-        },
-        { 
-          headers: { 
-            Authorization: `Bearer ${token}` 
-          } 
-        }
+        { orderId },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
+      // Clear cart and local storage
       await emptyCart();
       localStorage.removeItem("currentOrderId");
-      navigate("/");
-      toast.success("Payment successful!");
+
+      // Show success message
+      toast.success("Payment successful! Your order has been placed.");
+
+      // Navigate to order confirmation
+      navigate(`/order-confirmation?orderId=${orderId}`);
     } catch (error) {
-      console.error("Error processing eSewa payment:", error);
-      toast.error("Error processing eSewa payment");
+      console.error("Error completing payment:", error);
+      const errorMessage = error.response?.data?.message || error.message || "Failed to complete payment";
+      toast.error(errorMessage);
+      navigate("/cart");
     }
   };
 
