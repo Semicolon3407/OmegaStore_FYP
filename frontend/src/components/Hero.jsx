@@ -178,27 +178,6 @@ const Hero = () => {
                               damping: 15,
                             }}
                           />
-                          {[
-                            { icon: "🚀", class: "top-6 sm:top-8 md:top-12 left-6 sm:left-8 md:left-12", size: "text-lg sm:text-xl md:text-2xl" },
-                            { icon: "📸", class: "bottom-8 sm:bottom-12 md:bottom-16 right-6 sm:right-8 md:right-12", size: "text-xl sm:text-2xl md:text-3xl" },
-                            { icon: "⚡", class: "top-1/4 right-8 sm:right-12 md:right-16", size: "text-lg sm:text-xl md:text-2xl" },
-                          ].map((item, index) => (
-                            <motion.div
-                              key={index}
-                              className={`absolute ${item.size} ${item.class} drop-shadow-md`}
-                              initial={{ scale: 0, opacity: 0 }}
-                              animate={{ scale: 1, opacity: 1 }}
-                              transition={{
-                                duration: 0.6,
-                                delay: 1 + index * 0.3,
-                                type: "spring",
-                                stiffness: 100,
-                              }}
-                              whileHover={{ scale: 1.15, rotate: 10 }}
-                            >
-                              {item.icon}
-                            </motion.div>
-                          ))}
                         </div>
                       </motion.div>
                     </div>

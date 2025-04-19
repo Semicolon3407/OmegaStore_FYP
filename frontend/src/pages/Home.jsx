@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Hero from "../components/Hero";
 import Image from "../components/Image";
 import { motion } from "framer-motion";
-import { ChevronRight, ChevronLeft, ShoppingCart, Star, GitCompare, Heart, CheckCircle, Truck, Headphones, DollarSign } from "lucide-react";
+import { ChevronRight, ChevronLeft, ShoppingCart, Star, GitCompare, Heart, CheckCircle, Truck, Headphones, DollarSign, ArrowRight } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Autoplay } from "swiper/modules";
 import "swiper/css";
@@ -143,12 +143,14 @@ const Home = () => {
       <Hero />
 
       {/* Featured Products Section */}
-      <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-white">
+      <section className="py-16 sm:py-20 md:py-24 lg:py-28 bg-white">
         <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <div className="text-center mb-8 sm:mb-10 md:mb-12 lg:mb-16">
+            <div className="text-center mb-10 sm:mb-12 md:mb-16 lg:mb-20">
+              <span className="inline-block px-3 py-1 bg-blue-100 text-blue-900 text-xs font-semibold rounded-full mb-3">Featured Collection</span>
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-blue-900 tracking-tight">Featured Products</h2>
-              <p className="mt-3 sm:mt-4 text-base sm:text-lg text-gray-600 max-w-xl sm:max-w-2xl mx-auto leading-relaxed">
+              <div className="w-20 h-1 bg-blue-900 mx-auto mt-4 rounded-full"></div>
+              <p className="mt-4 sm:mt-5 text-base sm:text-lg text-gray-600 max-w-xl sm:max-w-2xl mx-auto leading-relaxed">
                 Explore our handpicked selection of top-tier technology.
               </p>
             </div>
@@ -166,7 +168,7 @@ const Home = () => {
                   <SwiperSlide key={product._id}>
                     <Link to={`/products/${product._id}`}>
                       <motion.div
-                        className="bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group relative border border-gray-200"
+                        className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group relative border border-gray-200"
                         whileHover={{ y: -6 }}
                       >
                         <div className="absolute top-3 right-3 z-10 flex space-x-1 sm:space-x-2">
@@ -200,12 +202,13 @@ const Home = () => {
                             <GitCompare size={16} sm:size={18} />
                           </button>
                         </div>
-                        <div className="relative h-48 sm:h-56 md:h-64 bg-gray-100 flex items-center justify-center">
+                        <div className="relative h-48 sm:h-56 md:h-64 bg-gray-100 flex items-center justify-center overflow-hidden">
                           <Image
                             src={(typeof product.images[0] === "string" ? product.images[0] : product.images[0]?.url) || "/placeholder.jpg"}
                             alt={product.title}
-                            className="w-full h-full object-contain p-4 sm:p-6 transition-transform duration-300 group-hover:scale-105"
+                            className="w-full h-full object-contain p-4 sm:p-6 transition-transform duration-500 group-hover:scale-110"
                           />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         </div>
                         <div className="p-4 sm:p-6 flex flex-col">
                           <span className="text-xs sm:text-sm text-gray-600 capitalize mb-1 sm:mb-2">{product.category || "Electronics"}</span>
@@ -252,17 +255,25 @@ const Home = () => {
                 <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
               </button>
             </div>
+            
+            <div className="text-center mt-10">
+              <Link to="/products" className="inline-flex items-center text-blue-900 font-medium hover:text-blue-700 transition-colors">
+                View All Products <ArrowRight className="ml-1 w-4 h-4" />
+              </Link>
+            </div>
           </motion.div>
         </div>
       </section>
 
       {/* New Arrivals Section */}
-      <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-gray-100">
+      <section className="py-16 sm:py-20 md:py-24 lg:py-28 bg-gray-100">
         <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}>
-            <div className="text-center mb-8 sm:mb-10 md:mb-12 lg:mb-16">
+            <div className="text-center mb-10 sm:mb-12 md:mb-16 lg:mb-20">
+              <span className="inline-block px-3 py-1 bg-orange-100 text-orange-900 text-xs font-semibold rounded-full mb-3">Latest Products</span>
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-blue-900 tracking-tight">New Arrivals</h2>
-              <p className="mt-3 sm:mt-4 text-base sm:text-lg text-gray-600 max-w-xl sm:max-w-2xl mx-auto leading-relaxed">
+              <div className="w-20 h-1 bg-blue-900 mx-auto mt-4 rounded-full"></div>
+              <p className="mt-4 sm:mt-5 text-base sm:text-lg text-gray-600 max-w-xl sm:max-w-2xl mx-auto leading-relaxed">
                 Check out the latest additions to our collection.
               </p>
             </div>
@@ -280,7 +291,7 @@ const Home = () => {
                   <SwiperSlide key={product._id}>
                     <Link to={`/products/${product._id}`}>
                       <motion.div
-                        className="bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group relative border border-gray-200"
+                        className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group relative border border-gray-200"
                         whileHover={{ y: -6 }}
                       >
                         <div className="absolute top-3 right-3 z-10 flex space-x-1 sm:space-x-2">
@@ -314,13 +325,14 @@ const Home = () => {
                             <GitCompare size={16} sm:size={18} />
                           </button>
                         </div>
-                        <div className="relative h-48 sm:h-56 md:h-64 bg-gray-100 flex items-center justify-center">
+                        <div className="relative h-48 sm:h-56 md:h-64 bg-gray-100 flex items-center justify-center overflow-hidden">
                           <Image
                             src={(typeof product.images[0] === "string" ? product.images[0] : product.images[0]?.url) || "/placeholder.jpg"}
                             alt={product.title}
-                            className="w-full h-full object-contain p-4 sm:p-6 transition-transform duration-300 group-hover:scale-105"
+                            className="w-full h-full object-contain p-4 sm:p-6 transition-transform duration-500 group-hover:scale-110"
                           />
-                          <span className="absolute top-3 left-3 bg-blue-900 text-white text-xs font-semibold px-2 sm:px-3 py-1 rounded-full shadow">NEW</span>
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          <span className="absolute top-3 left-3 bg-orange-500 text-white text-xs font-semibold px-2 sm:px-3 py-1 rounded-full shadow">NEW</span>
                         </div>
                         <div className="p-4 sm:p-6 flex flex-col">
                           <span className="text-xs sm:text-sm text-gray-600 capitalize mb-1 sm:mb-2">{product.category || "Electronics"}</span>
@@ -367,17 +379,25 @@ const Home = () => {
                 <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
               </button>
             </div>
+            
+            <div className="text-center mt-10">
+              <Link to="/products" className="inline-flex items-center text-blue-900 font-medium hover:text-blue-700 transition-colors">
+                View All Products <ArrowRight className="ml-1 w-4 h-4" />
+              </Link>
+            </div>
           </motion.div>
         </div>
       </section>
 
       {/* Your Trusted Brand Section */}
-      <section className="py-10 sm:py-14 md:py-16 lg:py-20 bg-white">
+      <section className="py-16 sm:py-20 md:py-24 lg:py-28 bg-white">
         <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}>
-            <div className="text-center mb-8 sm:mb-10 md:mb-12 lg:mb-16">
+            <div className="text-center mb-10 sm:mb-12 md:mb-16 lg:mb-20">
+              <span className="inline-block px-3 py-1 bg-blue-100 text-blue-900 text-xs font-semibold rounded-full mb-3">Our Partners</span>
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-blue-900 tracking-tight">Your Trusted Brands</h2>
-              <p className="mt-3 sm:mt-4 text-base sm:text-lg text-gray-600 max-w-xl sm:max-w-2xl mx-auto leading-relaxed">
+              <div className="w-20 h-1 bg-blue-900 mx-auto mt-4 rounded-full"></div>
+              <p className="mt-4 sm:mt-5 text-base sm:text-lg text-gray-600 max-w-xl sm:max-w-2xl mx-auto leading-relaxed">
                 We partner with the world's most trusted brands to bring you the best products.
               </p>
             </div>
@@ -392,14 +412,17 @@ const Home = () => {
               >
                 {brandList.map((brand) => (
                   <SwiperSlide key={brand._id} className="flex flex-col items-center justify-center">
-                    <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center border border-gray-200 shadow-md">
+                    <motion.div 
+                      className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-white flex items-center justify-center border border-gray-200 shadow-md hover:shadow-xl transition-all duration-300"
+                      whileHover={{ y: -5, scale: 1.05 }}
+                    >
                       <img
                         src={brand.image ? `${BASE_URL}${brand.image}` : "/placeholder.jpg"}
                         alt={brand.title}
-                        className="object-contain w-full h-full"
+                        className="object-contain w-full h-full p-4"
                       />
-                    </div>
-                    <span className="mt-2 text-sm font-medium text-gray-700">{brand.title}</span>
+                    </motion.div>
+                    <span className="mt-3 text-sm font-medium text-gray-700">{brand.title}</span>
                   </SwiperSlide>
                 ))}
               </Swiper>
@@ -415,12 +438,14 @@ const Home = () => {
       </section>
 
       {/* Why Choose Us Section */}
-      <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-gray-100">
+      <section className="py-16 sm:py-20 md:py-24 lg:py-28 bg-gray-100">
         <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 }}>
-            <div className="text-center mb-8 sm:mb-10 md:mb-12 lg:mb-16">
+            <div className="text-center mb-10 sm:mb-12 md:mb-16 lg:mb-20">
+              <span className="inline-block px-3 py-1 bg-orange-100 text-orange-900 text-xs font-semibold rounded-full mb-3">Why Choose Us</span>
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-blue-900 tracking-tight">Why Choose Us</h2>
-              <p className="mt-3 sm:mt-4 text-base sm:text-lg text-gray-600 max-w-xl sm:max-w-2xl mx-auto leading-relaxed">
+              <div className="w-20 h-1 bg-blue-900 mx-auto mt-4 rounded-full"></div>
+              <p className="mt-4 sm:mt-5 text-base sm:text-lg text-gray-600 max-w-xl sm:max-w-2xl mx-auto leading-relaxed">
                 Discover the reasons why customers trust us for their tech needs.
               </p>
             </div>
@@ -429,13 +454,16 @@ const Home = () => {
               {whyChooseUs.map((feature, index) => (
                 <motion.div
                   key={feature.title}
-                  className="bg-white rounded-lg shadow-md p-6 sm:p-8 text-center border border-gray-200 hover:shadow-xl transition-all duration-300"
+                  className="bg-white rounded-xl shadow-md p-6 sm:p-8 text-center border border-gray-200 hover:shadow-xl transition-all duration-300 relative overflow-hidden group"
                   whileHover={{ y: -6 }}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                 >
-                  <feature.icon className="w-10 h-10 sm:w-12 sm:h-12 text-blue-900 mx-auto mb-4" />
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-900 to-blue-500 transform group-hover:scale-x-110 transition-transform duration-300 origin-left"></div>
+                  <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-200 transition-colors duration-300">
+                    <feature.icon className="w-8 h-8 text-blue-900" />
+                  </div>
                   <h3 className="text-lg sm:text-xl font-semibold text-blue-900 mb-2 sm:mb-3">{feature.title}</h3>
                   <p className="text-sm sm:text-base text-gray-600 leading-relaxed">{feature.description}</p>
                 </motion.div>
@@ -446,25 +474,28 @@ const Home = () => {
       </section>
 
       {/* Call to Action Section */}
-      <section className="bg-blue-900 py-12 sm:py-16 md:py-20 lg:py-24">
-        <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 text-center">
+      <section className="bg-blue-900 py-16 sm:py-20 md:py-24 lg:py-28 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('/assets/images/noise.png')] opacity-5"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.1),transparent_70%)]"></div>
+        <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 text-center relative z-10">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight mb-4 sm:mb-6">
               Elevate Your Tech Experience
             </h2>
-            <p className="text-base sm:text-lg md:text-xl text-gray-200 mb-6 sm:mb-8 max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-3xl mx-auto leading-relaxed">
+            <div className="w-20 h-1 bg-white mx-auto mt-4 rounded-full"></div>
+            <p className="text-base sm:text-lg md:text-xl text-gray-200 mb-8 sm:mb-10 max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-3xl mx-auto leading-relaxed">
               Unlock exclusive deals and cutting-edge gadgets designed to enhance your life.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 md:gap-6">
               <Link
                 to="/products"
-                className="bg-blue-500 text-white font-semibold px-6 sm:px-8 py-2 sm:py-3 rounded-full hover:bg-blue-600 transition-all duration-300 shadow-lg hover:shadow-xl"
+                className="bg-white text-blue-900 font-semibold px-6 sm:px-8 py-3 sm:py-4 rounded-full hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl"
               >
                 Shop Now
               </Link>
               <Link
                 to="/products"
-                className="bg-transparent text-white font-semibold px-6 sm:px-8 py-2 sm:py-3 rounded-full border-2 border-white hover:bg-white hover:text-blue-900 transition-all duration-300 shadow-md"
+                className="bg-transparent text-white font-semibold px-6 sm:px-8 py-3 sm:py-4 rounded-full border-2 border-white hover:bg-white hover:text-blue-900 transition-all duration-300 shadow-md"
               >
                 Explore More
               </Link>
