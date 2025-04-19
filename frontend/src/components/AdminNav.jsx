@@ -36,6 +36,7 @@ const AdminSidebar = () => {
     { title: "Users", path: "/admin/users", icon: <Users size={20} /> },
     { title: "Chat", path: "/admin/chat", icon: <MessageSquare size={20} /> },
     { title: "Hero Banners", path: "/admin/hero-banners", icon: <Image size={20} /> },
+    { title: "Brands", path: "/admin/brands", icon: <Image size={20} /> },
   ];
 
   useEffect(() => {

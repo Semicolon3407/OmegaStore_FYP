@@ -9,6 +9,10 @@ var brandSchema = new mongoose.Schema(
       unique: true,
       index: true,
     },
+    image: {
+      type: String,
+      required: false,
+    },
   },
   {
     timestamps: true,

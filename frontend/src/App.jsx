@@ -18,6 +18,7 @@ import AdminUserManagement from "./pages/admin/AdminUserManagement";
 import AdminChat from "./pages/admin/AdminChat";
 import AdminHeroBanners from "./pages/admin/AdminHeroBanners";
 import AdminCoupons from "./pages/admin/AdminCoupon";
+import AdminBrandsPage from "./pages/AdminBrands";
 import UserChat from "./pages/UserChat";
 import Locations from "./pages/Locations";
 import SignIn from "./pages/SignIn";
@@ -173,6 +174,7 @@ const Layout = () => {
               <Route path="/admin/chat" element={<ProtectedRoute requireAdmin={true}><AdminChat /></ProtectedRoute>} />
               <Route path="/admin/hero-banners" element={<ProtectedRoute requireAdmin={true}><AdminHeroBanners /></ProtectedRoute>} />
               <Route path="/admin/coupons" element={<ProtectedRoute requireAdmin={true}><AdminCoupons /></ProtectedRoute>} />
+              <Route path="/admin/brands" element={<ProtectedRoute requireAdmin={true}><AdminBrandsPage /></ProtectedRoute>} />
 
               {/* Fallback Route */}
               <Route path="*" element={<Navigate to="/" replace />} />

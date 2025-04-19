@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Hero from "../components/Hero";
 import Image from "../components/Image";
 import { motion } from "framer-motion";
-import { ChevronRight, ChevronLeft, ShoppingCart, Star, GitCompare, Heart } from "lucide-react";
+import { ChevronRight, ChevronLeft, ShoppingCart, Star, GitCompare, Heart, CheckCircle, Truck, Headphones, DollarSign } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Autoplay } from "swiper/modules";
 import "swiper/css";
@@ -21,6 +21,7 @@ const Home = () => {
   const [newArrivals, setNewArrivals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [wishlistLoading, setWishlistLoading] = useState({});
+  const [brandList, setBrandList] = useState([]);
 
   const { addToCompare } = useCompare();
   const { wishlistItems, addToWishlist, removeFromWishlist } = useWishlist();
@@ -28,12 +29,27 @@ const Home = () => {
 
   const BASE_URL = "http://localhost:5001";
 
-  const brands = [
-    { name: "Apple", logo: "https://www.apple.com/ac/structured-data/images/knowledge_graph_logo.png" },
-    { name: "Samsung", logo: "https://upload.wikimedia.org/wikipedia/commons/2/24/Samsung_Logo.svg" },
-    { name: "Google", logo: "https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" },
-    { name: "Microsoft", logo: "https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg" },
-    { name: "Sony", logo: "https://upload.wikimedia.org/wikipedia/commons/4/4e/Sony_logo.png" },
+  const whyChooseUs = [
+    {
+      icon: CheckCircle,
+      title: "Premium Quality",
+      description: "We offer only the highest quality products from trusted brands.",
+    },
+    {
+      icon: Truck,
+      title: "Fast Shipping",
+      description: "Enjoy quick and reliable delivery on all orders.",
+    },
+    {
+      icon: Headphones,
+      title: "24/7 Support",
+      description: "Our dedicated team is here to assist you anytime.",
+    },
+    {
+      icon: DollarSign,
+      title: "Competitive Pricing",
+      description: "Get the best value with our unbeatable prices.",
+    },
   ];
 
   useEffect(() => {
@@ -70,6 +86,10 @@ const Home = () => {
       setNewArrivals(sortedByDate.slice(0, 6));
     }
   }, [products]);
+
+  useEffect(() => {
+    axios.get(`${BASE_URL}/api/brand`).then(res => setBrandList(res.data)).catch(() => setBrandList([]));
+  }, []);
 
   const swiperBreakpoints = {
     320: { slidesPerView: 1, spaceBetween: 12 },
@@ -192,7 +212,6 @@ const Home = () => {
                           <h3 className="text-base sm:text-lg font-semibold text-blue-900 line-clamp-2 mb-2 sm:mb-3 group-hover:text-orange-500 transition-colors">
                             {product.title}
                           </h3>
-                          {/* Rating Display */}
                           <div className="flex items-center mb-2 sm:mb-3">
                             {[...Array(5)].map((_, i) => (
                               <Star
@@ -308,7 +327,6 @@ const Home = () => {
                           <h3 className="text-base sm:text-lg font-semibold text-blue-900 line-clamp-2 mb-2 sm:mb-3 group-hover:text-orange-500 transition-colors">
                             {product.title}
                           </h3>
-                          {/* Rating Display */}
                           <div className="flex items-center mb-2 sm:mb-3">
                             {[...Array(5)].map((_, i) => (
                               <Star
@@ -353,38 +371,35 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Trusted Brands Section */}
-      <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-white">
+      {/* Your Trusted Brand Section */}
+      <section className="py-10 sm:py-14 md:py-16 lg:py-20 bg-white">
         <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12">
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 }}>
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}>
             <div className="text-center mb-8 sm:mb-10 md:mb-12 lg:mb-16">
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-blue-900 tracking-tight">Our Trusted Brands</h2>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-blue-900 tracking-tight">Your Trusted Brands</h2>
               <p className="mt-3 sm:mt-4 text-base sm:text-lg text-gray-600 max-w-xl sm:max-w-2xl mx-auto leading-relaxed">
-                Premium quality from industry-leading partners.
+                We partner with the world's most trusted brands to bring you the best products.
               </p>
             </div>
-
             <div className="relative">
               <Swiper
                 modules={[Navigation, Autoplay]}
-                spaceBetween={24}
+                navigation={{ nextEl: ".brands-next", prevEl: ".brands-prev" }}
+                autoplay={{ delay: 2200, disableOnInteraction: false }}
                 loop={true}
-                autoplay={{ delay: 3000, disableOnInteraction: false }}
-                navigation={{ prevEl: ".brands-prev", nextEl: ".brands-next" }}
                 breakpoints={brandBreakpoints}
+                className="brand-swiper"
               >
-                {brands.map((brand) => (
-                  <SwiperSlide key={brand.name}>
-                    <motion.div
-                      className="bg-white rounded-lg shadow-md p-4 sm:p-6 flex items-center justify-center h-24 sm:h-28 md:h-32 border border-gray-200 hover:shadow-xl transition-all duration-300"
-                      whileHover={{ scale: 1.05 }}
-                    >
-                      <Image
-                        src={brand.logo}
-                        alt={brand.name}
-                        className="max-h-10 sm:max-h-12 md:max-h-14 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity duration-300"
+                {brandList.map((brand) => (
+                  <SwiperSlide key={brand._id} className="flex flex-col items-center justify-center">
+                    <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center border border-gray-200 shadow-md">
+                      <img
+                        src={brand.image ? `${BASE_URL}${brand.image}` : "/placeholder.jpg"}
+                        alt={brand.title}
+                        className="object-contain w-full h-full"
                       />
-                    </motion.div>
+                    </div>
+                    <span className="mt-2 text-sm font-medium text-gray-700">{brand.title}</span>
                   </SwiperSlide>
                 ))}
               </Swiper>
@@ -394,6 +409,37 @@ const Home = () => {
               <button className="brands-next hidden sm:flex absolute top-1/2 -right-4 sm:-right-6 -translate-y-1/2 bg-white p-1 sm:p-2 rounded-full shadow-md hover:bg-gray-200 transition-all duration-300 z-10">
                 <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
               </button>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Why Choose Us Section */}
+      <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-gray-100">
+        <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12">
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 }}>
+            <div className="text-center mb-8 sm:mb-10 md:mb-12 lg:mb-16">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-blue-900 tracking-tight">Why Choose Us</h2>
+              <p className="mt-3 sm:mt-4 text-base sm:text-lg text-gray-600 max-w-xl sm:max-w-2xl mx-auto leading-relaxed">
+                Discover the reasons why customers trust us for their tech needs.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+              {whyChooseUs.map((feature, index) => (
+                <motion.div
+                  key={feature.title}
+                  className="bg-white rounded-lg shadow-md p-6 sm:p-8 text-center border border-gray-200 hover:shadow-xl transition-all duration-300"
+                  whileHover={{ y: -6 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                >
+                  <feature.icon className="w-10 h-10 sm:w-12 sm:h-12 text-blue-900 mx-auto mb-4" />
+                  <h3 className="text-lg sm:text-xl font-semibold text-blue-900 mb-2 sm:mb-3">{feature.title}</h3>
+                  <p className="text-sm sm:text-base text-gray-600 leading-relaxed">{feature.description}</p>
+                </motion.div>
+              ))}
             </div>
           </motion.div>
         </div>
