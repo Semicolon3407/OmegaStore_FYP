@@ -76,7 +76,7 @@ const Locations = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="mb-8 sm:mb-12 text-center border-b border-gray-200 pb-4"
+          className="mb-8 sm:mb-12 text-center border-b border-gray-200 pb-4 relative z-10"
         >
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-blue-900 mb-2 sm:mb-3 tracking-tight">
             Our Locations
@@ -89,7 +89,7 @@ const Locations = () => {
         {/* Mobile Layout (Stacked) */}
         <div className="block md:hidden">
           {/* Locations Cards (Mobile) */}
-          <div className="mb-6">
+          <div className="mb-6 relative z-10">
             <div className="grid grid-cols-1 gap-4">
               {locations.map((location, index) => (
                 <motion.div
@@ -127,7 +127,7 @@ const Locations = () => {
           {/* Map (Mobile) */}
           <motion.div
             id="map-section"
-            className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden h-[350px] w-full"
+            className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden h-[350px] w-full relative z-0"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
@@ -152,7 +152,7 @@ const Locations = () => {
                       <h3 className="font-bold text-blue-900 text-sm">{location.name}</h3>
                       <p className="text-xs text-gray-600">{location.address}</p>
                       <a 
-                        href={`https://www.google.com/maps/dir/?api=1&destination=${location.coordinates[0]},${location.coordinates[1]}`}
+                        href={`https://www.openstreetmap.org/?mlat=${location.coordinates[0]}&mlon=${location.coordinates[1]}&zoom=15`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center mt-1 text-xs text-blue-500 hover:text-blue-700"
@@ -174,7 +174,7 @@ const Locations = () => {
         <div className="hidden md:grid md:grid-cols-2 gap-8">
           {/* Map (Desktop) */}
           <motion.div
-            className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden"
+            className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden relative z-0"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
@@ -200,7 +200,7 @@ const Locations = () => {
                         <p className="text-sm text-gray-600">{location.address}</p>
                         <p className="text-sm text-gray-600">{location.phone}</p>
                         <a 
-                          href={`https://www.google.com/maps/dir/?api=1&destination=${location.coordinates[0]},${location.coordinates[1]}`}
+                          href={`https://www.openstreetmap.org/?mlat=${location.coordinates[0]}&mlon=${location.coordinates[1]}&zoom=15`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center mt-2 text-sm text-blue-500 hover:text-blue-700"
@@ -218,7 +218,7 @@ const Locations = () => {
           </motion.div>
 
           {/* Locations Cards (Desktop) */}
-          <div>
+          <div className="relative z-10">
             <div className="space-y-4">
               {locations.map((location, index) => (
                 <motion.div
@@ -247,18 +247,6 @@ const Locations = () => {
                       <Clock className="w-5 h-5 text-blue-900 mr-3 mt-1 flex-shrink-0" />
                       <p className="text-gray-600">{location.hours}</p>
                     </div>
-                  </div>
-                  <div className="mt-4">
-                    <a 
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${location.coordinates[0]},${location.coordinates[1]}`}
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center text-blue-500 hover:text-blue-700"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Navigation size={16} className="mr-1" />
-                      Get Directions
-                    </a>
                   </div>
                 </motion.div>
               ))}
