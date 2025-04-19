@@ -30,9 +30,23 @@ const Compare = () => {
   };
 
   const handleClearCompare = async () => {
-    const success = await clearCompare();
-    if (success) {
-      toast.success('Compare list cleared!');
+    if (!localStorage.getItem('token')) {
+      toast.info('Please login to clear compare list');
+      navigate('/sign-in');
+      return;
+    }
+
+    try {
+      const success = await clearCompare();
+      if (success) {
+        toast.success('Compare list cleared successfully!');
+        // The compareItems state will be automatically updated by the context
+      } else {
+        toast.error('Failed to clear compare list');
+      }
+    } catch (error) {
+      console.error('Error clearing compare list:', error);
+      toast.error('An error occurred while clearing the compare list');
     }
   };
 
@@ -104,9 +118,11 @@ const Compare = () => {
           {compareItems.length > 0 && (
             <button
               onClick={handleClearCompare}
-              className="text-red-600 hover:text-red-800 font-medium transition-colors duration-300 px-4 sm:px-6 py-2 sm:py-3 rounded-full border border-red-600 hover:bg-red-50 text-sm sm:text-base"
+              className="text-red-600 hover:text-red-800 font-medium transition-colors duration-300 px-4 sm:px-6 py-2 sm:py-3 rounded-full border border-red-600 hover:bg-red-50 text-sm sm:text-base flex items-center"
+              disabled={loading}
             >
-              Clear Compare List
+              <Trash2 size={16} className="mr-2" />
+              {loading ? 'Clearing...' : 'Clear Compare List'}
             </button>
           )}
         </motion.div>

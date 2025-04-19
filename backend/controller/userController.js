@@ -933,22 +933,19 @@ const clearCompare = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   validateMongoDbId(_id);
 
-  try {
-    const user = await User.findById(_id);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    user.compare = [];
-    await user.save();
-    res.json({ compare: user.compare, message: "Compare list cleared" });
-  } catch (error) {
-    console.error("ClearCompare Error:", error);
-    res.status(500).json({
-      message: "Server error clearing compare list",
-      error: error.message,
-    });
+  const user = await User.findById(_id);
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
   }
+
+  user.compare = [];
+  await user.save();
+  
+  // No need to populate an empty array
+  res.json({ 
+    compare: [], 
+    message: "Compare list cleared successfully" 
+  });
 });
 
 const applyDiscountCoupon = asyncHandler(async (req, res) => {

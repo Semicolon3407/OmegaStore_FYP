@@ -14,6 +14,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useCompare } from "../Context/compareContext";
 import { useWishlist } from "../Context/wishlistContext";
 import { toast } from "react-toastify";
+import { useCart } from "../Context/cartContext";
 
 const Home = () => {
   const [products, setProducts] = useState([]);
@@ -25,6 +26,7 @@ const Home = () => {
 
   const { addToCompare } = useCompare();
   const { wishlistItems, addToWishlist, removeFromWishlist } = useWishlist();
+  const { addToCart, isInCart } = useCart();
   const navigate = useNavigate();
 
   const BASE_URL = "http://localhost:5001";
@@ -238,7 +240,26 @@ const Home = () => {
                                 <p className="text-xs sm:text-sm text-gray-500 line-through">Rs {product.originalPrice.toLocaleString()}</p>
                               )}
                             </div>
-                            <button className="p-1 sm:p-2 bg-blue-900 text-white rounded-full hover:bg-blue-500 transition-all duration-300 shadow-md">
+                            <button 
+                              onClick={(e) => {
+                                e.preventDefault();
+                                if (!localStorage.getItem("token")) {
+                                  toast.info("Please login to add items to cart");
+                                  navigate("/sign-in");
+                                  return;
+                                }
+                                if (isInCart(product._id)) {
+                                  toast.info("Product is already in your cart");
+                                  return;
+                                }
+                                addToCart(product._id);
+                              }}
+                              className={`p-1 sm:p-2 rounded-full transition-all duration-300 shadow-md ${
+                                isInCart(product._id)
+                                  ? "bg-green-500 text-white hover:bg-green-600"
+                                  : "bg-blue-900 text-white hover:bg-blue-500"
+                              }`}
+                            >
                               <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
                             </button>
                           </div>
@@ -362,7 +383,26 @@ const Home = () => {
                                 <p className="text-xs sm:text-sm text-gray-500 line-through">Rs {product.originalPrice.toLocaleString()}</p>
                               )}
                             </div>
-                            <button className="p-1 sm:p-2 bg-blue-900 text-white rounded-full hover:bg-blue-500 transition-all duration-300 shadow-md">
+                            <button 
+                              onClick={(e) => {
+                                e.preventDefault();
+                                if (!localStorage.getItem("token")) {
+                                  toast.info("Please login to add items to cart");
+                                  navigate("/sign-in");
+                                  return;
+                                }
+                                if (isInCart(product._id)) {
+                                  toast.info("Product is already in your cart");
+                                  return;
+                                }
+                                addToCart(product._id);
+                              }}
+                              className={`p-1 sm:p-2 rounded-full transition-all duration-300 shadow-md ${
+                                isInCart(product._id)
+                                  ? "bg-green-500 text-white hover:bg-green-600"
+                                  : "bg-blue-900 text-white hover:bg-blue-500"
+                              }`}
+                            >
                               <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
                             </button>
                           </div>

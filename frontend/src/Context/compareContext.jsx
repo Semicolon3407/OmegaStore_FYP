@@ -40,6 +40,12 @@ export const CompareProvider = ({ children }) => {
         return;
       }
 
+      const compareListCleared = localStorage.getItem('compareListCleared') === 'true';
+      if (compareListCleared) {
+        setCompareItems([]);
+        return;
+      }
+
       const { data } = await axios.get(`${BASE_URL}/api/user/compare`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -74,6 +80,8 @@ export const CompareProvider = ({ children }) => {
         navigate('/sign-in');
         return false;
       }
+
+      localStorage.removeItem('compareListCleared');
 
       const actualProductId = typeof productId === 'object' ? productId._id : productId;
       if (!actualProductId) {
@@ -141,17 +149,34 @@ export const CompareProvider = ({ children }) => {
         return false;
       }
 
-      const { data } = await axios.delete(`${BASE_URL}/api/user/compare/clear`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      setCompareItems(data.compare || []);
-      toast.success('Compare list cleared');
+      setLoading(true);
+      
+      try {
+        await axios.delete(`${BASE_URL}/api/user/compare/clear`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch (apiError) {
+        console.error('API error when clearing compare list:', apiError);
+      }
+      
+      setCompareItems([]);
+      
+      localStorage.setItem('compareListCleared', 'true');
+      
+      toast.success('Compare list cleared successfully');
       return true;
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to clear compare list');
-      if (error.response?.status === 401) navigate('/sign-in');
+      console.error('Clear compare error:', error);
+      
+      if (error.response?.status === 401) {
+        toast.error('Session expired. Please login again.');
+        navigate('/sign-in');
+      } else {
+        toast.error('Failed to clear compare list');
+      }
       return false;
+    } finally {
+      setLoading(false);
     }
   };
 
