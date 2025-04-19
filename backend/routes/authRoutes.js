@@ -79,12 +79,7 @@ router.get("/get-orders", authMiddleware, getUserOrders);
 router.put("/order/:id", authMiddleware, isAdmin, updateOrder);
 router.delete("/order/:id", authMiddleware, isAdmin, deleteOrder);
 
-// eSewa Routes
-router.post("/esewa/initiate-payment", authMiddleware, initiatePayment);
-router.post("/esewa/complete", authMiddleware, handleEsewaPaymentComplete);
-router.get("/esewa/success", handleSuccess);
-router.get("/esewa/failure", handleFailure);
-router.get("/esewa/status/:transaction_uuid", authMiddleware, checkTransactionStatus);
+
 
 // Wishlist Routes
 router.get("/wishlist", authMiddleware, getWishlist);

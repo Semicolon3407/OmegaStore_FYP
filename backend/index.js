@@ -6,6 +6,7 @@ dotenv.config();
 const dbConnect = require("./config/dbConnect");
 const { notFound, errorHandler } = require("./middlewares/errorHandler");
 const authRouter = require("./routes/authRoutes");
+const esewaRouter = require("./routes/esewaRoutes");
 const productRouter = require("./routes/productRoutes");
 const brandRouter = require("./routes/brandRoutes");
 const couponRouter = require("./routes/couponRoutes");
@@ -76,6 +77,7 @@ app.use("/images", express.static(path.join(__dirname, "public/images")));
 app.use("/uploads", express.static(path.join(__dirname, "Uploads")));
 
 app.use("/api/user", authRouter);
+app.use("/api/monster/esewa", esewaRouter);
 app.use("/api/products", productRouter);
 app.use("/api/brand", brandRouter);
 app.use("/api/coupon", couponRouter);

@@ -6,7 +6,6 @@ import CheckoutProgress from "../components/CheckoutProgress";
 import { useCart } from "../Context/cartContext";
 import axios from "axios";
 import { toast } from "react-toastify";
-import CryptoJS from 'crypto-js';
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -22,15 +21,25 @@ const Checkout = () => {
     phone: "",
   });
   const [error, setError] = useState(null);
+  const [processingPayment, setProcessingPayment] = useState(false);
 
   const couponCode = location.state?.couponCode || null;
 
   useEffect(() => {
     const query = new URLSearchParams(location.search);
     const errorMsg = query.get("error");
+    const success = query.get("success");
+    const orderId = query.get("orderId");
+    
+    // Handle error from URL param
     if (errorMsg) {
       toast.error(errorMsg);
       setError(errorMsg);
+    }
+    
+    // Check if payment was successful
+    if (success === "true" && orderId) {
+      handlePaymentSuccess(orderId);
     }
   }, [location.search]);
 
@@ -40,6 +49,23 @@ const Checkout = () => {
 
   const handlePaymentMethodChange = (method) => {
     setPaymentMethod(method);
+  };
+
+  // Handle successful payment return
+  const handlePaymentSuccess = async (orderId) => {
+    try {
+      // Empty the cart after successful payment
+      await emptyCart();
+      
+      // Show success message
+      toast.success("Payment successful! Your order has been placed.");
+      
+      // Navigate to order confirmation page
+      navigate(`/order/${orderId}`);
+    } catch (error) {
+      console.error("Error processing payment success:", error);
+      toast.error("There was an issue with your payment. Please contact support.");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -61,6 +87,7 @@ const Checkout = () => {
         }
 
         if (paymentMethod === "COD") {
+          setProcessingPayment(true);
           const response = await axios.post(
             "http://localhost:5001/api/user/cart/cash-order",
             {
@@ -77,39 +104,25 @@ const Checkout = () => {
           toast.success("Order placed successfully!");
           navigate("/");
         } else if (paymentMethod === "eSewa") {
-          const response = await axios.post(
-            "http://localhost:5001/api/user/cart/cash-order",
-            {
-              COD: false,
-              couponApplied: !!couponCode,
-              couponCode,
-              shippingInfo: formData,
-              paymentMethod: "eSewa"
-            },
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-
-          if (response.data.orderId) {
-            await handleEsewaPayment(response.data.orderId);
-          }
+          await handleEsewaPayment();
         }
       } catch (error) {
         console.error("Error creating order:", error);
         const errorMessage = error.response?.data?.message || error.message || "Failed to place order";
         toast.error(errorMessage);
+      } finally {
+        setProcessingPayment(false);
       }
     }
   };
 
-  const handleEsewaPayment = async (orderId) => {
+  const handleEsewaPayment = async () => {
     try {
+      setProcessingPayment(true);
       const token = localStorage.getItem("token");
       if (!token) {
         throw new Error("Please log in to place an order");
       }
-
-      // Store orderId for later use
-      localStorage.setItem("currentOrderId", orderId);
 
       // Validate required fields
       const requiredFields = ['name', 'email', 'address', 'city', 'phone'];
@@ -118,17 +131,9 @@ const Checkout = () => {
         throw new Error(`Please fill in all required fields: ${missingFields.join(', ')}`);
       }
 
-      // Show test credentials alert with better formatting
-      toast.info(
-        "🔑 Test eSewa Credentials:\n" +
-        "ID: 9806800001\n" +
-        "Password: Nepal@123",
-        { autoClose: 10000 }
-      );
-
       // Initialize eSewa payment
       const response = await axios.post(
-        "http://localhost:5001/api/user/esewa/initiate-payment",
+        "http://localhost:5001/api/monster/esewa/initiate-payment",
         {
           couponApplied: !!couponCode,
           couponCode,
@@ -143,7 +148,7 @@ const Checkout = () => {
       const form = document.createElement("form");
       form.method = "POST";
       form.action = paymentUrl;
-      form.target = "esewaPopup"; // Set target to popup window
+      form.target = "_blank";
       form.style.display = 'none';
 
       // Add all required eSewa fields
@@ -153,20 +158,6 @@ const Checkout = () => {
         input.name = key;
         input.value = value;
         form.appendChild(input);
-      });
-
-      // Open popup window
-      const popup = window.open("", "esewaPopup", "width=800,height=600");
-      if (!popup) {
-        throw new Error("Please allow popups for this site to process payment");
-      }
-
-      // Add message listener for payment completion
-      window.addEventListener("message", async (event) => {
-        if (event.data.type === "ESEWA_PAYMENT_SUCCESS") {
-          popup.close();
-          await handleEsewaSuccess();
-        }
       });
 
       // Append form to main document and submit
@@ -188,49 +179,10 @@ const Checkout = () => {
       const errorMessage =
         error.response?.data?.message || error.message || "Failed to initiate payment";
       toast.error(errorMessage);
+    } finally {
+      setProcessingPayment(false);
     }
   };
-
-  const handleEsewaSuccess = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const orderId = localStorage.getItem("currentOrderId");
-      
-      if (!token || !orderId) {
-        throw new Error("Missing authentication or order information");
-      }
-
-      // Call the backend to complete the payment
-      const response = await axios.post(
-        "http://localhost:5001/api/user/esewa/complete",
-        { orderId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      // Clear cart and local storage
-      await emptyCart();
-      localStorage.removeItem("currentOrderId");
-
-      // Show success message
-      toast.success("Payment successful! Your order has been placed.");
-
-      // Navigate to order confirmation
-      navigate(`/order-confirmation?orderId=${orderId}`);
-    } catch (error) {
-      console.error("Error completing payment:", error);
-      const errorMessage = error.response?.data?.message || error.message || "Failed to complete payment";
-      toast.error(errorMessage);
-      navigate("/cart");
-    }
-  };
-
-  useEffect(() => {
-    // Check if this is a return from eSewa payment
-    const isEsewaReturn = location.pathname === "/order/success";
-    if (isEsewaReturn) {
-      handleEsewaSuccess();
-    }
-  }, [location.pathname]);
 
   const pageVariants = {
     initial: { opacity: 0, x: "-100%" },
@@ -454,6 +406,7 @@ const Checkout = () => {
               type="button"
               onClick={() => setStep(step - 1)}
               className="bg-gray-300 text-gray-700 px-6 py-3 rounded-md hover:bg-gray-400 transition-colors"
+              disabled={processingPayment}
             >
               Back
             </button>
@@ -463,14 +416,20 @@ const Checkout = () => {
             className="bg-blue-900 text-white px-6 py-3 rounded-md flex items-center hover:bg-blue-800 transition-colors ml-auto"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            disabled={!localStorage.getItem("token")}
+            disabled={!localStorage.getItem("token") || processingPayment}
           >
-            {step < 2
-              ? "Continue"
-              : paymentMethod === "COD"
-              ? "Place Order"
-              : "Proceed to eSewa"}
-            <Lock className="ml-2" size={20} />
+            {processingPayment ? (
+              "Processing..."
+            ) : (
+              <>
+                {step < 2
+                  ? "Continue"
+                  : paymentMethod === "COD"
+                  ? "Place Order"
+                  : "Proceed to eSewa"}
+                <Lock className="ml-2" size={20} />
+              </>
+            )}
           </motion.button>
         </div>
       </motion.form>
