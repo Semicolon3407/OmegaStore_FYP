@@ -212,7 +212,7 @@ const Checkout = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="name" className="block text-gray-700 mb-2">
-                  Full Name
+                  Full Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -220,13 +220,15 @@ const Checkout = () => {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
+                  placeholder="Enter your full name"
                   required
+                  minLength="3"
                   className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-900"
                 />
               </div>
               <div>
                 <label htmlFor="email" className="block text-gray-700 mb-2">
-                  Email
+                  Email <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="email"
@@ -234,13 +236,15 @@ const Checkout = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
+                  placeholder="your.email@example.com"
                   required
+                  pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
                   className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-900"
                 />
               </div>
               <div className="md:col-span-2">
                 <label htmlFor="address" className="block text-gray-700 mb-2">
-                  Address
+                  Delivery Address <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -248,13 +252,15 @@ const Checkout = () => {
                   name="address"
                   value={formData.address}
                   onChange={handleChange}
+                  placeholder="Enter your complete delivery address"
                   required
+                  minLength="5"
                   className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-900"
                 />
               </div>
               <div>
                 <label htmlFor="city" className="block text-gray-700 mb-2">
-                  City
+                  City <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -262,13 +268,15 @@ const Checkout = () => {
                   name="city"
                   value={formData.city}
                   onChange={handleChange}
+                  placeholder="Enter your city"
                   required
+                  minLength="2"
                   className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-900"
                 />
               </div>
               <div>
                 <label htmlFor="phone" className="block text-gray-700 mb-2">
-                  Phone Number
+                  Phone Number <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="tel"
@@ -276,9 +284,13 @@ const Checkout = () => {
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
+                  placeholder="Enter your phone number"
                   required
+                  pattern="[0-9]{10}"
+                  title="Please enter a valid 10-digit phone number"
                   className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-900"
                 />
+                <p className="text-xs text-gray-500 mt-1">Format: 10-digit number without spaces or dashes</p>
               </div>
             </div>
           </motion.div>

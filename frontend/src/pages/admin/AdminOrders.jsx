@@ -39,11 +39,22 @@ const AdminOrders = () => {
       });
       const formattedOrders = response.data.map((order) => ({
         id: order._id,
-        customer: order.orderby?.email || "Unknown",
+        customer: {
+          name: order.orderby ? `${order.orderby.firstname} ${order.orderby.lastname}` : "Unknown",
+          email: order.orderby?.email || "Unknown"
+        },
         total: order.paymentIntent.amount,
         status: order.orderStatus,
         date: new Date(order.createdAt).toLocaleDateString(),
         coupon: order.coupon ? order.coupon.name : "None",
+        paymentMethod: order.paymentIntent.method || "Not specified",
+        transactionCode: order.paymentIntent.transactionCode || "N/A",
+        products: order.products?.map(product => ({
+          title: product.product?.title || "Unknown Product",
+          price: product.price || 0,
+          quantity: product.count || 0,
+          image: product.product?.images?.[0]?.url || ""
+        })) || [],
         shippingInfo: order.shippingInfo || {
           name: "",
           email: "",
@@ -197,9 +208,12 @@ const AdminOrders = () => {
             <thead className="bg-gray-100">
               <tr>
                 <th className="px-4 py-3 text-gray-700 font-medium">Order ID</th>
-                <th className="px-4 py-3 text-gray-700 font-medium">Customer Email</th>
+                <th className="px-4 py-3 text-gray-700 font-medium">Customer Info</th>
+                <th className="px-4 py-3 text-gray-700 font-medium">Products</th>
                 <th className="px-4 py-3 text-gray-700 font-medium">Total</th>
                 <th className="px-4 py-3 text-gray-700 font-medium">Status</th>
+                <th className="px-4 py-3 text-gray-700 font-medium">Payment Method</th>
+                <th className="px-4 py-3 text-gray-700 font-medium">Transaction Code</th>
                 <th className="px-4 py-3 text-gray-700 font-medium">Date</th>
                 <th className="px-4 py-3 text-gray-700 font-medium">Coupon</th>
                 <th className="px-4 py-3 text-gray-700 font-medium">Shipping Info</th>
@@ -218,7 +232,43 @@ const AdminOrders = () => {
                     className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50"
                   >
                     <td className="px-4 py-3 text-gray-800">{order.id.slice(-6)}</td>
-                    <td className="px-4 py-3 text-gray-800">{order.customer}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-col">
+                        <span className="font-medium text-gray-900">{order.customer.name}</span>
+                        <span className="text-sm text-gray-500">{order.customer.email}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-col gap-2">
+                        {order.products && order.products.length > 0 ? (
+                          order.products.map((product, index) => (
+                            <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                              {product.image && (
+                                <img 
+                                  src={product.image} 
+                                  alt={product.title}
+                                  className="w-12 h-12 object-cover rounded"
+                                  onError={(e) => {
+                                    e.target.src = "https://via.placeholder.com/48";
+                                    e.target.onerror = null;
+                                  }}
+                                />
+                              )}
+                              <div className="flex-1">
+                                <p className="text-sm font-semibold text-gray-900">{product.title}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="text-xs text-gray-600">Price: Rs {product.price.toLocaleString()}</span>
+                                  <span className="text-xs text-gray-600">×</span>
+                                  <span className="text-xs text-gray-600">Qty: {product.quantity}</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-sm text-gray-500">No products found</p>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-4 py-3 text-gray-800">Rs {order.total.toLocaleString()}</td>
                     <td className="px-4 py-3">
                       <span
@@ -242,6 +292,26 @@ const AdminOrders = () => {
                       >
                         {order.status}
                       </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          order.paymentMethod === "eSewa"
+                            ? "bg-teal-100 text-teal-700"
+                            : order.paymentMethod === "Cash on Delivery"
+                            ? "bg-orange-100 text-orange-700"
+                            : "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        {order.paymentMethod}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-800">
+                      {order.paymentMethod === "eSewa" ? (
+                        <span className="font-mono text-sm">{order.transactionCode}</span>
+                      ) : (
+                        "N/A"
+                      )}
                     </td>
                     <td className="px-4 py-3 text-gray-800">{order.date}</td>
                     <td className="px-4 py-3 text-gray-800">{order.coupon}</td>

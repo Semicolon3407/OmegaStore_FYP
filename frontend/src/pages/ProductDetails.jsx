@@ -125,7 +125,7 @@ const ProductDetails = () => {
     fetchProductDetails();
   }, [fetchProductDetails]);
 
-  const handleAddToCart = async (productId = null, qty = null) => {
+  const handleAddToCart = async (productId = null) => {
     const token = localStorage.getItem('token');
     if (!token) {
       toast.info('Please sign in to add products to cart');
@@ -133,18 +133,17 @@ const ProductDetails = () => {
       return;
     }
 
-    // Use provided productId and quantity or default to current product
+    // Use provided productId or default to current product
     const targetProductId = productId || product._id;
-    const targetQuantity = qty || quantity;
 
     if (isInCart(targetProductId)) {
       toast.info('This product is already in your cart');
       return;
     }
 
-    const success = await addToCart(targetProductId, targetQuantity);
+    const success = await addToCart(targetProductId);
     if (success) {
-      toast.success(`Added ${targetQuantity} item${targetQuantity > 1 ? 's' : ''} to cart!`);
+      toast.success('Product added to cart!');
     } else {
       toast.error('Failed to add to cart');
     }
@@ -176,8 +175,7 @@ const ProductDetails = () => {
     }
   };
 
-  const handleReviewSubmit = async (e) => {
-    e.preventDefault();
+  const handleReviewSubmit = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
       toast.info('Please sign in to submit a review');
@@ -362,31 +360,8 @@ const ProductDetails = () => {
                 )}
               </div>
 
-              {product.quantity > 0 && (
-                <div className="flex items-center mb-4 sm:mb-6">
-                  <span className="mr-3 sm:mr-4 font-medium text-blue-900 text-sm sm:text-base">Quantity:</span>
-                  <div className="flex border border-gray-200 rounded-full overflow-hidden bg-gray-100">
-                    <button
-                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                      className="w-10 sm:w-12 h-10 sm:h-12 flex items-center justify-center text-blue-900 hover:bg-gray-200 transition-colors duration-300"
-                    >
-                      -
-                    </button>
-                    <span className="w-10 sm:w-12 h-10 sm:h-12 flex items-center justify-center text-blue-900 font-medium text-sm sm:text-base">
-                      {quantity}
-                    </span>
-                    <button
-                      onClick={() => setQuantity((q) => Math.min(product.quantity, q + 1))}
-                      className="w-10 sm:w-12 h-10 sm:h-12 flex items-center justify-center text-blue-900 hover:bg-gray-200 transition-colors duration-300"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-              )}
-
               <button
-                onClick={handleAddToCart}
+                onClick={() => handleAddToCart()}
                 disabled={product.quantity <= 0}
                 className={`w-full flex items-center justify-center space-x-2 py-2 sm:py-3 px-4 sm:px-6 rounded-full text-sm sm:text-base font-medium transition-all duration-300 ${
                   product.quantity <= 0
@@ -483,7 +458,7 @@ const ProductDetails = () => {
                 {showReviewForm ? 'Cancel' : 'Write a Review'}
               </button>
               {showReviewForm && (
-                <form onSubmit={handleReviewSubmit} className="mt-4 sm:mt-6 space-y-3 sm:space-y-4">
+                <div className="mt-4 sm:mt-6 space-y-3 sm:space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-blue-900 mb-1 sm:mb-2">Rating</label>
                     <div className="flex space-x-1">
@@ -510,13 +485,13 @@ const ProductDetails = () => {
                     />
                   </div>
                   <button
-                    type="submit"
+                    onClick={handleReviewSubmit}
                     disabled={rating === 0 || reviewLoading}
                     className="bg-blue-900 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full hover:bg-blue-800 transition-all duration-300 shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed text-sm sm:text-base"
                   >
                     {reviewLoading ? 'Submitting...' : 'Submit Review'}
                   </button>
-                </form>
+                </div>
               )}
             </FilterSection>
 
@@ -613,11 +588,24 @@ const ProductDetails = () => {
                           )}
                         </Link>
                         <button
-                          onClick={() => handleAddToCart(accessory._id, 1)}
-                          className="mt-2 w-full bg-blue-900 text-white py-1.5 rounded-lg hover:bg-blue-800 transition-colors duration-300 flex items-center justify-center text-sm"
+                          onClick={() => handleAddToCart(accessory._id)}
+                          disabled={accessory.quantity <= 0}
+                          className={`mt-2 w-full flex items-center justify-center space-x-2 py-1.5 rounded-lg text-sm font-medium transition-all duration-300 ${
+                            accessory.quantity <= 0
+                              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                              : isInCart(accessory._id)
+                              ? 'bg-green-500 text-white hover:bg-green-600'
+                              : 'bg-blue-900 text-white hover:bg-blue-800'
+                          }`}
                         >
                           <ShoppingCart size={16} className="mr-1" />
-                          Add to Cart
+                          <span>
+                            {accessory.quantity <= 0
+                              ? 'Out of Stock'
+                              : isInCart(accessory._id)
+                              ? 'In Cart'
+                              : 'Add to Cart'}
+                          </span>
                         </button>
                       </motion.div>
                     );

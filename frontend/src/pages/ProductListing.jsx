@@ -417,7 +417,22 @@ const ProductListing = () => {
                     type="number"
                     placeholder={`${priceRange.min}`}
                     value={minPrice}
-                    onChange={(e) => setMinPrice(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setMinPrice(value);
+                      // Debounce the search to avoid too many API calls
+                      const timeoutId = setTimeout(() => {
+                        if (value && !isNaN(value)) {
+                          fetchProducts();
+                        }
+                      }, 500);
+                      return () => clearTimeout(timeoutId);
+                    }}
+                    onBlur={() => {
+                      if (minPrice && !isNaN(minPrice)) {
+                        fetchProducts();
+                      }
+                    }}
                     min={priceRange.min}
                     max={priceRange.max}
                     className="w-full p-2 sm:p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100 text-blue-900 text-sm"
@@ -429,11 +444,38 @@ const ProductListing = () => {
                     type="number"
                     placeholder={`${priceRange.max}`}
                     value={maxPrice}
-                    onChange={(e) => setMaxPrice(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setMaxPrice(value);
+                      // Debounce the search to avoid too many API calls
+                      const timeoutId = setTimeout(() => {
+                        if (value && !isNaN(value)) {
+                          fetchProducts();
+                        }
+                      }, 500);
+                      return () => clearTimeout(timeoutId);
+                    }}
+                    onBlur={() => {
+                      if (maxPrice && !isNaN(maxPrice)) {
+                        fetchProducts();
+                      }
+                    }}
                     min={priceRange.min}
                     max={priceRange.max}
                     className="w-full p-2 sm:p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100 text-blue-900 text-sm"
                   />
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => {
+                      if ((minPrice && !isNaN(minPrice)) || (maxPrice && !isNaN(maxPrice))) {
+                        fetchProducts();
+                      }
+                    }}
+                    className="bg-blue-900 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-800 transition-colors"
+                  >
+                    Apply Price Filter
+                  </button>
                 </div>
               </div>
             </FilterSection>
