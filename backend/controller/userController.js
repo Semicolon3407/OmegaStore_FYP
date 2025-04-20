@@ -714,8 +714,8 @@ const createOrder = asyncHandler(async (req, res) => {
 
     res.json({
       message: "Order placed successfully",
-      orderId: newOrder._id,
-      redirect: '/'
+      order: newOrder,
+      success: true
     });
   } else {
     // For eSewa, create order but don't update stock yet

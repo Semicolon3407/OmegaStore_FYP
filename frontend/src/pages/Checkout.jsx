@@ -54,17 +54,22 @@ const Checkout = () => {
   // Handle successful payment return
   const handlePaymentSuccess = async (orderId) => {
     try {
+      if (!orderId) {
+        throw new Error("No order ID provided");
+      }
+      
       // Empty the cart after successful payment
       await emptyCart();
       
       // Show success message
       toast.success("Payment successful! Your order has been placed.");
       
-      // Navigate to order confirmation page
-      navigate(`/order/${orderId}`);
+      // Navigate to order confirmation page with the order ID
+      navigate(`/order?orderId=${orderId}`);
     } catch (error) {
       console.error("Error processing payment success:", error);
       toast.error("There was an issue with your payment. Please contact support.");
+      navigate("/");
     }
   };
 
@@ -100,9 +105,13 @@ const Checkout = () => {
             { headers: { Authorization: `Bearer ${token}` } }
           );
 
-          await emptyCart();
-          toast.success("Order placed successfully!");
-          navigate("/");
+          if (response.data && response.data.order && response.data.order._id) {
+            await emptyCart();
+            toast.success("Order placed successfully!");
+            navigate(`/order?orderId=${response.data.order._id}`);
+          } else {
+            throw new Error("Invalid order response from server");
+          }
         } else if (paymentMethod === "eSewa") {
           await handleEsewaPayment();
         }
