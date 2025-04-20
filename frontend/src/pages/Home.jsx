@@ -453,8 +453,13 @@ const Home = () => {
                 {brandList.map((brand) => (
                   <SwiperSlide key={brand._id} className="flex flex-col items-center justify-center">
                     <motion.div 
-                      className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-white flex items-center justify-center border border-gray-200 shadow-md hover:shadow-xl transition-all duration-300"
+                      className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-white flex items-center justify-center border border-gray-200 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"
                       whileHover={{ y: -5, scale: 1.05 }}
+                      onClick={() => {
+                        const params = new URLSearchParams();
+                        params.append('brand', brand.title);
+                        navigate(`/products?${params.toString()}`);
+                      }}
                     >
                       <img
                         src={brand.image ? `${BASE_URL}${brand.image}` : "/placeholder.jpg"}
@@ -462,7 +467,16 @@ const Home = () => {
                         className="object-contain w-full h-full p-4"
                       />
                     </motion.div>
-                    <span className="mt-3 text-sm font-medium text-gray-700">{brand.title}</span>
+                    <span 
+                      className="mt-3 text-sm font-medium text-gray-700 cursor-pointer hover:text-blue-900 transition-colors"
+                      onClick={() => {
+                        const params = new URLSearchParams();
+                        params.append('brand', brand.title);
+                        navigate(`/products?${params.toString()}`);
+                      }}
+                    >
+                      {brand.title}
+                    </span>
                   </SwiperSlide>
                 ))}
               </Swiper>

@@ -106,26 +106,27 @@ const Header = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (!searchQuery.trim()) return;
-    
-    const searchParams = new URLSearchParams();
-    searchParams.append("search", searchQuery.trim());
-    if (searchCategory !== "All Categories") {
-      searchParams.append("category", searchCategory);
-    }
-    navigate(`/products?${searchParams.toString()}`);
-    setSearchQuery("");
-    setIsMenuOpen(false);
+    const params = new URLSearchParams();
+    if (searchQuery) params.append('search', searchQuery);
+    if (searchCategory !== 'All Categories') params.append('category', searchCategory);
+    navigate(`/products?${params.toString()}`);
+  };
+
+  const handleCategorySelect = (category) => {
+    setSearchCategory(category);
+    const params = new URLSearchParams();
+    if (searchQuery) params.append('search', searchQuery);
+    if (category !== 'All Categories') params.append('category', category);
+    navigate(`/products?${params.toString()}`);
   };
 
   const handleBrandClick = (brand, category) => {
-    const searchParams = new URLSearchParams();
-    searchParams.append("brand", brand);
-    searchParams.append("category", category);
-    navigate(`/products?${searchParams.toString()}`);
-    setSearchCategory(category);
+    const params = new URLSearchParams();
+    if (searchQuery) params.append('search', searchQuery);
+    params.append('category', category);
+    params.append('brand', brand);
+    navigate(`/products?${params.toString()}`);
     setIsDropdownOpen(false);
-    setIsMenuOpen(false);
   };
 
   const toggleDropdown = (e) => {
@@ -204,7 +205,7 @@ const Header = () => {
               <select
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-transparent text-blue-900 focus:outline-none pr-8 appearance-none"
                 value={searchCategory}
-                onChange={(e) => setSearchCategory(e.target.value)}
+                onChange={(e) => handleCategorySelect(e.target.value)}
               >
                 {["All Categories", ...categories].map((cat) => (
                   <option key={cat} value={cat}>
