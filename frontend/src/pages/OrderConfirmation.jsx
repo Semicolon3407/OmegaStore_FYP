@@ -50,7 +50,7 @@ const OrderConfirmation = () => {
       }
     };
 
-    fetchOrder();
+      fetchOrder();
   }, [orderId]);
 
   if (loading) {
@@ -164,18 +164,18 @@ const OrderConfirmation = () => {
                     <p className="text-sm text-gray-500">Quantity: {item.count}</p>
                   </div>
                   <p className="font-medium">NPR {item.price * item.count}</p>
-                </div>
-              ))}
-            </div>
+          </div>
+        ))}
+      </div>
           </div>
 
           <div className="mt-8 flex flex-col sm:flex-row gap-4">
-            <button
-              onClick={() => navigate("/")}
+      <button
+        onClick={() => navigate("/")}
               className="flex-1 bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              Continue Shopping
-            </button>
+      >
+        Continue Shopping
+      </button>
             {order.trackingNumber && (
               <Link
                 to={`/track-order/${order.trackingNumber}`}

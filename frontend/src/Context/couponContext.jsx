@@ -12,10 +12,11 @@ export const CouponProvider = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // List of unauthenticated routes where toast and navigation should be suppressed
   const unauthenticatedRoutes = ["/sign-in", "/forgot-password", "/account/create", "/reset-password"];
+  const publicRoutes = [...unauthenticatedRoutes, "/coupons"]; // Add public routes here
 
   const fetchCoupons = useCallback(async () => {
+    console.log('fetchCoupons called', { pathname: location.pathname, token: localStorage.getItem('token'), userId: localStorage.getItem('userId') });
     try {
       setCouponLoading(true);
       setCouponError(null);
@@ -24,8 +25,7 @@ export const CouponProvider = ({ children }) => {
 
       if (!token || !userId) {
         setCoupons([]);
-        // Suppress toast and navigation on unauthenticated routes
-        if (!unauthenticatedRoutes.includes(location.pathname)) {
+        if (!publicRoutes.includes(location.pathname)) {
           toast.info('Please login to view your coupons');
           navigate('/sign-in');
         }
@@ -36,7 +36,6 @@ export const CouponProvider = ({ children }) => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // Filter coupons: either user-specific (coupon.user._id matches userId) or general (coupon.user is null), and not expired
       const validCoupons = data.filter(
         (coupon) =>
           (coupon.user?._id === userId || coupon.user === null) &&
@@ -47,8 +46,7 @@ export const CouponProvider = ({ children }) => {
       const errorMsg = error.response?.data?.message || 'Failed to fetch coupons';
       setCouponError(errorMsg);
       if (error.response?.status === 401) {
-        // Suppress toast and navigation on unauthenticated routes for 401 errors
-        if (!unauthenticatedRoutes.includes(location.pathname)) {
+        if (!publicRoutes.includes(location.pathname)) {
           toast.info('Session expired, please login');
           navigate('/sign-in');
         }
@@ -56,16 +54,26 @@ export const CouponProvider = ({ children }) => {
     } finally {
       setCouponLoading(false);
     }
-  }, [navigate, location.pathname]); // Add location.pathname as a dependency
+  }, [navigate, location.pathname]);
 
   useEffect(() => {
-    fetchCoupons();
+    const token = localStorage.getItem('token');
+    const userId = localStorage.getItem('userId');
+    if (token && userId) {
+      fetchCoupons();
+    } else {
+      setCoupons([]);
+    }
 
-    const handleAuthChange = () => {
-      if (!localStorage.getItem('token') || !localStorage.getItem('userId')) {
-        setCoupons([]);
-      } else {
-        fetchCoupons();
+    const handleAuthChange = (event) => {
+      if (event.key === 'token' || event.key === 'userId') {
+        const newToken = localStorage.getItem('token');
+        const newUserId = localStorage.getItem('userId');
+        if (!newToken || !newUserId) {
+          setCoupons([]);
+        } else {
+          fetchCoupons();
+        }
       }
     };
 
