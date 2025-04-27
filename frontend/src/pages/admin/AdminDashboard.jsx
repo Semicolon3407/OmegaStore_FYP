@@ -16,6 +16,13 @@ import {
   Image,
   Percent,
   ChevronRight,
+  Lock,
+  Unlock,
+  UserCheck,
+  CreditCard,
+  Truck,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import {
   BarChart,
@@ -30,82 +37,166 @@ import {
   PieChart as RePieChart,
   Pie,
   Cell,
+  Legend,
 } from "recharts";
 import axios from "axios";
 import AdminSidebar from "../../components/AdminNav";
+import { toast } from "react-toastify";
 
 const AdminDashboard = () => {
-  const [totalProducts, setTotalProducts] = useState(0);
-  const [totalSaleProducts, setTotalSaleProducts] = useState(0);
-  const [totalUsers, setTotalUsers] = useState(0);
-  const [totalOrders, setTotalOrders] = useState(0);
-  const [unreadMessages, setUnreadMessages] = useState(0);
-  const [revenue, setRevenue] = useState({
-    today: 0,
-    week: 0,
-    month: 0,
-    year: 0,
+  const [stats, setStats] = useState({
+    totalProducts: 0,
+    totalSaleProducts: 0,
+    totalUsers: 0,
+    activeUsers: 0,
+    blockedUsers: 0,
+    totalOrders: 0,
+    pendingOrders: 0,
+    deliveredOrders: 0,
+    cancelledOrders: 0,
+    unreadMessages: 0,
+    totalRevenue: 0,
+    esewaRevenue: 0,
+    codRevenue: 0,
+    recentOrders: [],
+    userGrowth: [],
+    orderStatusData: [],
+    paymentMethodData: [],
   });
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const API_PRODUCTS_URL = "http://localhost:5001/api/products";
-  const API_SALE_PRODUCTS_URL = "http://localhost:5001/api/sale-products";
-  const API_USERS_URL = "http://localhost:5001/api/user/all-users";
-  const API_CHAT_URL = "http://localhost:5001/api/chat/unread-count";
-  const API_ORDERS_URL = "http://localhost:5001/api/orders";
-  const API_REVENUE_URL = "http://localhost:5001/api/revenue";
+  const API_BASE_URL = "http://localhost:5001/api";
+  const API_PRODUCTS_URL = `${API_BASE_URL}/products`;
+  const API_SALE_PRODUCTS_URL = `${API_BASE_URL}/sale-products`;
+  const API_USERS_URL = `${API_BASE_URL}/user/all-users`;
+  const API_CHAT_URL = `${API_BASE_URL}/chat/unread-count`;
+  const API_ORDERS_URL = `${API_BASE_URL}/orders`;
+  const API_REVENUE_URL = `${API_BASE_URL}/revenue`;
+
+  const getAuthConfig = () => ({
+    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+  });
 
   const fetchStats = async () => {
     try {
       setLoading(true);
 
-      const productsResponse = await axios.get(API_PRODUCTS_URL);
-      setTotalProducts(productsResponse.data.products.length);
+      // Fetch all data in parallel
+      const [
+        productsRes,
+        saleProductsRes,
+        usersRes,
+        chatRes,
+        ordersRes,
+        revenueRes,
+      ] = await Promise.all([
+        axios.get(API_PRODUCTS_URL),
+        axios.get(API_SALE_PRODUCTS_URL),
+        axios.get(API_USERS_URL, getAuthConfig()),
+        axios.get(API_CHAT_URL, getAuthConfig()),
+        axios.get(API_ORDERS_URL, getAuthConfig()),
+        axios.get(`${API_REVENUE_URL}/all`, getAuthConfig()),
+      ]);
 
-      const saleProductsResponse = await axios.get(API_SALE_PRODUCTS_URL);
-      setTotalSaleProducts(saleProductsResponse.data.saleProducts.length);
+      // Process users data
+      const users = usersRes.data || [];
+      const activeUsers = users.filter(user => !user.isBlocked).length;
+      const blockedUsers = users.filter(user => user.isBlocked).length;
 
-      const usersResponse = await axios.get(API_USERS_URL, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      setTotalUsers(usersResponse.data.length);
+      // Process orders data
+      const orders = ordersRes.data.orders || [];
+      const pendingOrders = orders.filter(order => order.orderStatus === "Processing").length;
+      const deliveredOrders = orders.filter(order => order.orderStatus === "Delivered").length;
+      const cancelledOrders = orders.filter(order => order.orderStatus === "Cancelled").length;
 
-      const chatResponse = await axios.get(API_CHAT_URL, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      setUnreadMessages(chatResponse.data.count || 0);
+      // Get recent 5 orders
+      const recentOrders = orders
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 5)
+        .map(order => ({
+          id: order._id,
+          customer: order.orderby ? `${order.orderby.firstname} ${order.orderby.lastname}` : "Unknown",
+          amount: order.paymentIntent.amount,
+          status: order.orderStatus,
+          date: new Date(order.createdAt).toLocaleDateString(),
+          paymentMethod: order.paymentIntent.method || "Unknown",
+        }));
 
-      // Fetch total orders
-      const ordersResponse = await axios.get(API_ORDERS_URL, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      setTotalOrders(ordersResponse.data.orders.length || 0);
+      // Prepare order status data for chart
+      const orderStatusData = [
+        { name: "Processing", value: pendingOrders, color: "#0088FE" },
+        { name: "Delivered", value: deliveredOrders, color: "#00C49F" },
+        { name: "Cancelled", value: cancelledOrders, color: "#FF8042" },
+      ];
 
-      // Fetch revenue stats
-      const revenueResponse = await axios.get(API_REVENUE_URL, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      
-      setRevenue({
-        today: revenueResponse.data.today || 0,
-        week: revenueResponse.data.week || 0,
-        month: revenueResponse.data.month || 0,
-        year: revenueResponse.data.year || 0,
+      // Prepare payment method data for chart
+      const paymentMethods = orders.reduce((acc, order) => {
+        const method = order.paymentIntent.method || "Unknown";
+        acc[method] = (acc[method] || 0) + 1;
+        return acc;
+      }, {});
+
+      const paymentMethodData = Object.entries(paymentMethods).map(([name, value]) => ({
+        name,
+        value,
+        color: name === "eSewa" ? "#00C49F" : name === "Cash on Delivery" ? "#FFBB28" : "#0088FE",
+      }));
+
+      // Calculate user growth (last 6 months)
+      const userGrowth = calculateUserGrowth(users);
+
+      setStats({
+        totalProducts: productsRes.data.products.length,
+        totalSaleProducts: saleProductsRes.data.saleProducts.length,
+        totalUsers: users.length,
+        activeUsers,
+        blockedUsers,
+        totalOrders: orders.length,
+        pendingOrders,
+        deliveredOrders,
+        cancelledOrders,
+        unreadMessages: chatRes.data.count || 0,
+        totalRevenue: revenueRes.data.total || 0,
+        esewaRevenue: revenueRes.data.esewa || 0,
+        codRevenue: revenueRes.data.cod || 0,
+        recentOrders,
+        userGrowth,
+        orderStatusData,
+        paymentMethodData,
       });
     } catch (error) {
       console.error("Failed to fetch stats:", error);
+      toast.error(error.response?.data?.message || "Failed to load dashboard data");
+      if (error.response?.status === 401) {
+        navigate("/sign-in");
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function to calculate user growth over last 6 months
+  const calculateUserGrowth = (users) => {
+    const months = [];
+    const now = new Date();
+    
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthName = date.toLocaleString('default', { month: 'short' });
+      const monthUsers = users.filter(user => {
+        const userDate = new Date(user.createdAt);
+        return userDate.getFullYear() === date.getFullYear() && 
+               userDate.getMonth() === date.getMonth();
+      }).length;
+      
+      months.push({
+        name: monthName,
+        users: monthUsers,
+      });
+    }
+    
+    return months;
   };
 
   useEffect(() => {
@@ -119,245 +210,185 @@ const AdminDashboard = () => {
     }
   }, [navigate]);
 
-  // Weekly visitor traffic data
-  const visitorData = [
-    { name: "Mon", visits: 1000 },
-    { name: "Tue", visits: 1200 },
-    { name: "Wed", visits: 1500 },
-    { name: "Thu", visits: 1300 },
-    { name: "Fri", visits: 1400 },
-    { name: "Sat", visits: 1800 },
-    { name: "Sun", visits: 1600 },
-  ];
-
-  // Traffic sources data
-  const trafficSourceData = [
-    { name: "Direct", value: 400 },
-    { name: "Organic Search", value: 300 },
-    { name: "Paid Search", value: 200 },
-    { name: "Social Media", value: 100 },
-  ];
-
-  // Monthly revenue data
-  const monthlyRevenue = [
-    { name: "Jan", revenue: 30000 },
-    { name: "Feb", revenue: 35000 },
-    { name: "Mar", revenue: 40000 },
-    { name: "Apr", revenue: 38000 },
-    { name: "May", revenue: 42000 },
-    { name: "Jun", revenue: 45000 },
-    { name: "Jul", revenue: 50000 },
-    { name: "Aug", revenue: 48000 },
-    { name: "Sep", revenue: 52000 },
-    { name: "Oct", revenue: 55000 },
-    { name: "Nov", revenue: 58000 },
-    { name: "Dec", revenue: 62000 },
-  ];
+  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"];
 
   const quickLinks = [
     { title: "Manage Products", icon: Package, link: "/admin/products" },
     { title: "Manage Sale Products", icon: Tag, link: "/admin/sale-products" },
     { title: "Manage Orders", icon: ShoppingCart, link: "/admin/orders" },
-    { title: "Manage Coupons", icon: Percent, link: "/admin/coupons" },
     { title: "User Management", icon: Users, link: "/admin/users" },
-    { title: "Analytics & Revenue", icon: BarChart2, link: "/admin/analytics-revenue" },
-    {
-      title: "Chat Support",
-      icon: MessageSquare,
-      link: "/admin/chat",
-      badge: unreadMessages > 0 ? unreadMessages : null,
-    },
-    { title: "Manage Hero Banners", icon: Image, link: "/admin/hero-banners" },
+    { title: "Chat Support", icon: MessageSquare, link: "/admin/chat", badge: stats.unreadMessages },
+    { title: "Analytics", icon: BarChart2, link: "/admin/analytics" },
   ];
 
-  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
+  const renderStatusBadge = (status) => {
+    const statusClasses = {
+      Processing: "bg-blue-100 text-blue-800",
+      Delivered: "bg-green-100 text-green-800",
+      Cancelled: "bg-red-100 text-red-800",
+      default: "bg-gray-100 text-gray-800",
+    };
+
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusClasses[status] || statusClasses.default}`}>
+        {status}
+      </span>
+    );
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-100">
       <AdminSidebar />
-      <div className="flex-1 p-4 md:p-6">
-        <h1 className="text-3xl font-bold mb-6 text-blue-900">Analytics & Revenue Dashboard</h1>
+      <div className="flex-1 p-4 md:p-6 overflow-auto">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <h1 className="text-3xl font-bold mb-2 text-gray-900">Admin Dashboard</h1>
+          <p className="text-gray-600 mb-6">Overview of your e-commerce platform</p>
+        </motion.div>
 
         {loading ? (
-          <div className="text-center text-gray-500">
-            <svg
-              className="animate-spin h-8 w-8 text-blue-600 mx-auto mb-2"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
-            Loading stats...
-          </div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center justify-center h-64"
+          >
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading dashboard data...</p>
+            </div>
+          </motion.div>
         ) : (
           <>
-            {/* Top Row - Key Metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
-            
-
-              {/* Total Users */}
-              <motion.div
-                className="bg-white rounded-lg shadow-md p-4 md:p-6 hover:shadow-lg transition-shadow duration-300"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              >
-                <div className="flex items-center mb-2">
-                  <Users className="text-blue-600 mr-2" size={24} />
-                  <h2 className="text-lg font-semibold text-gray-700">Total Users</h2>
-                </div>
-                <p className="text-2xl font-bold text-gray-800">{totalUsers.toLocaleString()}</p>
-                <div className="flex items-center mt-2 text-green-500">
-                  <TrendingUp size={20} />
-                  <span className="ml-1">5% Increase</span>
-                </div>
-              </motion.div>
-
-              {/* Total Orders */}
-              <motion.div
-                className="bg-white rounded-lg shadow-md p-4 md:p-6 hover:shadow-lg transition-shadow duration-300"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-              >
-                <div className="flex items-center mb-2">
-                  <ShoppingCart className="text-blue-600 mr-2" size={24} />
-                  <h2 className="text-lg font-semibold text-gray-700">Total Orders</h2>
-                </div>
-                <p className="text-2xl font-bold text-gray-800">{totalOrders.toLocaleString()}</p>
-                <div className="flex items-center mt-2 text-red-500">
-                  <TrendingDown size={20} />
-                  <span className="ml-1">3% Decrease</span>
-                </div>
-              </motion.div>
-
+            {/* Quick Stats Grid */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
+            >
               {/* Total Products */}
-              <motion.div
-                className="bg-white rounded-lg shadow-md p-4 md:p-6 hover:shadow-lg transition-shadow duration-300"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-              >
-                <div className="flex items-center mb-2">
-                  <Package className="text-blue-600 mr-2" size={24} />
-                  <h2 className="text-lg font-semibold text-gray-700">Total Products</h2>
+              <div className="bg-white rounded-lg shadow p-4 md:p-6 border border-gray-100 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Total Products</p>
+                    <p className="text-2xl font-bold mt-1">{stats.totalProducts}</p>
+                  </div>
+                  <div className="p-3 rounded-full bg-blue-50 text-blue-600">
+                    <Package size={20} />
+                  </div>
                 </div>
-                <p className="text-2xl font-bold text-gray-800">{totalProducts.toLocaleString()}</p>
-                <div className="flex items-center mt-2 text-green-500">
-                  <TrendingUp size={20} />
-                  <span className="ml-1">8% Increase</span>
+                <div className="mt-4 flex items-center text-sm text-gray-500">
+                  <span className="flex items-center">
+                    <Tag size={14} className="mr-1" />
+                    {stats.totalSaleProducts} on sale
+                  </span>
                 </div>
-              </motion.div>
-            </div>
+              </div>
 
-            {/* Revenue Metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-8">
-              {/* Revenue (Today) */}
-              <motion.div
-                className="bg-white rounded-lg shadow-md p-4 md:p-6 hover:shadow-lg transition-shadow duration-300"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.5 }}
-              >
-                <div className="flex items-center mb-2">
-                  <DollarSign className="text-blue-600 mr-2" size={24} />
-                  <h2 className="text-lg font-semibold text-gray-700">Revenue (Today)</h2>
+              {/* Users Summary */}
+              <div className="bg-white rounded-lg shadow p-4 md:p-6 border border-gray-100 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Total Users</p>
+                    <p className="text-2xl font-bold mt-1">{stats.totalUsers}</p>
+                  </div>
+                  <div className="p-3 rounded-full bg-purple-50 text-purple-600">
+                    <Users size={20} />
+                  </div>
                 </div>
-                <p className="text-2xl font-bold text-gray-800">${revenue.today.toLocaleString()}</p>
-                <div className="flex items-center mt-2 text-green-500">
-                  <TrendingUp size={20} />
-                  <span className="ml-1">5% Increase</span>
+                <div className="mt-4 flex justify-between text-sm">
+                  <span className="text-green-600 flex items-center">
+                    <UserCheck size={14} className="mr-1" />
+                    {stats.activeUsers} active
+                  </span>
+                  <span className="text-red-600 flex items-center">
+                    <Lock size={14} className="mr-1" />
+                    {stats.blockedUsers} blocked
+                  </span>
                 </div>
-              </motion.div>
+              </div>
 
-              {/* Revenue (Week) */}
-              <motion.div
-                className="bg-white rounded-lg shadow-md p-4 md:p-6 hover:shadow-lg transition-shadow duration-300"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.6 }}
-              >
-                <div className="flex items-center mb-2">
-                  <DollarSign className="text-blue-600 mr-2" size={24} />
-                  <h2 className="text-lg font-semibold text-gray-700">Revenue (Week)</h2>
+              {/* Orders Summary */}
+              <div className="bg-white rounded-lg shadow p-4 md:p-6 border border-gray-100 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Total Orders</p>
+                    <p className="text-2xl font-bold mt-1">{stats.totalOrders}</p>
+                  </div>
+                  <div className="p-3 rounded-full bg-orange-50 text-orange-600">
+                    <ShoppingCart size={20} />
+                  </div>
                 </div>
-                <p className="text-2xl font-bold text-gray-800">${revenue.week.toLocaleString()}</p>
-                <div className="flex items-center mt-2 text-green-500">
-                  <TrendingUp size={20} />
-                  <span className="ml-1">12% Increase</span>
+                <div className="mt-4 flex justify-between text-sm">
+                  <span className="text-blue-600 flex items-center">
+                    <Truck size={14} className="mr-1" />
+                    {stats.pendingOrders} processing
+                  </span>
+                  <span className="text-green-600 flex items-center">
+                    <CheckCircle size={14} className="mr-1" />
+                    {stats.deliveredOrders} delivered
+                  </span>
                 </div>
-              </motion.div>
+              </div>
 
-              {/* Revenue (Month) */}
-              <motion.div
-                className="bg-white rounded-lg shadow-md p-4 md:p-6 hover:shadow-lg transition-shadow duration-300"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.7 }}
-              >
-                <div className="flex items-center mb-2">
-                  <DollarSign className="text-blue-600 mr-2" size={24} />
-                  <h2 className="text-lg font-semibold text-gray-700">Revenue (Month)</h2>
+              {/* Revenue Summary */}
+              <div className="bg-white rounded-lg shadow p-4 md:p-6 border border-gray-100 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Total Revenue</p>
+                    <p className="text-2xl font-bold mt-1">Rs. {stats.totalRevenue.toLocaleString()}</p>
+                  </div>
+                  <div className="p-3 rounded-full bg-green-50 text-green-600">
+                    <DollarSign size={20} />
+                  </div>
                 </div>
-                <p className="text-2xl font-bold text-gray-800">${revenue.month.toLocaleString()}</p>
-                <div className="flex items-center mt-2 text-red-500">
-                  <TrendingDown size={20} />
-                  <span className="ml-1">3% Decrease</span>
+                <div className="mt-4 flex justify-between text-sm">
+                  <span className="text-teal-600 flex items-center">
+                    <CreditCard size={14} className="mr-1" />
+                    Rs. {stats.esewaRevenue.toLocaleString()} eSewa
+                  </span>
+                  <span className="text-yellow-600 flex items-center">
+                    <DollarSign size={14} className="mr-1" />
+                    Rs. {stats.codRevenue.toLocaleString()} COD
+                  </span>
                 </div>
-              </motion.div>
-
-              {/* Revenue (Year) */}
-              <motion.div
-                className="bg-white rounded-lg shadow-md p-4 md:p-6 hover:shadow-lg transition-shadow duration-300 sm:col-span-3"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.8 }}
-              >
-                <div className="flex items-center mb-2">
-                  <DollarSign className="text-blue-600 mr-2" size={24} />
-                  <h2 className="text-lg font-semibold text-gray-700">Revenue (Year)</h2>
-                </div>
-                <p className="text-2xl font-bold text-gray-800">${revenue.year.toLocaleString()}</p>
-                <div className="flex items-center mt-2 text-green-500">
-                  <TrendingUp size={20} />
-                  <span className="ml-1">18% Increase</span>
-                </div>
-              </motion.div>
-            </div>
+              </div>
+            </motion.div>
 
             {/* Charts Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-8">
-              {/* Weekly Visitor Traffic */}
-              <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
-                <h3 className="text-xl font-semibold mb-2">Weekly Visitor Traffic</h3>
-                <p className="text-gray-600 mb-4">Number of visitors per day</p>
-                <div className="h-[300px]">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6"
+            >
+              {/* User Growth */}
+              <div className="bg-white rounded-lg shadow p-4 md:p-6 border border-gray-100">
+                <h3 className="text-lg font-semibold mb-4">User Growth (Last 6 Months)</h3>
+                <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={visitorData}>
-                      <CartesianGrid strokeDasharray="3 3" />
+                    <BarChart data={stats.userGrowth}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis dataKey="name" />
                       <YAxis />
                       <Tooltip />
-                      <Bar dataKey="visits" fill="#8884d8" name="Visits" />
+                      <Bar dataKey="users" fill="#8884d8" name="New Users" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               </div>
 
-              {/* Traffic Sources */}
-              <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
-                <h3 className="text-xl font-semibold mb-2">Traffic Sources</h3>
-                <p className="text-gray-600 mb-4">Distribution of visitor sources</p>
-                <div className="h-[300px]">
+              {/* Order Status Distribution */}
+              <div className="bg-white rounded-lg shadow p-4 md:p-6 border border-gray-100">
+                <h3 className="text-lg font-semibold mb-4">Order Status Distribution</h3>
+                <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <RePieChart>
                       <Pie
-                        data={trafficSourceData}
+                        data={stats.orderStatusData}
                         cx="50%"
                         cy="50%"
                         labelLine={false}
@@ -366,123 +397,136 @@ const AdminDashboard = () => {
                         dataKey="value"
                         label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                       >
-                        {trafficSourceData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        {stats.orderStatusData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
                       <Tooltip />
+                      <Legend />
                     </RePieChart>
                   </ResponsiveContainer>
                 </div>
               </div>
 
-              {/* Monthly Revenue */}
-              <div className="bg-white rounded-lg shadow-md p-4 md:p-6 lg:col-span-2">
-                <h3 className="text-xl font-semibold mb-2">Monthly Revenue</h3>
-                <p className="text-gray-600 mb-4">Revenue trend over the past 12 months</p>
-                <div className="h-[400px]">
+              {/* Payment Methods */}
+              <div className="bg-white rounded-lg shadow p-4 md:p-6 border border-gray-100 lg:col-span-2">
+                <h3 className="text-lg font-semibold mb-4">Payment Methods</h3>
+                <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={monthlyRevenue}>
-                      <CartesianGrid strokeDasharray="3 3" />
+                    <BarChart data={stats.paymentMethodData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis dataKey="name" />
                       <YAxis />
                       <Tooltip />
-                      <Line type="monotone" dataKey="revenue" stroke="#8884d8" name="Revenue" />
-                    </LineChart>
+                      <Legend />
+                      <Bar dataKey="value" name="Orders" radius={[4, 4, 0, 0]}>
+                        {stats.paymentMethodData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
                   </ResponsiveContainer>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
-            {/* Quick Links */}
-            <div className="mt-6 md:mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-              {quickLinks.map((link, index) => (
-                <Link
-                  key={index}
-                  to={link.link}
-                  className="bg-white text-blue-600 rounded-lg shadow-md p-4 md:p-6 hover:bg-blue-50 transition-colors duration-300 flex items-center justify-between relative"
-                >
-                  <div className="flex items-center">
-                    {link.icon && <link.icon size={24} className="mr-3" />}
-                    <span className="font-semibold text-gray-800">{link.title}</span>
-                  </div>
-                  <div className="flex items-center">
-                    {link.badge && (
-                      <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center mr-2">
-                        {link.badge}
-                      </span>
-                    )}
-                    <ChevronRight size={20} />
-                  </div>
-                </Link>
-              ))}
-            </div>
-
-            {/* Additional Metrics */}
-            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-              {/* Top Products */}
-              <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
-                <h3 className="text-xl font-semibold mb-2">Top Selling Products</h3>
-                <ul className="space-y-2">
-                  <li className="flex justify-between items-center">
-                    <span>Product A</span>
-                    <span className="font-semibold">$12,500</span>
-                  </li>
-                  <li className="flex justify-between items-center">
-                    <span>Product B</span>
-                    <span className="font-semibold">$10,200</span>
-                  </li>
-                  <li className="flex justify-between items-center">
-                    <span>Product C</span>
-                    <span className="font-semibold">$8,750</span>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Revenue by Category */}
-              <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
-                <h3 className="text-xl font-semibold mb-2">Revenue by Category</h3>
-                <ul className="space-y-2">
-                  <li className="flex justify-between items-center">
-                    <span>Electronics</span>
-                    <span className="font-semibold">$45,000</span>
-                  </li>
-                  <li className="flex justify-between items-center">
-                    <span>Clothing</span>
-                    <span className="font-semibold">$32,000</span>
-                  </li>
-                  <li className="flex justify-between items-center">
-                    <span>Home & Garden</span>
-                    <span className="font-semibold">$28,500</span>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Customer Satisfaction */}
-              <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
-                <h3 className="text-xl font-semibold mb-2">Customer Satisfaction</h3>
-                <div className="text-3xl font-bold text-center mb-2">4.7/5</div>
-                <div className="flex justify-center">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <svg
-                      key={star}
-                      className={`w-5 h-5 ${star <= 4 ? "text-yellow-400" : "text-gray-300"}`}
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
+            {/* Recent Orders and Quick Links */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+            >
+              {/* Recent Orders */}
+              <div className="bg-white rounded-lg shadow p-4 md:p-6 border border-gray-100 lg:col-span-2">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">Recent Orders</h3>
+                  <Link to="/admin/orders" className="text-sm text-blue-600 hover:underline">
+                    View all
+                  </Link>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Order ID
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Customer
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Amount
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {stats.recentOrders.length > 0 ? (
+                        stats.recentOrders.map((order) => (
+                          <tr key={order.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                              #{order.id.slice(-6)}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                              {order.customer}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                              Rs. {order.amount.toLocaleString()}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              {renderStatusBadge(order.status)}
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="4" className="px-4 py-8 text-center text-gray-500">
+                            No recent orders found
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
-              {/* Conversion Rate */}
-              <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
-                <h3 className="text-xl font-semibold mb-2">Conversion Rate</h3>
-                <div className="text-3xl font-bold text-center mb-2">3.2%</div>
-                <p className="text-center text-gray-600">Visitors who made a purchase</p>
+              {/* Quick Links */}
+              <div className="bg-white rounded-lg shadow p-4 md:p-6 border border-gray-100">
+                <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
+                <div className="space-y-2">
+                  {quickLinks.map((link, index) => (
+                    <motion.div
+                      key={index}
+                      whileHover={{ x: 5 }}
+                      transition={{ type: "spring", stiffness: 300 }}
+                    >
+                      <Link
+                        to={link.link}
+                        className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-center">
+                          <div className="p-2 rounded-full bg-gray-100 text-gray-600 mr-3">
+                            <link.icon size={18} />
+                          </div>
+                          <span className="font-medium">{link.title}</span>
+                        </div>
+                        <div className="flex items-center">
+                          {link.badge && (
+                            <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full mr-2">
+                              {link.badge}
+                            </span>
+                          )}
+                          <ChevronRight size={18} className="text-gray-400" />
+                        </div>
+                      </Link>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
-            </div>
+            </motion.div>
           </>
         )}
       </div>
